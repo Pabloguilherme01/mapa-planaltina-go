@@ -29,3 +29,11 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Executar fluxos mobile, desktop, PWA e acessibilidade
         run: npx playwright test --config=playwright.pages.config.mjs
+      - name: Preservar traces e screenshots em falhas
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: browser-qa-failure-${{ github.run_id }}
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: warn
