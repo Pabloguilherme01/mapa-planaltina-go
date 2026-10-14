@@ -13,21 +13,26 @@ A procedência usa `official`, `verified_open_data`, `community` e `demo`. Licen
 
 ## Publicação no GitHub Pages
 
-Cada alteração em `main` executa a checagem TypeScript, os testes e a construção estática, depois publica via GitHub Actions. Pull requests para `main` executam as mesmas verificações sem publicar o site. O prefixo `/mapa-planaltina-go/` e o acesso direto a `/fontes/` estão configurados.
+Cada alteração em `main` executa a checagem TypeScript, os testes, a construção estática e a verificação do artefato antes de publicar via GitHub Actions. Pull requests para `main` executam as mesmas verificações sem publicar o site. O prefixo `/mapa-planaltina-go/` e o acesso direto a `/fontes/` estão configurados.
 
 ```sh
 npm ci
 npm run lint
 npm test
 npm run build:pages
+npm run verify:pages
 npm run preview
 ```
 
 O Pages hospeda HTML, CSS e JavaScript e não executa o servidor Express. Os dados DEMO e o resultado da consulta IBGE são exportados durante a construção. Se a consulta falhar, o site mostra a falha sem inventar metadados oficiais. A busca local do assistente funciona sem servidor e identifica explicitamente que não é uma chamada Gemini. A localização é solicitada com consentimento e permanece no dispositivo.
 
-## Robustez e degradação controlada
+## Robustez, PWA e degradação controlada
 
 O projeto adota o mesmo princípio usado no **Trajeto Águas Lindas**: recursos dependentes de rede ou configuração externa não devem quebrar o núcleo local. O mapa esquemático continua sendo o provedor padrão; Google Maps só fica disponível quando `VITE_GOOGLE_MAPS_API_KEY` está configurada. Busca e filtros permanecem locais e a UI evita importar módulos da camada `server/`.
+
+A publicação do GitHub Pages também gera um manifesto instalável e um service worker sem dependências extras. Depois de uma visita online bem-sucedida, o shell principal, `/fontes/`, os bundles estáticos e os snapshots JSON publicados ficam em cache para consulta sem conexão. Recursos externos, como Google Maps e fontes remotas, continuam sujeitos à rede. O cache recebe uma versão derivada do conteúdo do build, e versões antigas do próprio Mapa Planaltina são removidas na ativação.
+
+O verificador de artefato bloqueia o deploy se o base path estiver incorreto, se algum ponto perder a marcação DEMO, se controles de protótipo do Stitch vazarem para produção ou se manifesto, service worker e ícone instalável não forem gerados corretamente. O smoke pós-deploy valida página principal, `/fontes/`, snapshot de pontos, manifesto e service worker no endereço publicado.
 
 ## Servidor, Gemini e integrações futuras
 
@@ -49,4 +54,4 @@ PostgreSQL/PostGIS é uma integração futura. A migração SQL e a interface do
 
 ## Verificação
 
-Há testes para busca, filtros, procedência, falha do IBGE, resposta inventada pelo modelo, roteamento do Pages, busca local sem servidor e disponibilidade do provedor Google Maps. O workflow deve passar integralmente antes da publicação.
+Há testes para busca, filtros, procedência, falha do IBGE, resposta inventada pelo modelo, roteamento do Pages, busca local sem servidor, disponibilidade do provedor Google Maps, contratos de acessibilidade, geração da PWA e integridade do artefato publicado. O workflow deve passar integralmente antes da publicação.

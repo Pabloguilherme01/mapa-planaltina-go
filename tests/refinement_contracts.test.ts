@@ -23,4 +23,19 @@ describe('contratos de refinamento da interface', () => {
     expect(source).toContain('id="mobile-points-list"');
     expect(source).toContain('aria-label="Limpar busca"');
   });
+
+  it('registra service worker somente em produção e dentro do base path do Pages', () => {
+    const source = read('src/main.tsx');
+    expect(source).toContain('import.meta.env.PROD');
+    expect(source).toContain('import.meta.env.BASE_URL');
+    expect(source).toContain("'serviceWorker' in navigator");
+    expect(source).toContain('.register(`${import.meta.env.BASE_URL}sw.js`');
+  });
+
+  it('só promete cache offline quando há service worker controlando a página', () => {
+    const source = read('src/components/Common/OfflineBanner.tsx');
+    expect(source).toContain('navigator.serviceWorker?.controller');
+    expect(source).toContain('controllerchange');
+    expect(source).toContain('snapshots locais');
+  });
 });

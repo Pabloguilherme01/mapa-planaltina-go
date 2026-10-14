@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: mapa-planaltina-${{ github.workflow }}-${{ github.ref }}
+  group: mapa-planaltina-${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.ref }}
   cancel-in-progress: true
 jobs:
   build:
@@ -66,6 +66,10 @@ jobs:
           curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/index.html "$root"
           curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/fontes.html "${root}fontes/"
           curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/points.json "${root}data/points.json"
+          curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/manifest.webmanifest "${root}manifest.webmanifest"
+          curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/sw.js "${root}sw.js"
           grep -q '<title>Mapa Planaltina GO</title>' /tmp/index.html
           grep -q '<title>Mapa Planaltina GO</title>' /tmp/fontes.html
           grep -q '"ibgeCode":"5217609"' /tmp/points.json
+          grep -q '"start_url": "/mapa-planaltina-go/"' /tmp/manifest.webmanifest
+          grep -q '/mapa-planaltina-go/data/points.json' /tmp/sw.js

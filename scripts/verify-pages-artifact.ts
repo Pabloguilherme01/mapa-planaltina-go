@@ -11,6 +11,9 @@ const REQUIRED_FILES = [
   'data/points.json',
   'data/sources.json',
   'data/municipality.json',
+  'manifest.webmanifest',
+  'sw.js',
+  'icons/mapa-planaltina.svg',
 ] as const;
 
 async function readRequired(root: string, relativePath: string) {
@@ -35,6 +38,9 @@ export async function verifyPagesArtifact(root = 'dist'): Promise<void> {
     if (!html.includes(`${EXPECTED_BASE}assets/`)) {
       throw new Error(`Base path ausente em ${htmlPath}: nenhum asset usa ${EXPECTED_BASE}assets/.`);
     }
+    if (!html.includes(`${EXPECTED_BASE}manifest.webmanifest`)) {
+      throw new Error(`PWA inválida em ${htmlPath}: link do manifesto não usa ${EXPECTED_BASE}.`);
+    }
   }
 
   const points = JSON.parse(contents.get('data/points.json') ?? '{}') as {
@@ -57,6 +63,33 @@ export async function verifyPagesArtifact(root = 'dist'): Promise<void> {
     throw new Error('sources.json inválido no artefato do Pages.');
   }
   JSON.parse(contents.get('data/municipality.json') ?? '{}');
+
+  const manifest = JSON.parse(contents.get('manifest.webmanifest') ?? '{}') as {
+    name?: string;
+    start_url?: string;
+    scope?: string;
+    display?: string;
+    icons?: Array<{ src?: string }>;
+  };
+  if (
+    manifest.name !== 'Mapa Planaltina GO' ||
+    manifest.start_url !== EXPECTED_BASE ||
+    manifest.scope !== EXPECTED_BASE ||
+    manifest.display !== 'standalone'
+  ) {
+    throw new Error('Manifesto PWA inválido ou fora do base path esperado.');
+  }
+  if (!manifest.icons?.some((icon) => icon.src === `${EXPECTED_BASE}icons/mapa-planaltina.svg`)) {
+    throw new Error('Manifesto PWA não referencia o ícone instalável esperado.');
+  }
+
+  const serviceWorker = contents.get('sw.js') ?? '';
+  if (!serviceWorker.includes(EXPECTED_BASE) || !serviceWorker.includes(`${EXPECTED_BASE}data/points.json`)) {
+    throw new Error('Service worker inválido: shell e snapshot de pontos não estão no escopo offline esperado.');
+  }
+  if (!(contents.get('icons/mapa-planaltina.svg') ?? '').includes('<svg')) {
+    throw new Error('Ícone PWA inválido.');
+  }
 
   const assetNames = await readdir(join(root, 'assets'));
   const jsAssets = assetNames.filter((name) => name.endsWith('.js'));
