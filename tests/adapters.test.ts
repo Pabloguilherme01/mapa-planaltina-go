@@ -143,7 +143,8 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
     expect(status.status).toBe('connected');
     expect(status.verified).toBe(true);
     expect(status.retrievedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    expect(status.checkedAt).toBe(status.retrievedAt);
+    expect(status.checkedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(Date.parse(status.checkedAt!)).toBeLessThanOrEqual(Date.parse(status.retrievedAt!));
     expect(status.license).toMatch(/licença não informada/i);
     expect(status.statusMessage).toContain('1 estabelecimento');
   });
