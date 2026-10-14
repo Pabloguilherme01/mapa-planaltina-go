@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildServiceWorkerSource, buildWebManifest } from '../scripts/pagesPwa.ts';
+import {
+  buildServiceWorkerSource,
+  buildWebManifest,
+  injectPwaMetadata,
+} from '../scripts/pagesPwa.ts';
 
 const BASE = '/mapa-planaltina-go/';
 
@@ -12,6 +16,16 @@ describe('GitHub Pages PWA assets', () => {
     expect(manifest.start_url).toBe(BASE);
     expect(manifest.scope).toBe(BASE);
     expect(manifest.display).toBe('standalone');
+  });
+
+  it('injeta metadados de instalação sem duplicar entradas existentes', () => {
+    const html = '<html><head><title>Mapa</title></head><body></body></html>';
+    const once = injectPwaMetadata(html, BASE);
+    const twice = injectPwaMetadata(once, BASE);
+
+    expect(once).toContain(`href="${BASE}manifest.webmanifest"`);
+    expect(once).toContain('name="theme-color"');
+    expect(twice.match(/manifest\.webmanifest/g)).toHaveLength(1);
   });
 
   it('gera service worker com precache do shell e dos snapshots locais', () => {
