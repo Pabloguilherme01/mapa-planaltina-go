@@ -9,12 +9,13 @@ const prefeitura = new PrefeituraAdapter();
 const inep = new InepAdapter();
 const osm = new OsmAdapter();
 
-// A publicação do Pages é um snapshot auditável. Para evitar promover uma
-// publicação "real" sem dados reais, a geração falha se a fonte CNES não
-// entregar pelo menos um ponto georreferenciado válido de Planaltina-GO.
+// A publicação é um snapshot auditável. O adapter tenta atualização ao vivo e,
+// quando o órgão bloqueia/indisponibiliza a consulta, preserva somente o último
+// snapshot real previamente validado. A publicação continua bloqueada se nem
+// atualização nem fallback fornecerem ao menos um ponto real verificável.
 const realHealthPoints = await cnes.fetchPoints();
 if (realHealthPoints.length === 0) {
-  throw new Error('Publicação bloqueada: nenhum ponto real do CNES foi obtido.');
+  throw new Error('Publicação bloqueada: nenhum ponto real verificado do CNES foi obtido.');
 }
 
 console.log(
@@ -22,12 +23,15 @@ console.log(
     event: 'cnes-planaltina-snapshot',
     source: 'SES-GO / CNES',
     resourceId: '7559175a-98ac-4719-bf30-5e6455ba57c5',
+    sourceMode: cnes.dataMode,
+    liveError: cnes.liveError,
     realCount: realHealthPoints.length,
     points: realHealthPoints.map((point) => ({
       id: point.id,
       name: point.name,
       lat: point.lat,
       lng: point.lng,
+      provenance: point.provenanceMeta.provenance,
       zone: point.zone,
       addressHint: point.addressHint,
       retrievedAt: point.provenanceMeta.retrievedAt,
@@ -66,8 +70,9 @@ await writeFile(
       municipality: 'Planaltina, Goiás',
       ibgeCode: '5217609',
       mode: 'misto_oficial_demo',
+      realSourceMode: cnes.dataMode,
       disclaimer:
-        'O catálogo combina estabelecimentos de saúde reais do CNES/SES-GO com pontos DEMO explicitamente identificados. Consulte a procedência de cada registro antes do deslocamento.',
+        'O catálogo combina estabelecimentos de saúde reais verificados com pontos DEMO explicitamente identificados. Consulte a procedência e o modo da fonte antes do deslocamento.',
     },
   })
 );
@@ -81,7 +86,7 @@ await writeFile(
       totalSources: sources.length,
       verifiedCount: sources.filter((source) => source.verified).length,
       policyNotice:
-        'Snapshot de publicação com proveniência por registro. Fonte oficial não elimina a necessidade de confirmar mudanças recentes de atendimento.',
+        'Snapshot de publicação com proveniência por registro e fallback explícito para a última coleta real validada quando a fonte ao vivo não responde.',
     },
   })
 );
