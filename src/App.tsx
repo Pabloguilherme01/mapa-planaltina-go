@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useMemo, useCallback } from 'react';
 import { MapPoint, PointCategory, ProvenanceType, CATEGORIES_LIST } from './types/index.ts';
 import { fetchPoints } from './services/apiClient.ts';
 import { Navbar, ActiveTab } from './components/Navigation/Navbar.tsx';
@@ -11,14 +11,41 @@ import { DesktopSidebar } from './components/Sidebar/DesktopSidebar.tsx';
 import { MobileBottomSheet } from './components/BottomSheet/MobileBottomSheet.tsx';
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav.tsx';
 import { MapContainer } from './components/Map/MapContainer.tsx';
-import { PointDetailsModal } from './components/Modals/PointDetailsModal.tsx';
-import { SourcesPage } from './pages/SourcesPage.tsx';
-import { GeolocationConsentModal } from './components/Modals/GeolocationConsentModal.tsx';
-import { AssistantDrawer } from './components/Drawer/AssistantDrawer.tsx';
 import { OfflineBanner } from './components/Common/OfflineBanner.tsx';
 import { normalizeText } from './utils/text.ts';
-import { Trees, X } from 'lucide-react';
+import { Loader2, Trees, X } from 'lucide-react';
 import { pageRoute, sitePath } from './utils/routing.ts';
+
+const SourcesPage = lazy(() =>
+  import('./pages/SourcesPage.tsx').then((module) => ({ default: module.SourcesPage }))
+);
+const PointDetailsModal = lazy(() =>
+  import('./components/Modals/PointDetailsModal.tsx').then((module) => ({
+    default: module.PointDetailsModal,
+  }))
+);
+const GeolocationConsentModal = lazy(() =>
+  import('./components/Modals/GeolocationConsentModal.tsx').then((module) => ({
+    default: module.GeolocationConsentModal,
+  }))
+);
+const AssistantDrawer = lazy(() =>
+  import('./components/Drawer/AssistantDrawer.tsx').then((module) => ({
+    default: module.AssistantDrawer,
+  }))
+);
+
+function LoadingSurface({ label }: { label: string }) {
+  return (
+    <div
+      role="status"
+      className="fixed inset-0 z-40 flex items-center justify-center gap-2 bg-[#F5F0E6]/85 text-sm font-semibold text-[#355E3B] backdrop-blur-sm"
+    >
+      <Loader2 size={18} className="animate-spin" />
+      {label}
+    </div>
+  );
+}
 
 export default function App() {
   const [allPoints, setAllPoints] = useState<MapPoint[]>([]);
@@ -102,14 +129,12 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Category toggles
   const handleToggleCategory = (category: PointCategory) => {
     setSelectedCategories((prev) => {
       if (prev.includes(category)) {
         return prev.filter((c) => c !== category);
-      } else {
-        return [...prev, category];
       }
+      return [...prev, category];
     });
   };
 
@@ -117,23 +142,19 @@ export default function App() {
     setSelectedCategories([]);
   };
 
-  // Instant Unaccented & Multi-attribute Filtering
   const filteredPoints = useMemo(() => {
     let result = [...allPoints];
 
-    // Filter by categories if any selected
     if (selectedCategories.length > 0) {
       result = result.filter((p) => selectedCategories.includes(p.category));
     }
 
-    // Filter by provenance if selected
     if (selectedProvenance !== 'all') {
       result = result.filter(
         (p) => p.provenanceMeta.provenance === selectedProvenance
       );
     }
 
-    // Filter by search query without accents
     if (searchQuery.trim().length > 0) {
       const q = normalizeText(searchQuery);
       result = result.filter((p) => {
@@ -155,7 +176,6 @@ export default function App() {
     return result;
   }, [allPoints, selectedCategories, selectedProvenance, searchQuery]);
 
-  // Category counts
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     CATEGORIES_LIST.forEach((cat) => {
@@ -202,7 +222,6 @@ export default function App() {
     >
       <OfflineBanner />
 
-      {/* Main Top Navigation & DEMO Warning */}
       <Navbar
         activeTab={activeTab}
         onSelectTab={handleTabSelect}
@@ -211,13 +230,12 @@ export default function App() {
         onToggleHighContrast={() => setHighContrast(!highContrast)}
       />
 
-      {/* If current route is /fontes, render real SourcesPage */}
       {currentRoute === '/fontes' ? (
-        <SourcesPage onBackToMap={() => navigateTo('/')} />
+        <Suspense fallback={<LoadingSurface label="Carregando fontes…" />}>
+          <SourcesPage onBackToMap={() => navigateTo('/')} />
+        </Suspense>
       ) : (
-        /* Protagonist Workspace: Sidebar Desktop + Map Protagonist + Mobile Bottom Sheet */
         <div className="flex-1 w-full pt-28 lg:pt-24 pb-16 lg:pb-0 flex overflow-hidden relative">
-          {/* Desktop Sidebar (hidden on mobile) */}
           <div className="hidden lg:flex h-[calc(100vh-6rem)]">
             <DesktopSidebar
               points={filteredPoints}
@@ -238,13 +256,11 @@ export default function App() {
             />
           </div>
 
-          {/* Map Container Area (Protagonist) */}
           <main
             className="flex-1 h-[calc(100vh-6rem)] relative overflow-hidden flex flex-col"
             role="main"
             aria-label="Área principal do mapa"
           >
-            {/* Mobile Floating Welcome Card */}
             {showWelcomeBanner && (
               <div className="lg:hidden absolute top-2 inset-x-3 z-30 pointer-events-auto">
                 <div className="bg-[#EAE3D2] rounded-2xl p-3 flex items-start gap-2.5 shadow-md border border-[#355E3B]/20">
@@ -271,7 +287,6 @@ export default function App() {
               </div>
             )}
 
-            {/* Core Interactive Map */}
             <div className="w-full h-full">
               <MapContainer
                 points={filteredPoints}
@@ -283,7 +298,6 @@ export default function App() {
               />
             </div>
 
-            {/* Mobile Bottom Sheet (Always shows search & 9 categories) */}
             <MobileBottomSheet
               points={filteredPoints}
               selectedPoint={selectedPoint}
@@ -300,32 +314,42 @@ export default function App() {
         </div>
       )}
 
-      {/* Mobile Fixed Bottom Nav Tabs (Mapa, Assistente, Fontes) */}
       <MobileBottomNav activeTab={activeTab} onSelectTab={handleTabSelect} />
 
-      {/* Modals & Drawers */}
-      <PointDetailsModal
-        point={selectedPoint && isDetailsOpen ? selectedPoint : null}
-        onClose={() => setIsDetailsOpen(false)}
-      />
+      {isDetailsOpen && selectedPoint && (
+        <Suspense fallback={<LoadingSurface label="Carregando ficha…" />}>
+          <PointDetailsModal
+            point={selectedPoint}
+            onClose={() => setIsDetailsOpen(false)}
+          />
+        </Suspense>
+      )}
 
-      <GeolocationConsentModal
-        isOpen={isGeoConsentOpen}
-        onClose={() => setIsGeoConsentOpen(false)}
-        onSuccessLocation={(coords) => {
-          setUserLocation(coords);
-        }}
-      />
+      {isGeoConsentOpen && (
+        <Suspense fallback={<LoadingSurface label="Carregando geolocalização…" />}>
+          <GeolocationConsentModal
+            isOpen={isGeoConsentOpen}
+            onClose={() => setIsGeoConsentOpen(false)}
+            onSuccessLocation={(coords) => {
+              setUserLocation(coords);
+            }}
+          />
+        </Suspense>
+      )}
 
-      <AssistantDrawer
-        isOpen={isAssistantOpen}
-        onClose={() => {
-          setIsAssistantOpen(false);
-          setActiveTab('map');
-        }}
-        onSelectPointById={handleSelectPointById}
-        allPoints={allPoints}
-      />
+      {isAssistantOpen && (
+        <Suspense fallback={<LoadingSurface label="Carregando assistente…" />}>
+          <AssistantDrawer
+            isOpen={isAssistantOpen}
+            onClose={() => {
+              setIsAssistantOpen(false);
+              setActiveTab('map');
+            }}
+            onSelectPointById={handleSelectPointById}
+            allPoints={allPoints}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }
