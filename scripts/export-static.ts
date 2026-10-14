@@ -17,6 +17,24 @@ if (realHealthPoints.length === 0) {
   throw new Error('Publicação bloqueada: nenhum ponto real do CNES foi obtido.');
 }
 
+console.log(
+  JSON.stringify({
+    event: 'cnes-planaltina-snapshot',
+    source: 'SES-GO / CNES',
+    resourceId: '7559175a-98ac-4719-bf30-5e6455ba57c5',
+    realCount: realHealthPoints.length,
+    points: realHealthPoints.map((point) => ({
+      id: point.id,
+      name: point.name,
+      lat: point.lat,
+      lng: point.lng,
+      zone: point.zone,
+      addressHint: point.addressHint,
+      retrievedAt: point.provenanceMeta.retrievedAt,
+    })),
+  })
+);
+
 const data = [...realHealthPoints, ...demoPoints];
 const sources = await Promise.all(
   [ibge, prefeitura, cnes, inep, osm].map((adapter) => adapter.checkStatus())
