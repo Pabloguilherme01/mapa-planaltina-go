@@ -28,6 +28,9 @@ test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', 
   await page.getByRole('navigation', { name: 'Navegação móvel' }).getByRole('button', { name: /Fontes/i }).click();
   await expect(page).toHaveURL(new RegExp(`${BASE_PATH}fontes/?$`));
   await expect(page.getByRole('heading', { name: 'Fontes & Transparência Territorial' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Pesquisa comunitária: comércio e corredores urbanos' })).toBeVisible();
+  await expect(page.getByText('Atacadão Dia a Dia — Planaltina de Goiás')).toBeVisible();
+  await expect(page.getByText('Pendente de geometria')).toHaveCount(4);
 });
 
 test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request }, testInfo) => {
@@ -101,6 +104,7 @@ test('páginas principais não têm violações críticas ou sérias de acessibi
 
   await page.goto('./fontes/');
   await expect(page.getByRole('heading', { name: 'Fontes & Transparência Territorial' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Âncoras comerciais com checagem pública' })).toBeVisible();
 
   const sourcesResults = await new AxeBuilder({ page }).analyze();
   const sourcesBlocking = sourcesResults.violations.filter((violation) => ['critical', 'serious'].includes(violation.impact));
