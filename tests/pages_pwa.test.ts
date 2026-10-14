@@ -46,6 +46,17 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain(`${BASE}data/points.json`);
     expect(source).toContain(`${BASE}fontes/index.html`);
     expect(source).toContain("request.mode === 'navigate'");
-    expect(source).toContain(`caches.match('${BASE}')`);
+  });
+
+  it('faz match do precache por URL mesmo quando a resposta varia por Origin', () => {
+    const source = buildServiceWorkerSource({
+      basePath: BASE,
+      cacheName: 'mapa-planaltina-v1',
+      assets: ['index.html', 'assets/app.js'],
+    });
+
+    expect(source).toContain('caches.match(request, { ignoreVary: true })');
+    expect(source).toContain('caches.match(fallbackUrl, { ignoreVary: true })');
+    expect(source).toContain(`caches.match('${BASE}', { ignoreVary: true })`);
   });
 });
