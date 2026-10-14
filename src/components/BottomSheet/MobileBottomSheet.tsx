@@ -42,6 +42,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   return (
     <div
       id="bottomSheet"
+      role="region"
+      aria-label="Busca e lista de pontos demonstrativos"
       className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
         isExpanded ? 'h-[75vh]' : 'h-[230px]'
       }`}
@@ -50,6 +52,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       <button
         type="button"
         aria-label="Expandir ou recolher lista de pontos demonstrativos"
+        aria-expanded={isExpanded}
+        aria-controls="mobile-points-list"
         onClick={() => setIsExpanded(!isExpanded)}
         className="touch-target w-full h-7 -mt-1 flex flex-col items-center justify-center cursor-pointer active:opacity-60 shrink-0"
       >
@@ -58,21 +62,26 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
       {/* ALWAYS ACCESSIBLE IN MOBILE PEEK & EXPANDED: Search Input */}
       <div className="relative w-full mb-1.5 shrink-0">
+        <label htmlFor="mobile-search-input" className="sr-only">
+          Buscar pontos em Planaltina, Goiás
+        </label>
         <div className="relative flex items-center bg-[#F5F0E6] rounded-xl border border-neutral-300 focus-within:border-[#355E3B] transition-colors">
           <Search size={16} className="text-neutral-500 ml-2.5 shrink-0" />
           <input
+            id="mobile-search-input"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar pontos em Planaltina, Goiás..."
-            className="w-full py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-400 focus:outline-none"
+            className="w-full min-h-[44px] py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-400 focus:outline-none"
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => onSearchChange('')}
-              className="p-1 text-neutral-400 hover:text-neutral-700 mr-2"
+              className="touch-target p-1 text-neutral-400 hover:text-neutral-700 mr-2"
               title="Limpar busca"
+              aria-label="Limpar busca"
             >
               <X size={14} />
             </button>
@@ -97,7 +106,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             <Building size={14} />
           </div>
           <div>
-            <h2 className="text-xs font-bold text-[#121E14] leading-tight">
+            <h2 id="mobile-results-heading" className="text-xs font-bold text-[#121E14] leading-tight">
               {points.length} pontos demonstrativos
             </h2>
             <p className="text-[10px] text-neutral-500">
@@ -109,6 +118,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         <button
           type="button"
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+          aria-controls="mobile-points-list"
           className="touch-target px-2.5 py-1 text-[#355E3B] text-xs font-bold flex items-center gap-1"
         >
           <span>{isExpanded ? 'Recolher' : 'Expandir lista'}</span>
@@ -117,7 +128,11 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       </div>
 
       {/* Points Scroll Area */}
-      <div className="overflow-y-auto flex flex-col gap-2 flex-1 pr-0.5">
+      <div
+        id="mobile-points-list"
+        aria-labelledby="mobile-results-heading"
+        className="overflow-y-auto flex flex-col gap-2 flex-1 pr-0.5"
+      >
         {points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
             Nenhum ponto demonstrativo encontrado com os filtros atuais.
