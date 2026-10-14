@@ -7,7 +7,7 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: mapa-planaltina-browser-${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.ref }}
+  group: mapa-planaltina-browser-${{ github.ref }}
   cancel-in-progress: true
 jobs:
   browser:
@@ -24,7 +24,7 @@ jobs:
       - name: Instalar dependências do projeto
         run: npm ci
       - name: Instalar ferramentas de QA sem alterar o lockfile
-        run: npm install --no-save --package-lock=false @playwright/test@1.55.0 @axe-core/playwright@4.10.2
+        run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1 @axe-core/playwright@4.13.0
       - name: Preparar Chromium
         run: npx playwright install --with-deps chromium
       - name: Executar fluxos mobile, desktop, PWA e acessibilidade
