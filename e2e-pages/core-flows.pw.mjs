@@ -3,7 +3,9 @@ import AxeBuilder from '@axe-core/playwright';
 
 const BASE_PATH = '/mapa-planaltina-go/';
 
-test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', async ({ page }) => {
+test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Cobertura mobile específica');
+
   await page.goto('./');
 
   const search = page.getByLabel('Buscar pontos em Planaltina, Goiás');
@@ -16,7 +18,7 @@ test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', 
   await expect(page.getByRole('heading', { name: 'Fontes & Transparência Territorial' })).toBeVisible();
 });
 
-test('desktop: mapa, fontes e artefatos PWA estão acessíveis', async ({ page, request }, testInfo) => {
+test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
 
   await page.goto('./');
