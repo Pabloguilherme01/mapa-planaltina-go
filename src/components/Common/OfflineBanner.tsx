@@ -24,11 +24,11 @@ export const OfflineBanner: React.FC = () => {
   return (
     <div
       role="status"
-      aria-live="assertive"
+      aria-live="polite"
       className="fixed top-24 left-1/2 -translate-x-1/2 z-50 bg-[#78350F] text-[#FFF9E6] px-4 py-2 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold border border-amber-300"
     >
       <WifiOff size={16} />
-      <span>Modo Offline: Operando com dados cartográficos em cache local.</span>
+      <span>Sem conexão: recursos online podem ficar indisponíveis. O mapa esquemático e os dados já carregados permanecem locais.</span>
     </div>
   );
 };
