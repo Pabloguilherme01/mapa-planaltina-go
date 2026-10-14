@@ -13,7 +13,7 @@ A procedência usa `official`, `verified_open_data`, `community` e `demo`. Licen
 
 ## Publicação no GitHub Pages
 
-Cada alteração em `main` executa a checagem TypeScript, os testes e a construção estática, depois publica via GitHub Actions. O prefixo `/mapa-planaltina-go/` e o acesso direto a `/fontes/` estão configurados.
+Cada alteração em `main` executa a checagem TypeScript, os testes e a construção estática, depois publica via GitHub Actions. Pull requests para `main` executam as mesmas verificações sem publicar o site. O prefixo `/mapa-planaltina-go/` e o acesso direto a `/fontes/` estão configurados.
 
 ```sh
 npm ci
@@ -24,6 +24,10 @@ npm run preview
 ```
 
 O Pages hospeda HTML, CSS e JavaScript e não executa o servidor Express. Os dados DEMO e o resultado da consulta IBGE são exportados durante a construção. Se a consulta falhar, o site mostra a falha sem inventar metadados oficiais. A busca local do assistente funciona sem servidor e identifica explicitamente que não é uma chamada Gemini. A localização é solicitada com consentimento e permanece no dispositivo.
+
+## Robustez e degradação controlada
+
+O projeto adota o mesmo princípio usado no **Trajeto Águas Lindas**: recursos dependentes de rede ou configuração externa não devem quebrar o núcleo local. O mapa esquemático continua sendo o provedor padrão; Google Maps só fica disponível quando `VITE_GOOGLE_MAPS_API_KEY` está configurada. Busca e filtros permanecem locais e a UI evita importar módulos da camada `server/`.
 
 ## Servidor, Gemini e integrações futuras
 
@@ -45,4 +49,4 @@ PostgreSQL/PostGIS é uma integração futura. A migração SQL e a interface do
 
 ## Verificação
 
-Há testes para busca, filtros, procedência, falha do IBGE, resposta inventada pelo modelo, roteamento do Pages e busca local sem servidor. O workflow deve passar integralmente antes da publicação.
+Há testes para busca, filtros, procedência, falha do IBGE, resposta inventada pelo modelo, roteamento do Pages, busca local sem servidor e disponibilidade do provedor Google Maps. O workflow deve passar integralmente antes da publicação.
