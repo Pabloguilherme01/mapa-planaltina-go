@@ -4,6 +4,7 @@ import { PrefeituraAdapter } from '../server/adapters/PrefeituraAdapter.ts';
 import { CnesAdapter } from '../server/adapters/CnesAdapter.ts';
 import { InepAdapter } from '../server/adapters/InepAdapter.ts';
 import { OsmAdapter } from '../server/adapters/OsmAdapter.ts';
+import { CNES_FALLBACK_CAPTURED_AT } from '../server/data/cnesPlanaltinaFallback.ts';
 import { MUNICIPALITY_CODE } from '../src/types/index.ts';
 
 const ibgeFixture = {
@@ -145,6 +146,38 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
     expect(status.checkedAt).toBe(status.retrievedAt);
     expect(status.license).toMatch(/licença não informada/i);
     expect(status.statusMessage).toContain('1 estabelecimento');
+  });
+
+  it('preserva snapshot real verificado quando a atualização CNES é bloqueada', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response('<html><body>Request Rejected</body></html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      )
+    );
+
+    const adapter = new CnesAdapter();
+    const points = await adapter.fetchPoints();
+    const status = await adapter.checkStatus();
+
+    expect(points.length).toBeGreaterThan(0);
+    expect(points[0]).toMatchObject({
+      id: 'cnes-0112666',
+      isDemo: false,
+      category: 'Saúde',
+      provenanceMeta: {
+        provenance: 'verified_open_data',
+        verificationStatus: 'verified',
+        retrievedAt: CNES_FALLBACK_CAPTURED_AT,
+      },
+    });
+    expect(status.status).toBe('snapshot_fallback');
+    expect(status.verified).toBe(true);
+    expect(status.retrievedAt).toBe(CNES_FALLBACK_CAPTURED_AT);
+    expect(status.notes).toMatch(/fallback|conteúdo inesperado/i);
   });
 
   it('adaptadores ainda não configurados mantêm datas nulas sem inventar consulta', async () => {
