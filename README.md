@@ -9,7 +9,7 @@ Fontes: https://pabloguilherme01.github.io/mapa-planaltina-go/fontes/
 
 O projeto deixou de ser exclusivamente demonstrativo. O catálogo publicado é **misto e explicitamente tipado por procedência**:
 
-- **Saúde real:** estabelecimentos do **CNES/SES-GO** publicados pelo Portal de Dados Abertos de Goiás, filtrados para o código municipal CNES/IBGE `521760`, com identificador CNES, endereço e coordenadas fornecidas pela própria fonte.
+- **Saúde real:** o adapter tenta consultar o **CNES/SES-GO** filtrado para o código municipal `521760`. Quando a fonte ao vivo responde, os registros válidos entram como `official`. Quando o órgão bloqueia ou fica indisponível, o projeto preserva somente um **último snapshot previamente validado**, classificado como `verified_open_data`, sem fingir que houve atualização ao vivo.
 - **DEMO:** os 20 pontos sintéticos anteriores continuam disponíveis para homologação da interface, sempre com `isDemo: true`, procedência `demo` e aviso de que não servem para deslocamento.
 - **Pesquisa comercial:** permanece na página `/fontes` como pesquisa comunitária/checagem pública, sem virar pin enquanto não houver geometria auditável.
 
@@ -21,9 +21,10 @@ Um ponto só pode entrar no snapshot como real quando:
 
 1. pertence inequivocamente a Planaltina-GO;
 2. possui identificador estável na fonte;
-3. possui latitude e longitude válidas publicadas pela fonte — `0,0`, campos vazios e coordenadas inválidas são rejeitados;
-4. registra URL, nome da fonte, data de coleta, licença/aviso de licença e status de verificação;
-5. não depende de inferência silenciosa para preencher atributos ausentes.
+3. possui latitude e longitude válidas — `0,0`, campos vazios e coordenadas inválidas são rejeitados;
+4. registra URL, nome da fonte, data do snapshot, licença/aviso de licença e status de verificação;
+5. não depende de inferência silenciosa para preencher atributos ausentes;
+6. declara se veio da atualização ao vivo ou de um snapshot de contingência previamente validado.
 
 A fonte CNES estadual não informa zona urbana/rural nesse recurso. Por isso, esses pontos usam **“Não classificada”** em vez de inferir “Urbana”. Telefones e e-mails existentes na base de origem não são replicados no mapa para reduzir o risco de contato operacional desatualizado.
 
@@ -31,7 +32,7 @@ A fonte CNES estadual não informa zona urbana/rural nesse recurso. Por isso, es
 
 ## Fonte real de Saúde
 
-Recurso utilizado: **Cadastro Nacional de Estabelecimentos de Saúde (CNES) – SES / Estabelecimentos de Saúde – Goiás**.
+Fonte live preferencial: **Cadastro Nacional de Estabelecimentos de Saúde (CNES) – SES / Estabelecimentos de Saúde – Goiás**.
 
 - Portal: `dadosabertos.go.gov.br`
 - Resource ID: `7559175a-98ac-4719-bf30-5e6455ba57c5`
@@ -39,7 +40,19 @@ Recurso utilizado: **Cadastro Nacional de Estabelecimentos de Saúde (CNES) – 
 - Campos cartográficos utilizados: CNES, nome fantasia/razão social, endereço, latitude, longitude, município, UF, tipo do estabelecimento e vínculo SUS.
 - Campos deliberadamente não publicados: telefone e e-mail.
 
-O adapter `CnesAdapter` consulta o CKAN DataStore com timeout, valida município/UF/coordenadas e converte somente registros utilizáveis em `MapPoint` real.
+O `CnesAdapter` consulta o CKAN DataStore com timeout, valida município/UF/coordenadas e converte somente registros utilizáveis em `MapPoint` real. A resposta também precisa ser JSON; páginas HTML de bloqueio do órgão são tratadas como indisponibilidade, não como dados.
+
+### Last-known-good / contingência
+
+O portal estadual apresentou bloqueios intermitentes nos runners da GitHub Actions. Para impedir que uma falha externa derrube o produto ou substitua dados úteis por uma coleção vazia, o projeto adota o mesmo princípio de robustez usado no **Trajeto**:
+
+- tenta a atualização ao vivo primeiro;
+- nunca promove resposta vazia, HTML de bloqueio ou geometria inválida;
+- quando a atualização falha, usa apenas o snapshot mínimo versionado e já validado;
+- expõe `snapshot_fallback` em `/fontes` e no JSON de fontes;
+- mantém a procedência do fallback abaixo de `official` quando sua geometria foi verificada por uma fonte pública derivada.
+
+O snapshot inicial de contingência contém a **UPA de Planaltina-GO, CNES 0112666**. Identidade e endereço foram conferidos no CNES/DataSUS oficial; a geometria pública foi conferida separadamente e, por isso, o ponto é publicado como `verified_open_data`, não como geometria oficial.
 
 ## Publicação no GitHub Pages
 
@@ -54,7 +67,7 @@ npm run verify:pages
 npm run preview
 ```
 
-O `build:pages` gera um **snapshot auditável**. Nesta etapa o projeto exige pelo menos um estabelecimento CNES georreferenciado válido; uma coleta vazia não é promovida como se fosse uma publicação real bem-sucedida. O JSON final informa `realCount`, `demoCount`, município, código IBGE e modo `misto_oficial_demo`.
+O `build:pages` gera um **snapshot auditável**. Ele exige pelo menos um ponto real verificável, vindo da fonte live ou do last-known-good. O JSON final informa `realCount`, `demoCount`, município, código IBGE, modo `misto_oficial_demo` e `realSourceMode` (`live` ou `snapshot_fallback`).
 
 O Pages hospeda HTML, CSS e JavaScript e não executa o servidor Express. O resultado da coleta é congelado no build e servido por `public/data/points.json`/`dist/data/points.json`, portanto a aplicação não depende do CNES a cada abertura pelo usuário.
 
@@ -62,7 +75,7 @@ O Pages hospeda HTML, CSS e JavaScript e não executa o servidor Express. O resu
 
 O projeto segue princípios usados no **Trajeto Águas Lindas**: fontes externas têm contrato explícito, dados vazios ou não verificáveis não são promovidos silenciosamente, funcionalidades secundárias não devem quebrar a navegação central e regressões críticas são cobertas por testes unitários e de navegador.
 
-O mapa esquemático continua disponível como provedor sem chave externa; Google Maps só fica disponível quando `VITE_GOOGLE_MAPS_API_KEY` está configurada. Busca, filtros e leitura do snapshot permanecem locais no Pages.
+O mapa esquemático continua disponível como provedor sem chave externa; Google Maps só fica disponível quando `VITE_GOOGLE_MAPS_API_KEY` está configurada. O fundo é claramente rotulado como esquemático, enquanto cada pin mostra se é **REAL** ou **DEMO**. Busca, filtros e leitura do snapshot permanecem locais no Pages.
 
 A publicação gera manifesto instalável e service worker. Depois de uma visita online, shell, `/fontes/`, bundles e snapshots JSON ficam em cache para consulta sem conexão. O Browser QA executa recarga offline real após o service worker assumir o controle.
 
@@ -77,12 +90,13 @@ O verificador de artefato bloqueia o deploy se:
 
 ## UX de procedência
 
-Desktop, mobile e ficha cadastral diferenciam visualmente:
+Desktop, mobile, mapa e ficha cadastral diferenciam visualmente:
 
-- **REAL / Verificado:** coordenadas publicadas pela fonte, origem e data de snapshot disponíveis;
+- **REAL / Verificado:** origem, data de snapshot e geometria verificável disponíveis;
+- **Snapshot preservado:** dado real mantido como contingência porque a atualização ao vivo não respondeu;
 - **DEMO:** registro sintético e não utilizável para deslocamento.
 
-A ficha de um ponto real não usa mais linguagem de “simulação”, e exibe a licença/limitação declarada, fonte, snapshot e coordenadas publicadas. A página `/fontes` mostra o estado de cada adapter e diferencia fonte ativa, não configurada e falha de atualização.
+A ficha de um ponto real não usa linguagem de “simulação”, e exibe licença/limitação declarada, fonte, snapshot e coordenadas. A página `/fontes` diferencia fonte ativa, snapshot preservado, não configurada e falha de atualização.
 
 ## Servidor, Gemini e integrações futuras
 
@@ -111,4 +125,4 @@ A ordem recomendada segue o mesmo padrão de qualidade desta camada CNES:
 
 ## Verificação
 
-Há testes para busca, filtros, procedência, integração CNES, rejeição de geometria inválida, falha do IBGE, assistente, roteamento do Pages, disponibilidade do Google Maps, acessibilidade, PWA, reload offline e integridade do artefato. O Browser QA também lê o snapshot publicado, exige ao menos um ponto oficial de Saúde e abre sua ficha para confirmar que a UI o apresenta como dado real verificado.
+Há testes para busca, filtros, procedência, integração CNES live, fallback last-known-good, rejeição de geometria inválida, falha do IBGE, assistente, roteamento do Pages, disponibilidade do Google Maps, acessibilidade, PWA, reload offline e integridade do artefato. O Browser QA lê os snapshots publicados, exige ao menos um ponto real de Saúde, valida a procedência e abre sua ficha para confirmar que a UI o apresenta como dado real verificado.
