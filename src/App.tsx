@@ -16,7 +16,7 @@ import { SourcesPage } from './pages/SourcesPage.tsx';
 import { GeolocationConsentModal } from './components/Modals/GeolocationConsentModal.tsx';
 import { AssistantDrawer } from './components/Drawer/AssistantDrawer.tsx';
 import { OfflineBanner } from './components/Common/OfflineBanner.tsx';
-import { normalizeText } from '../server/repository/PointsRepository.ts';
+import { normalizeText } from './utils/text.ts';
 import { Trees, X } from 'lucide-react';
 import { pageRoute, sitePath } from './utils/routing.ts';
 
