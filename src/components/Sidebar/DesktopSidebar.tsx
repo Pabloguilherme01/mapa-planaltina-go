@@ -48,8 +48,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   isError,
   onRetry,
 }) => {
-  // Test preview state switch from Stitch prototype
   const [simulatedState, setSimulatedState] = useState<'normal' | 'skeleton' | 'empty' | 'error'>('normal');
+  const showStateSimulator = import.meta.env.DEV;
 
   const activeLoading = isLoading || simulatedState === 'skeleton';
   const activeError = isError || simulatedState === 'error';
@@ -95,6 +95,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 onClick={() => onSearchChange('')}
                 className="p-1.5 text-neutral-400 hover:text-neutral-700 mr-2"
                 title="Limpar busca"
+                aria-label="Limpar busca"
               >
                 <X size={16} />
               </button>
@@ -154,32 +155,34 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           </button>
         </div>
 
-        {/* UX States Simulator (Stitch Reference) */}
-        <div className="p-2 rounded-lg bg-white/60 border border-neutral-200/80 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-[11px]">
-            <span className="text-neutral-700 font-bold flex items-center gap-1">
-              <SlidersHorizontal size={12} />
-              Estados da Interface (Stitch):
-            </span>
-            <span className="text-[#BA623D] font-semibold">Simulação UI</span>
+        {/* UX States Simulator — development only */}
+        {showStateSimulator && (
+          <div className="p-2 rounded-lg bg-white/60 border border-neutral-200/80 flex flex-col gap-1.5">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="text-neutral-700 font-bold flex items-center gap-1">
+                <SlidersHorizontal size={12} />
+                Estados da Interface (Stitch):
+              </span>
+              <span className="text-[#BA623D] font-semibold">Simulação UI</span>
+            </div>
+            <div className="grid grid-cols-4 gap-1">
+              {(['normal', 'skeleton', 'empty', 'error'] as const).map((st) => (
+                <button
+                  key={st}
+                  type="button"
+                  onClick={() => setSimulatedState(st)}
+                  className={`py-1 px-1 rounded text-center text-[10px] font-bold uppercase transition-all ${
+                    simulatedState === st
+                      ? 'bg-[#355E3B] text-white shadow-sm'
+                      : 'bg-white text-neutral-600 hover:bg-neutral-100'
+                  }`}
+                >
+                  {st}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="grid grid-cols-4 gap-1">
-            {(['normal', 'skeleton', 'empty', 'error'] as const).map((st) => (
-              <button
-                key={st}
-                type="button"
-                onClick={() => setSimulatedState(st)}
-                className={`py-1 px-1 rounded text-center text-[10px] font-bold uppercase transition-all ${
-                  simulatedState === st
-                    ? 'bg-[#355E3B] text-white shadow-sm'
-                    : 'bg-white text-neutral-600 hover:bg-neutral-100'
-                }`}
-              >
-                {st}
-              </button>
-            ))}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Results Header with Live Region */}
