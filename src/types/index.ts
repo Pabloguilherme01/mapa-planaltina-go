@@ -47,6 +47,8 @@ export type VerificationStatus =
   | 'pending'
   | 'synthetic_demo';
 
+export type PointZone = 'Urbana' | 'Rural' | 'Distrital' | 'Não classificada';
+
 export interface ProvenanceMetadata {
   provenance: ProvenanceType;
   sourceUrl?: string;
@@ -64,7 +66,7 @@ export interface MapPoint {
   description: string;
   lat: number;
   lng: number;
-  zone: 'Urbana' | 'Rural' | 'Distrital';
+  zone: PointZone;
   isDemo: boolean;
   demoDisclaimer: string;
   provenanceMeta: ProvenanceMetadata;
@@ -104,6 +106,7 @@ export interface MunicipalityOfficialInfo {
 
 export type SourceConnectionStatus =
   | 'connected'
+  | 'snapshot_fallback'
   | 'not_configured'
   | 'pending_integration'
   | 'error';

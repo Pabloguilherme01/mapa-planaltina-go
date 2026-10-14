@@ -4,33 +4,82 @@ import { PrefeituraAdapter } from '../server/adapters/PrefeituraAdapter.ts';
 import { CnesAdapter } from '../server/adapters/CnesAdapter.ts';
 import { InepAdapter } from '../server/adapters/InepAdapter.ts';
 import { OsmAdapter } from '../server/adapters/OsmAdapter.ts';
+import { CNES_FALLBACK_CAPTURED_AT } from '../server/data/cnesPlanaltinaFallback.ts';
 import { MUNICIPALITY_CODE } from '../src/types/index.ts';
+
+const ibgeFixture = {
+  id: 5217609,
+  nome: 'Planaltina',
+  microrregiao: {
+    id: 52012,
+    nome: 'Fixture municipal',
+    mesorregiao: {
+      id: 5203,
+      nome: 'Fixture de região',
+      UF: { id: 52, sigla: 'GO', nome: 'Goiás' },
+    },
+  },
+};
+
+const cnesFixture = {
+  success: true,
+  result: {
+    total: 1,
+    records: [
+      {
+        cnes: '2437651',
+        razao_social: 'FUNDO MUNICIPAL DE SAUDE DE PLANALTINA GOIAS',
+        nome_fantasia: 'HOSPITAL MUNICIPAL MATERNO INFANTIL SANTA RITA DE CASSIA',
+        logradouro: 'QD 08',
+        numero: '115',
+        bairro: 'LOTEAM SANTA RITA SETOR LESTE',
+        cep: '73752080',
+        latitude: '-15.4542',
+        longitude: '-47.6029',
+        codigo_ibge: '521760',
+        uf: 'GO',
+        municipio: 'PLANALTINA',
+        tipo_estabelecimento: 'HOSPITAL GERAL',
+        vinculo_sus: 'SIM',
+      },
+    ],
+  },
+};
 
 describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn(async () => new Response(JSON.stringify({
-      id: 5217609, nome: 'Planaltina', microrregiao: { id: 52012, nome: 'Fixture municipal', mesorregiao: { id: 5203, nome: 'Fixture de região', UF: { id: 52, sigla: 'GO', nome: 'Goiás' } } },
-    }), { headers: { 'Content-Type': 'application/json' } })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(JSON.stringify(ibgeFixture), {
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    );
   });
-  afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('does not invent verified official metadata when IBGE is unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     const status = await new IbgeAdapter().checkStatus();
     expect(status.status).toBe('error');
     expect(status.verified).toBe(false);
     expect(status.retrievedAt).toBeNull();
-    vi.unstubAllGlobals();
   });
+
   const ibgeAdapter = new IbgeAdapter();
   const prefeituraAdapter = new PrefeituraAdapter();
-  const cnesAdapter = new CnesAdapter();
   const inepAdapter = new InepAdapter();
   const osmAdapter = new OsmAdapter();
 
   it('todos os adaptadores devem referenciar o código municipal 5217609', () => {
     expect(ibgeAdapter.municipalCode).toBe(MUNICIPALITY_CODE);
     expect(prefeituraAdapter.municipalCode).toBe(MUNICIPALITY_CODE);
-    expect(cnesAdapter.municipalCode).toBe(MUNICIPALITY_CODE);
+    expect(new CnesAdapter().municipalCode).toBe(MUNICIPALITY_CODE);
     expect(inepAdapter.municipalCode).toBe(MUNICIPALITY_CODE);
     expect(osmAdapter.municipalCode).toBe(MUNICIPALITY_CODE);
   });
@@ -53,11 +102,7 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
         mesorregiao: {
           id: 5203,
           nome: 'Leste Goiano',
-          UF: {
-            id: 52,
-            sigla: 'GO',
-            nome: 'Goiás',
-          },
+          UF: { id: 52, sigla: 'GO', nome: 'Goiás' },
         },
       },
     };
@@ -71,7 +116,6 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
       nome: 'São Paulo',
       microrregiao: { mesorregiao: { UF: { sigla: 'SP' } } },
     };
-
     expect(() => ibgeAdapter.validateIbgePayload(invalidIdData)).toThrow(
       /Código IBGE divergente/
     );
@@ -81,24 +125,69 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
       nome: 'Planaltina',
       microrregiao: { mesorregiao: { UF: { sigla: 'DF' } } },
     };
-
-    expect(() => ibgeAdapter.validateIbgePayload(invalidUfData)).toThrow(
-      /UF divergente/
-    );
+    expect(() => ibgeAdapter.validateIbgePayload(invalidUfData)).toThrow(/UF divergente/);
   });
 
-  it('adaptadores not_configured devem ter retrievedAt null e checkedAt null sem datas fictícias', async () => {
+  it('CNES conectado só fica verificado depois de receber registros georreferenciados de Planaltina', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response(JSON.stringify(cnesFixture), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
+      )
+    );
+
+    const status = await new CnesAdapter().checkStatus();
+    expect(status.status).toBe('connected');
+    expect(status.verified).toBe(true);
+    expect(status.retrievedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(status.checkedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(Date.parse(status.checkedAt!)).toBeLessThanOrEqual(Date.parse(status.retrievedAt!));
+    expect(status.license).toMatch(/licença não informada/i);
+    expect(status.statusMessage).toContain('1 estabelecimento');
+  });
+
+  it('preserva snapshot real verificado quando a atualização CNES é bloqueada', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        new Response('<html><body>Request Rejected</body></html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      )
+    );
+
+    const adapter = new CnesAdapter();
+    const points = await adapter.fetchPoints();
+    const status = await adapter.checkStatus();
+
+    expect(points.length).toBeGreaterThan(0);
+    expect(points[0]).toMatchObject({
+      id: 'cnes-0112666',
+      isDemo: false,
+      category: 'Saúde',
+      provenanceMeta: {
+        provenance: 'verified_open_data',
+        verificationStatus: 'verified',
+        retrievedAt: CNES_FALLBACK_CAPTURED_AT,
+      },
+    });
+    expect(status.status).toBe('snapshot_fallback');
+    expect(status.verified).toBe(true);
+    expect(status.retrievedAt).toBe(CNES_FALLBACK_CAPTURED_AT);
+    expect(status.notes).toMatch(/fallback|conteúdo inesperado/i);
+  });
+
+  it('adaptadores ainda não configurados mantêm datas nulas sem inventar consulta', async () => {
     const prefStatus = await prefeituraAdapter.checkStatus();
     expect(prefStatus.status).toBe('not_configured');
     expect(prefStatus.retrievedAt).toBeNull();
     expect(prefStatus.checkedAt).toBeNull();
     expect(prefStatus.verified).toBe(false);
     expect(prefStatus.license).toBe('Pendente de verificação');
-
-    const cnesStatus = await cnesAdapter.checkStatus();
-    expect(cnesStatus.status).toBe('not_configured');
-    expect(cnesStatus.retrievedAt).toBeNull();
-    expect(cnesStatus.checkedAt).toBeNull();
 
     const inepStatus = await inepAdapter.checkStatus();
     expect(inepStatus.status).toBe('not_configured');

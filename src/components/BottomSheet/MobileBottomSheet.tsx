@@ -10,6 +10,7 @@ import {
   Search,
   X,
   Building,
+  BadgeCheck,
 } from 'lucide-react';
 
 interface MobileBottomSheetProps {
@@ -38,29 +39,28 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   categoryCounts,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const realCount = points.filter((point) => !point.isDemo).length;
 
   return (
     <div
       id="bottomSheet"
       role="region"
-      aria-label="Busca e lista de pontos demonstrativos"
+      aria-label="Busca e lista do catálogo territorial"
       className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
         isExpanded ? 'h-[75vh]' : 'h-[230px]'
       }`}
     >
-      {/* Handle Drag Bar (44px target) */}
       <button
         type="button"
-        aria-label="Expandir ou recolher lista de pontos demonstrativos"
+        aria-label="Expandir ou recolher lista de pontos"
         aria-expanded={isExpanded}
         aria-controls="mobile-points-list"
         onClick={() => setIsExpanded(!isExpanded)}
         className="touch-target w-full h-7 -mt-1 flex flex-col items-center justify-center cursor-pointer active:opacity-60 shrink-0"
       >
-        <span className="w-12 h-1.5 rounded-full bg-neutral-300"></span>
+        <span className="w-12 h-1.5 rounded-full bg-neutral-300" />
       </button>
 
-      {/* ALWAYS ACCESSIBLE IN MOBILE PEEK & EXPANDED: Search Input */}
       <div className="relative w-full mb-1.5 shrink-0">
         <label htmlFor="mobile-search-input" className="sr-only">
           Buscar pontos em Planaltina, Goiás
@@ -89,7 +89,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </div>
 
-      {/* ALWAYS ACCESSIBLE IN MOBILE PEEK & EXPANDED: 9 Categories Bar */}
       <div className="mb-2 shrink-0">
         <CategoryFilterBar
           selectedCategories={selectedCategories}
@@ -99,7 +98,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         />
       </div>
 
-      {/* Sheet Sub-Header */}
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
@@ -107,10 +105,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           </div>
           <div>
             <h2 id="mobile-results-heading" className="text-xs font-bold text-[#121E14] leading-tight">
-              {points.length} pontos demonstrativos
+              {points.length} pontos no catálogo
             </h2>
             <p className="text-[10px] text-neutral-500">
-              Planaltina, Goiás (DEMO)
+              Planaltina, Goiás • {realCount} reais verificados
             </p>
           </div>
         </div>
@@ -127,7 +125,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </button>
       </div>
 
-      {/* Points Scroll Area */}
       <div
         id="mobile-points-list"
         aria-labelledby="mobile-results-heading"
@@ -135,50 +132,44 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       >
         {points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
-            Nenhum ponto demonstrativo encontrado com os filtros atuais.
+            Nenhum ponto encontrado com os filtros atuais.
           </div>
         ) : (
           points.map((point) => {
             const catConfig = CATEGORY_CONFIG[point.category];
             const IconComponent = catConfig.icon;
             const isSelected = selectedPoint?.id === point.id;
+            const isReal = !point.isDemo;
 
             return (
               <div
                 key={point.id}
                 className={`bg-[#F5F0E6] rounded-2xl p-2.5 flex flex-col gap-1.5 border transition-all ${
-                  isSelected ? 'border-[#BA623D] ring-1 ring-[#BA623D]' : 'border-neutral-200'
+                  isSelected ? 'border-[#B05835] ring-1 ring-[#B05835]' : 'border-neutral-200'
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className={`w-8 h-8 rounded-xl ${catConfig.badgeBg} ${catConfig.color} flex items-center justify-center shrink-0`}
-                    >
+                    <div className={`w-8 h-8 rounded-xl ${catConfig.badgeBg} ${catConfig.color} flex items-center justify-center shrink-0`}>
                       <IconComponent size={17} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-xs font-bold text-[#121E14] truncate">
-                        {point.name}
-                      </h3>
-                      <p className="text-[10px] text-neutral-600">
-                        {point.category} • {point.zone}
-                      </p>
+                      <h3 className="text-xs font-bold text-[#121E14] truncate">{point.name}</h3>
+                      <p className="text-[10px] text-neutral-600">{point.category} • {point.zone}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="px-1.5 py-0.2 rounded-full bg-[#FFF9E6] text-[#78350F] text-[9px] font-bold border border-[#E5B744]/40">
-                      DEMO
-                    </span>
-                  </div>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isReal ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-[#FFF9E6] text-[#78350F] border-[#E5B744]/40'}`}>
+                    {isReal && <BadgeCheck size={9} />}
+                    {isReal ? 'REAL' : 'DEMO'}
+                  </span>
                 </div>
 
-                {/* Warning note */}
-                <div className="bg-[#FFF4DC] rounded-lg p-1.5 flex items-start gap-1 text-[#78350F]">
-                  <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-700" />
+                <div className={`rounded-lg p-1.5 flex items-start gap-1 ${isReal ? 'bg-emerald-50 text-emerald-950' : 'bg-[#FFF4DC] text-[#78350F]'}`}>
+                  {isReal ? <BadgeCheck size={12} className="shrink-0 mt-0.5 text-emerald-700" /> : <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-700" />}
                   <p className="text-[10px] leading-tight">
-                    Ilustrativo. Não use para deslocamento em Planaltina, Goiás.
+                    {isReal
+                      ? 'Coordenadas da fonte. Confirme atendimento antes do deslocamento.'
+                      : 'Ilustrativo. Não use para deslocamento em Planaltina, Goiás.'}
                   </p>
                 </div>
 
@@ -186,7 +177,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   <span className="text-[10px] text-neutral-500 font-semibold truncate max-w-[150px]">
                     {point.addressHint || 'Planaltina, Goiás'}
                   </span>
-
                   <div className="flex gap-1.5">
                     <button
                       type="button"
@@ -195,11 +185,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                     >
                       Focar
                     </button>
-
                     <button
                       type="button"
                       onClick={() => onOpenPointDetails(point)}
-                      className="touch-target px-2 py-1 rounded-lg bg-[#BA623D] text-white text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-transform"
+                      className="touch-target px-2 py-1 rounded-lg bg-[#B05835] text-white text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-transform"
                     >
                       <span>Ficha</span>
                       <Eye size={12} />

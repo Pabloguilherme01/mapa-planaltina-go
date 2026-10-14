@@ -27,7 +27,7 @@ const provenanceCards = [
     titleClass: 'text-[#355E3B]',
     icon: Building2,
     description:
-      'Registros oriundos de órgãos públicos do Estado de Goiás ou da Prefeitura de Planaltina, Goiás. Requer homologação técnica de vigência.',
+      'Registros publicados por órgãos públicos, com origem, identificador e data de coleta preservados. Nesta versão, estabelecimentos de saúde CNES/SES-GO entram aqui quando possuem coordenadas válidas.',
   },
   {
     title: '2. Dado aberto verificado',
@@ -36,7 +36,7 @@ const provenanceCards = [
     titleClass: 'text-blue-900',
     icon: FileCheck,
     description:
-      'Bases públicas auditáveis validadas por código censitário oficial, como a API IBGE 5217609 para identificação do município.',
+      'Bases públicas auditáveis validadas por código censitário oficial, como a API IBGE 5217609 e snapshots de contingência cuja origem e geometria foram verificadas separadamente.',
   },
   {
     title: '3. Comunidade',
@@ -48,15 +48,44 @@ const provenanceCards = [
       'Feições e pesquisas colaborativas alimentadas por moradores e entidades da sociedade civil, sempre separadas de dados oficiais e sujeitas a curadoria.',
   },
   {
-    title: '4. DEMO (Simulação Vigente)',
+    title: '4. DEMO (Simulação)',
     badge: 'Simulação',
     badgeClass: 'bg-[#E5B744] text-[#121E14]',
     titleClass: 'text-[#78350F]',
     icon: AlertCircle,
     description:
-      'Pontos sintéticos criados para homologação da ergonomia do mapa. Totalmente desprovidos de validade cadastral para deslocamento.',
+      'Pontos sintéticos mantidos para homologação da interface. São explicitamente separados dos registros reais e não possuem validade cadastral para deslocamento.',
   },
 ] as const;
+
+function statusBadge(source: SourceInfo) {
+  if (source.status === 'snapshot_fallback') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+        <ShieldCheck size={12} /> Snapshot preservado
+      </span>
+    );
+  }
+  if (source.verified) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+        <CheckCircle2 size={12} /> Fonte Ativa
+      </span>
+    );
+  }
+  if (source.status === 'error') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">
+        <AlertCircle size={12} /> Falha de atualização
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-200 text-neutral-700 text-[10px] font-bold">
+      Não Configurado
+    </span>
+  );
+}
 
 export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
   const [sources, setSources] = useState<SourceInfo[]>([]);
@@ -110,12 +139,12 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
       <div className="bg-[#FFF4DC] border border-[#E5B744]/70 p-4 rounded-2xl mb-6 shadow-sm flex items-start gap-3 text-[#78350F]">
         <HelpCircle size={22} className="text-[#984E2E] shrink-0 mt-0.5" />
         <div className="text-xs leading-relaxed">
-          <p className="font-extrabold text-sm mb-1">Ressalva Institucional de Origem & Verificação:</p>
+          <p className="font-extrabold text-sm mb-1">Política de Origem & Verificação</p>
           <p className="mb-1">
-            A indicação de repositório governamental ou listagem pública não implica verificação oficial de horários, telefones, condições de tráfego ou endereços físicos para deslocamento.
+            O mapa combina <strong>dados reais com procedência por registro</strong> e pontos <strong>DEMO</strong> claramente identificados. Um registro só é publicado como real quando possui fonte auditável, data de coleta, classificação de procedência e coordenadas válidas.
           </p>
           <p>
-            Os pins do mapa continuam <strong>DEMO (simulação ilustrativa)</strong>. A nova pesquisa comercial aparece apenas nesta página de transparência até que exista geometria auditável e fonte adequada para publicação cartográfica.
+            A camada real inicial é Saúde. O sistema tenta atualizar o CNES/SES-GO e, se o órgão bloquear ou ficar indisponível, preserva somente o último snapshot validado e mostra esse modo explicitamente. Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento.
           </p>
         </div>
       </div>
@@ -178,15 +207,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-bold text-sm text-[#121E14]">{src.name}</h3>
-                      {src.verified ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                          <CheckCircle2 size={12} /> Identificação Ativa
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-200 text-neutral-700 text-[10px] font-bold">
-                          Não Configurado
-                        </span>
-                      )}
+                      {statusBadge(src)}
                     </div>
                     <span className="text-[11px] text-neutral-500 font-medium">
                       {src.agency} • Código: {src.municipalCode}
@@ -198,7 +219,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                     target="_blank"
                     rel="noopener noreferrer"
                     className="touch-target p-2 rounded-xl text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-colors"
-                    title="Visitar link oficial"
+                    title="Visitar fonte"
                   >
                     <ExternalLink size={17} />
                   </a>
@@ -215,11 +236,13 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                   <span>Licença: <strong className="text-neutral-700">{src.license}</strong></span>
                   <span aria-hidden="true">•</span>
                   <span>
-                    Data da consulta:{' '}
+                    Data do snapshot:{' '}
                     {src.retrievedAt ? (
-                      <strong className="text-neutral-700">{new Date(src.retrievedAt).toLocaleDateString('pt-BR')}</strong>
+                      <strong className="text-neutral-700">
+                        {new Date(src.retrievedAt).toLocaleDateString('pt-BR')}
+                      </strong>
                     ) : (
-                      <span className="italic text-neutral-400">Pendente (não configurado)</span>
+                      <span className="italic text-neutral-400">Pendente / indisponível</span>
                     )}
                   </span>
                 </div>

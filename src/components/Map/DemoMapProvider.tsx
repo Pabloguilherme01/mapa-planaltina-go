@@ -1,8 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import {
-  MapPoint,
-  DEMO_DISCLAIMER_TEXT,
-} from '../../types/index.ts';
+import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import {
   Plus,
@@ -30,7 +27,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
   onRequestGeolocation,
   userLocation,
 }) => {
-  // Map transform state (zoom & pan)
   const [zoom, setZoom] = useState<number>(1);
   const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState<boolean>(false);
@@ -40,13 +36,11 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Planaltina, Goiás approximate center
   const CENTER_LAT = -15.4528;
   const CENTER_LNG = -47.6142;
   const LAT_SPAN = 0.08;
   const LNG_SPAN = 0.09;
 
-  // Convert lat/lng to SVG canvas percentage coordinates (0 - 800 x 0 - 650)
   const projectCoordinates = (lat: number, lng: number) => {
     const x = ((lng - (CENTER_LNG - LNG_SPAN / 2)) / LNG_SPAN) * 800;
     const y = (((CENTER_LAT + LAT_SPAN / 2) - lat) / LAT_SPAN) * 650;
@@ -60,7 +54,7 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
 
   const handleZoomIn = () => {
     setZoom((prev) => Math.min(prev + 0.25, 2.8));
-    showToast('Zoom ampliado (modo esquemático)');
+    showToast('Zoom ampliado (fundo esquemático)');
   };
 
   const handleZoomOut = () => {
@@ -74,11 +68,9 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
     showToast('Centralizado em Planaltina, Goiás');
   };
 
-  // Center on selected point if changed
   useEffect(() => {
     if (selectedPoint) {
       const { x, y } = projectCoordinates(selectedPoint.lat, selectedPoint.lng);
-      // center offset
       setPan({
         x: (400 - x) * zoom,
         y: (325 - y) * zoom,
@@ -86,7 +78,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
     }
   }, [selectedPoint]);
 
-  // Mouse pan handlers
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button')) return;
     setIsDragging(true);
@@ -105,7 +96,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
     setIsDragging(false);
   };
 
-  // Touch handlers for mobile pan
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 1) {
       setIsDragging(true);
@@ -128,13 +118,15 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
     setIsDragging(false);
   };
 
-  // Clusters representation: when zoom is low (< 0.9), cluster close points
   const displayedPoints = useMemo(() => {
-    return points.map((p) => {
-      const pos = projectCoordinates(p.lat, p.lng);
-      return { ...p, svgX: pos.x, svgY: pos.y };
+    return points.map((point) => {
+      const pos = projectCoordinates(point.lat, point.lng);
+      return { ...point, svgX: pos.x, svgY: pos.y };
     });
   }, [points]);
+
+  const realCount = points.filter((point) => !point.isDemo).length;
+  const demoCount = points.length - realCount;
 
   return (
     <div
@@ -142,7 +134,7 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
       className="relative w-full h-full overflow-hidden bg-[#EEFEEE] select-none cursor-grab active:cursor-grabbing focus:outline-none"
       tabIndex={0}
       role="region"
-      aria-label="Mapa Interativo Esquemático de Planaltina, Goiás"
+      aria-label="Mapa esquemático de Planaltina, Goiás, com pontos classificados por procedência"
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -156,33 +148,37 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
         if (e.key === '0') handleResetCenter();
       }}
     >
-      {/* Toast Notification */}
       {toastMessage && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-[#121E14] text-[#E5F5E4] px-4 py-2 rounded-full font-sans text-xs font-semibold shadow-lg transition-opacity duration-200">
           {toastMessage}
         </div>
       )}
 
-      {/* Floating Provider & Mode Watermark */}
       <div className="absolute top-3 left-3 z-20 flex flex-col gap-1 pointer-events-none">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/90 backdrop-blur-md shadow-sm border border-[#355E3B]/20 text-[#121E14] text-xs font-bold">
-          <span className="w-2 h-2 rounded-full bg-[#355E3B] animate-pulse"></span>
-          <span>Provedor Esquemático DEMO • Planaltina, Goiás</span>
+          <span className="w-2 h-2 rounded-full bg-[#355E3B] animate-pulse" />
+          <span>Fundo esquemático • pontos por procedência</span>
         </div>
         <div className="text-[11px] font-medium text-[#424941] bg-white/75 backdrop-blur-sm px-2.5 py-0.5 rounded-md w-fit">
-          Código IBGE 5217609 • Leste Goiano
+          Planaltina, Goiás • IBGE 5217609
         </div>
       </div>
 
-      {/* Floating Counter Badge in upper right */}
-      <div className="absolute top-3 right-3 md:right-4 z-20 flex items-center gap-2">
-        <div className="flex items-center gap-1.5 bg-[#4F3B00] text-[#FFDF9A] px-3 py-1.5 rounded-full shadow-md text-xs font-bold">
-          <span className="w-2 h-2 rounded-full bg-[#EF9C4C] animate-ping"></span>
-          <span>{points.length} DEMO</span>
-        </div>
+      <div className="absolute top-3 right-3 md:right-4 z-20 flex items-center gap-1.5 flex-wrap justify-end max-w-[55%]">
+        {realCount > 0 && (
+          <div className="flex items-center gap-1.5 bg-emerald-900 text-emerald-50 px-3 py-1.5 rounded-full shadow-md text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-emerald-300" />
+            <span>{realCount} reais</span>
+          </div>
+        )}
+        {demoCount > 0 && (
+          <div className="flex items-center gap-1.5 bg-[#4F3B00] text-[#FFDF9A] px-3 py-1.5 rounded-full shadow-md text-xs font-bold">
+            <span className="w-2 h-2 rounded-full bg-[#EF9C4C]" />
+            <span>{demoCount} DEMO</span>
+          </div>
+        )}
       </div>
 
-      {/* Map SVG Canvas */}
       <svg
         className="w-full h-full"
         viewBox="0 0 800 650"
@@ -214,11 +210,9 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           </pattern>
         </defs>
 
-        {/* Base Landscape */}
         <rect width="100%" height="100%" fill="url(#cerradoGrad)" />
         <rect width="100%" height="100%" fill="url(#gridSurvey)" />
 
-        {/* Municipality Outer Boundary (Schematic Planaltina-GO perimeter) */}
         <polygon
           points="80,90 280,50 620,70 740,240 690,520 440,610 180,570 60,360"
           fill="none"
@@ -228,7 +222,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           strokeOpacity="0.45"
         />
 
-        {/* River Course - Schematic Rio Maranhão / Hydrography */}
         <path
           d="M 40 40 Q 180 120 320 90 T 560 140 T 780 110"
           fill="none"
@@ -248,8 +241,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           Bacia do Rio Maranhão (esquemático)
         </text>
 
-        {/* Primary Arterial Road Corridors */}
-        {/* GO-118 highway axis */}
         <path
           d="M 120 0 C 180 180 260 340 380 650"
           fill="none"
@@ -268,7 +259,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           Eixo Viário Regional GO-118
         </text>
 
-        {/* East-West Urban Collector */}
         <path
           d="M 0 350 C 220 330 460 360 800 340"
           fill="none"
@@ -284,7 +274,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           strokeLinecap="round"
         />
 
-        {/* Secondary Grid Lines */}
         <path
           d="M 280 220 L 520 220 L 520 440 L 280 440 Z"
           fill="none"
@@ -296,10 +285,8 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
         <line x1="280" y1="290" x2="520" y2="290" stroke="#CAD6C7" strokeWidth="1.5" />
         <line x1="280" y1="370" x2="520" y2="370" stroke="#CAD6C7" strokeWidth="1.5" />
 
-        {/* Demonstrative Zones (Stitch Reference) */}
         {showZones && (
           <g className="transition-opacity duration-300">
-            {/* Zone 01: Noroeste Terracota */}
             <polygon
               points="140,160 270,140 290,260 170,280"
               fill="url(#terracotaWash)"
@@ -315,7 +302,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
               Zona Didática Central • Planaltina, Goiás
             </text>
 
-            {/* Zone 02: Leste Reserva */}
             <path
               d="M 490,140 Q 600,110 680,180 Q 720,290 610,320 Q 510,290 480,210 Z"
               fill="url(#reservaCerrado)"
@@ -331,7 +317,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
               Reserva Cívica e Hídrica Fictícia
             </text>
 
-            {/* Zone 03: Sul Cadastral */}
             <polygon
               points="240,430 460,445 420,565 210,540"
               fill="#E8F8E7"
@@ -349,7 +334,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           </g>
         )}
 
-        {/* User Geolocation Pulse (if consented and available) */}
         {userLocation && (
           <g>
             {(() => {
@@ -360,19 +344,12 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
                     cx={uPos.x}
                     cy={uPos.y}
                     r="24"
-                    fill="#BA623D"
+                    fill="#B05835"
                     fillOpacity="0.2"
                     className="animate-ping"
                   />
-                  <circle cx={uPos.x} cy={uPos.y} r="10" fill="#BA623D" stroke="#FFFFFF" strokeWidth="3" />
-                  <text
-                    x={uPos.x}
-                    y={uPos.y + 24}
-                    textAnchor="middle"
-                    fill="#121E14"
-                    fontSize="11"
-                    fontWeight="700"
-                  >
+                  <circle cx={uPos.x} cy={uPos.y} r="10" fill="#B05835" stroke="#FFFFFF" strokeWidth="3" />
+                  <text x={uPos.x} y={uPos.y + 24} textAnchor="middle" fill="#121E14" fontSize="11" fontWeight="700">
                     Você está aqui (aparelho)
                   </text>
                 </>
@@ -381,11 +358,12 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           </g>
         )}
 
-        {/* Interactive Points / Pins */}
         {displayedPoints.map((point) => {
           const isSelected = selectedPoint?.id === point.id;
           const config = CATEGORY_CONFIG[point.category];
-          const IconComponent = config.icon;
+          const isReal = !point.isDemo;
+          const pillLabel = isReal ? 'REAL' : 'DEMO';
+          const pillWidth = isReal ? 48 : 44;
 
           return (
             <g
@@ -398,7 +376,7 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
               }}
               tabIndex={0}
               role="button"
-              aria-label={`Ponto demonstrativo: ${point.name}, Categoria: ${point.category}`}
+              aria-label={`${isReal ? 'Ponto real verificado' : 'Ponto demonstrativo'}: ${point.name}, Categoria: ${point.category}`}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -406,7 +384,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
                 }
               }}
             >
-              {/* Pulse effect if selected */}
               {isSelected && (
                 <circle
                   cx="0"
@@ -418,33 +395,31 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
                 />
               )}
 
-              {/* DEMO Tag top pill */}
               <g transform="translate(0, -44)">
                 <rect
-                  x="-22"
+                  x={-pillWidth / 2}
                   y="-8"
-                  width="44"
+                  width={pillWidth}
                   height="16"
                   rx="8"
-                  fill="#FFF9E6"
-                  stroke="#E5B744"
+                  fill={isReal ? '#D1FAE5' : '#FFF9E6'}
+                  stroke={isReal ? '#047857' : '#E5B744'}
                   strokeWidth="1.5"
                 />
-                <circle cx="-13" cy="0" r="3" fill="#BA623D" />
+                <circle cx={-pillWidth / 2 + 9} cy="0" r="3" fill={isReal ? '#047857' : '#B05835'} />
                 <text
-                  x="2"
+                  x="3"
                   y="3.5"
                   textAnchor="middle"
-                  fill="#78350F"
+                  fill={isReal ? '#065F46' : '#78350F'}
                   fontSize="9"
                   fontWeight="800"
                   letterSpacing="0.05em"
                 >
-                  DEMO
+                  {pillLabel}
                 </text>
               </g>
 
-              {/* Pin Base Circle */}
               <circle
                 cx="0"
                 cy="-18"
@@ -455,19 +430,12 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
                 filter="drop-shadow(0px 3px 6px rgba(0,0,0,0.25))"
                 className="transition-all duration-150 group-hover:scale-110"
               />
-
-              {/* SVG Icon center representation */}
               <circle cx="0" cy="-18" r="7" fill="#FFFFFF" fillOpacity="0.9" />
               <circle cx="0" cy="-18" r="4" fill={config.hexColor} />
 
-              {/* Bottom Label on hover or selection */}
               <g
                 transform="translate(0, 10)"
-                className={`${
-                  isSelected
-                    ? 'opacity-100'
-                    : 'opacity-90 group-hover:opacity-100 group-hover:scale-105'
-                } transition-all duration-150`}
+                className={`${isSelected ? 'opacity-100' : 'opacity-90 group-hover:opacity-100 group-hover:scale-105'} transition-all duration-150`}
               >
                 <rect
                   x="-65"
@@ -481,17 +449,8 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
                   strokeWidth={isSelected ? 1.8 : 1}
                   filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.12))"
                 />
-                <text
-                  x="0"
-                  y="14"
-                  textAnchor="middle"
-                  fill="#121E14"
-                  fontSize="10"
-                  fontWeight="700"
-                >
-                  {point.name.length > 20
-                    ? point.name.slice(0, 18) + '...'
-                    : point.name}
+                <text x="0" y="14" textAnchor="middle" fill="#121E14" fontSize="10" fontWeight="700">
+                  {point.name.length > 20 ? point.name.slice(0, 18) + '...' : point.name}
                 </text>
               </g>
             </g>
@@ -499,7 +458,6 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
         })}
       </svg>
 
-      {/* Floating Map Controls (min 44px touch targets) */}
       <div className="absolute bottom-4 right-3 md:right-5 z-30 flex flex-col gap-2">
         <button
           aria-label="Aumentar Zoom do Mapa"
@@ -532,7 +490,7 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
         <button
           aria-label="Localização atual (no dispositivo)"
           title="Perto de mim (aparelho)"
-          className="touch-target w-11 h-11 rounded-xl bg-[#BA623D] text-white shadow-md hover:bg-[#974724] active:scale-95 flex items-center justify-center transition-all"
+          className="touch-target w-11 h-11 rounded-xl bg-[#B05835] text-white shadow-md hover:bg-[#984E2E] active:scale-95 flex items-center justify-center transition-all"
           type="button"
           onClick={onRequestGeolocation}
         >
@@ -543,9 +501,7 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
           aria-label="Alternar visualização de zonas didáticas"
           title="Alternar camadas"
           className={`touch-target w-11 h-11 rounded-xl shadow-md flex items-center justify-center transition-all ${
-            showZones
-              ? 'bg-[#355E3B] text-white'
-              : 'bg-white text-neutral-600 hover:bg-neutral-50'
+            showZones ? 'bg-[#355E3B] text-white' : 'bg-white text-neutral-600 hover:bg-neutral-50'
           }`}
           type="button"
           onClick={() => {
@@ -567,13 +523,12 @@ export const DemoMapProvider: React.FC<DemoMapProviderProps> = ({
         </button>
       </div>
 
-      {/* Floating Bottom Projection Pill */}
       <div className="absolute bottom-3 left-3 z-20 bg-white/90 backdrop-blur-md px-3 py-1.5 rounded-lg shadow-sm border border-neutral-200/60 hidden sm:flex items-center gap-2">
         <span className="text-[11px] font-semibold text-[#424941]">
-          Projeção Cartográfica Fictícia • Planaltina, Goiás
+          Fundo cartográfico esquemático • pins projetados por latitude/longitude
         </span>
         <span className="text-[10px] bg-neutral-100 text-neutral-600 px-1.5 py-0.5 rounded font-mono">
-          SRID 4326
+          WGS84
         </span>
       </div>
     </div>
