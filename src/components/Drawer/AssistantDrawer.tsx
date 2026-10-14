@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { MapPoint } from '../../types/index.ts';
 import { askAssistant } from '../../services/apiClient.ts';
+import { useDialogFocus } from '../../hooks/useDialogFocus.ts';
 import {
   X,
   Bot,
@@ -45,6 +46,9 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
   const [inputValue, setInputValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useDialogFocus(isOpen, onClose, dialogRef);
 
   if (!isOpen) return null;
 
@@ -100,10 +104,12 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="assistenteTitulo"
-      className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-white shadow-2xl flex flex-col border-l border-neutral-200 font-sans animate-in slide-in-from-right duration-200"
+      className="fixed inset-y-0 right-0 z-50 w-full sm:w-[420px] bg-white shadow-2xl flex flex-col border-l border-neutral-200 font-sans animate-in slide-in-from-right duration-200 focus:outline-none"
     >
       {/* Drawer Header */}
       <div className="p-4 bg-[#355E3B] text-white flex items-center justify-between">
@@ -157,7 +163,6 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
             >
               <p className="whitespace-pre-line">{msg.content}</p>
 
-              {/* Evidence Badges */}
               {msg.evidenceIds && msg.evidenceIds.length > 0 && (
                 <div className="mt-3 pt-2 border-t border-neutral-100 flex flex-col gap-1.5">
                   <span className="text-[10px] uppercase font-bold text-neutral-500">
@@ -184,7 +189,6 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
                 </div>
               )}
 
-              {/* Disclaimer */}
               {msg.isDemoNotice && (
                 <p className="mt-2 text-[10px] text-amber-800 font-semibold italic">
                   * {msg.isDemoNotice}
@@ -201,14 +205,20 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
         ))}
 
         {isLoading && (
-          <div className="flex items-center gap-2 p-3 bg-white rounded-2xl w-fit shadow-sm text-xs text-neutral-600 animate-pulse border border-neutral-200">
+          <div
+            role="status"
+            className="flex items-center gap-2 p-3 bg-white rounded-2xl w-fit shadow-sm text-xs text-neutral-600 animate-pulse border border-neutral-200"
+          >
             <Sparkles size={16} className="text-[#BA623D] animate-spin" />
             <span>Consultando corpus municipal...</span>
           </div>
         )}
 
         {errorNotice && (
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2">
+          <div
+            role="alert"
+            className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-start gap-2"
+          >
             <AlertTriangle size={15} className="shrink-0 mt-0.5" />
             <span>{errorNotice}</span>
           </div>
@@ -245,6 +255,7 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           placeholder="Pergunte sobre serviços em Planaltina, Goiás..."
+          aria-label="Pergunta para o assistente cívico"
           className="flex-1 py-2.5 px-3 bg-neutral-100 rounded-xl text-xs text-[#121E14] placeholder:text-neutral-400 focus:outline-none focus:ring-2 focus:ring-[#355E3B]"
         />
         <button
