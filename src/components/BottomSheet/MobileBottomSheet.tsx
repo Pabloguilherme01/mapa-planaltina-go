@@ -132,7 +132,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       >
         {points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
-            Nenhum ponto demonstrativo encontrado com os filtros atuais.
+            Nenhum ponto encontrado com os filtros atuais.
           </div>
         ) : (
           points.map((point) => {
