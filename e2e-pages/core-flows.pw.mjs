@@ -17,7 +17,6 @@ async function waitForServiceWorkerControl(page) {
 
 test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Cobertura mobile específica');
-
   await page.goto('./');
 
   const search = page.getByLabel('Buscar pontos em Planaltina, Goiás');
@@ -35,7 +34,6 @@ test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', 
 
 test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
-
   await page.goto('./');
   await expect(page.getByRole('main', { name: 'Área principal do mapa' })).toBeVisible();
 
@@ -50,25 +48,32 @@ test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request 
   expect(await serviceWorker.text()).toContain(`${BASE_PATH}data/points.json`);
 });
 
-test('desktop: catálogo publicado contém saúde real do CNES com proveniência auditável', async ({ page, request }, testInfo) => {
+test('desktop: catálogo publicado contém saúde real verificável, inclusive em fallback', async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
-
   await page.goto('./');
+
   const pointsResponse = await request.get(`${page.url()}data/points.json`);
+  const sourcesResponse = await request.get(`${page.url()}data/sources.json`);
   expect(pointsResponse.ok()).toBeTruthy();
+  expect(sourcesResponse.ok()).toBeTruthy();
   const snapshot = await pointsResponse.json();
+  const sourcesSnapshot = await sourcesResponse.json();
 
   expect(snapshot.meta.mode).toBe('misto_oficial_demo');
   expect(snapshot.meta.realCount).toBeGreaterThan(0);
   expect(snapshot.meta.demoCount).toBeGreaterThan(0);
 
   const realHealthPoint = snapshot.data.find(
-    (point) => point.isDemo === false && point.category === 'Saúde' && point.provenanceMeta?.provenance === 'official'
+    (point) => point.isDemo === false && point.category === 'Saúde' && ['official', 'verified_open_data'].includes(point.provenanceMeta?.provenance)
   );
-  expect(realHealthPoint, 'esperava ao menos um estabelecimento CNES real').toBeTruthy();
+  expect(realHealthPoint, 'esperava ao menos um estabelecimento de saúde real').toBeTruthy();
   expect(realHealthPoint.id).toMatch(/^cnes-\d+/);
   expect(realHealthPoint.provenanceMeta.verificationStatus).toBe('verified');
-  expect(realHealthPoint.provenanceMeta.sourceUrl).toContain('dadosabertos.go.gov.br');
+  expect(realHealthPoint.provenanceMeta.sourceUrl).toMatch(/dadosabertos\.go\.gov\.br|cnes2\.datasus\.gov\.br/);
+
+  const cnesSource = sourcesSnapshot.data.find((source) => source.id === 'cnes');
+  expect(cnesSource).toBeTruthy();
+  expect(['connected', 'snapshot_fallback']).toContain(cnesSource.status);
 
   const search = page.getByLabel('Buscar locais, órgãos e serviços em Planaltina, Goiás');
   await search.fill(realHealthPoint.name);
@@ -80,11 +85,17 @@ test('desktop: catálogo publicado contém saúde real do CNES com proveniência
   await expect(dialog.getByText('Dado real verificado')).toBeVisible();
   await expect(dialog.getByText('Verificado na fonte')).toBeVisible();
   await expect(dialog.getByText('Coordenadas publicadas:')).toBeVisible();
+
+  await page.goto('./fontes/');
+  if (cnesSource.status === 'snapshot_fallback') {
+    await expect(page.getByText('Snapshot preservado')).toBeVisible();
+  } else {
+    await expect(page.getByText('Fonte Ativa').first()).toBeVisible();
+  }
 });
 
 test('desktop: recarrega o mapa sem rede depois que o service worker assume o controle', async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
-
   await page.goto('./');
   await waitForServiceWorkerControl(page);
 
@@ -101,7 +112,6 @@ test('desktop: recarrega o mapa sem rede depois que o service worker assume o co
 
 test('desktop: geolocalização e assistente prendem foco, fecham com Escape e restauram o acionador', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
-
   await page.goto('./');
 
   const geoTrigger = page.getByRole('button', { name: 'Perto de mim' });
@@ -129,7 +139,6 @@ test('desktop: geolocalização e assistente prendem foco, fecham com Escape e r
 
 test('páginas principais não têm violações críticas ou sérias de acessibilidade', async ({ page }) => {
   await page.goto('./');
-
   const mapResults = await new AxeBuilder({ page }).analyze();
   const mapBlocking = mapResults.violations.filter((violation) => ['critical', 'serious'].includes(violation.impact));
   expect(mapBlocking, JSON.stringify(mapBlocking, null, 2)).toEqual([]);
