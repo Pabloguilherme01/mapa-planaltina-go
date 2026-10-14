@@ -45,7 +45,7 @@ describe('integração de pontos reais do CNES/SES-GO', () => {
       id: 'cnes-2437651',
       name: 'HOSPITAL MUNICIPAL MATERNO INFANTIL SANTA RITA DE CASSIA',
       category: 'Saúde',
-      zone: 'Urbana',
+      zone: 'Não classificada',
       isDemo: false,
       lat: -15.4542,
       lng: -47.6029,
