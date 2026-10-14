@@ -28,7 +28,8 @@ describe('contratos de refinamento da interface', () => {
     const source = read('src/main.tsx');
     expect(source).toContain('import.meta.env.PROD');
     expect(source).toContain('import.meta.env.BASE_URL');
-    expect(source).toContain('navigator.serviceWorker.register');
+    expect(source).toContain("'serviceWorker' in navigator");
+    expect(source).toContain('.register(`${import.meta.env.BASE_URL}sw.js`');
   });
 
   it('só promete cache offline quando há service worker controlando a página', () => {
