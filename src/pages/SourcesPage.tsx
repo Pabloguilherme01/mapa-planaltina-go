@@ -130,7 +130,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                 <ExternalLink size={16} />
                 3. Comunidade
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-[#BA623D] text-[10px] font-extrabold uppercase">
+              <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-[#984E2E] text-[10px] font-extrabold uppercase">
                 Colaborativo
               </span>
             </div>
