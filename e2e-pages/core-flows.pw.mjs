@@ -3,6 +3,18 @@ import AxeBuilder from '@axe-core/playwright';
 
 const BASE_PATH = '/mapa-planaltina-go/';
 
+async function waitForServiceWorkerControl(page) {
+  await page.evaluate(async () => {
+    if (!('serviceWorker' in navigator)) throw new Error('Service worker indisponível');
+    await navigator.serviceWorker.ready;
+    if (navigator.serviceWorker.controller) return;
+
+    await new Promise((resolve) => {
+      navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+    });
+  });
+}
+
 test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Cobertura mobile específica');
 
@@ -33,6 +45,51 @@ test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request 
   const serviceWorker = await request.get(`${page.url()}sw.js`);
   expect(serviceWorker.ok()).toBeTruthy();
   expect(await serviceWorker.text()).toContain(`${BASE_PATH}data/points.json`);
+});
+
+test('desktop: recarrega o mapa sem rede depois que o service worker assume o controle', async ({ page, context }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
+
+  await page.goto('./');
+  await waitForServiceWorkerControl(page);
+
+  await context.setOffline(true);
+  try {
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('main', { name: 'Área principal do mapa' })).toBeVisible();
+    await expect(page.getByText(/Sem conexão:/)).toBeVisible();
+    await expect(page.getByText(/snapshots locais/)).toBeVisible();
+  } finally {
+    await context.setOffline(false);
+  }
+});
+
+test('desktop: geolocalização e assistente prendem foco, fecham com Escape e restauram o acionador', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
+
+  await page.goto('./');
+
+  const geoTrigger = page.getByRole('button', { name: 'Perto de mim' });
+  await geoTrigger.click();
+  const geoDialog = page.getByRole('dialog', { name: 'Ativar Geolocalização?' });
+  await expect(geoDialog).toBeVisible();
+  await expect(geoDialog.getByRole('button', { name: 'Fechar' })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(geoDialog.getByRole('button', { name: 'Cancelar' })).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(geoDialog).toBeHidden();
+  await expect(geoTrigger).toBeFocused();
+
+  const assistantTrigger = page.getByRole('navigation', { name: 'Navegação principal' }).getByRole('button', { name: /Assistente Cívico/i });
+  await assistantTrigger.click();
+  const assistantDialog = page.getByRole('dialog', { name: 'Assistente Cívico Local' });
+  await expect(assistantDialog).toBeVisible();
+  await expect(assistantDialog.getByRole('button', { name: 'Fechar assistente' })).toBeFocused();
+  await page.keyboard.press('Shift+Tab');
+  await expect(assistantDialog.getByPlaceholder('Pergunte sobre serviços em Planaltina, Goiás...')).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(assistantDialog).toBeHidden();
+  await expect(assistantTrigger).toBeFocused();
 });
 
 test('páginas principais não têm violações críticas ou sérias de acessibilidade', async ({ page }) => {
