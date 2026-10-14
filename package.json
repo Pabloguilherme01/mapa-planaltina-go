@@ -8,6 +8,7 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=esm --packages=external --outfile=server.js",
     "start": "node server.js",
     "build:pages": "tsx scripts/build-pages.ts",
+    "verify:pages": "tsx scripts/verify-pages-artifact.ts dist",
     "test": "vitest run",
     "preview": "vite preview",
     "clean": "rm -rf dist server.js",

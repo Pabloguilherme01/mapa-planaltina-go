@@ -35,6 +35,8 @@ jobs:
         env:
           VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
           VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+      - name: Verificar artefato estático
+        run: npm run verify:pages
       - name: Configurar Pages
         if: github.event_name != 'pull_request'
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
@@ -47,6 +49,7 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -54,3 +57,15 @@ jobs:
       - name: Publicar
         id: deployment
         uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346
+      - name: Verificar site publicado
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          set -euo pipefail
+          root="${PAGE_URL%/}/"
+          curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/index.html "$root"
+          curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/fontes.html "${root}fontes/"
+          curl --fail --silent --show-error --retry 8 --retry-delay 5 --retry-all-errors -o /tmp/points.json "${root}data/points.json"
+          grep -q '<title>Mapa Planaltina GO</title>' /tmp/index.html
+          grep -q '<title>Mapa Planaltina GO</title>' /tmp/fontes.html
+          grep -q '"ibgeCode":"5217609"' /tmp/points.json
