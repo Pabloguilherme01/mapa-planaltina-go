@@ -1,4 +1,5 @@
 import { MapPoint, MUNICIPALITY_CODE, SourceInfo } from '../../src/types/index.ts';
+import { CNES_FALLBACK_CAPTURED_AT, CNES_FALLBACK_POINTS } from '../data/cnesPlanaltinaFallback.ts';
 import { SourceAdapter } from './SourceAdapter.ts';
 
 export const CNES_MUNICIPALITY_CODE = '521760';
@@ -38,6 +39,8 @@ interface CkanDatastoreResponse {
     total?: number;
   };
 }
+
+type CnesDataMode = 'live' | 'snapshot_fallback';
 
 function normalized(value: unknown): string {
   return String(value ?? '').trim();
@@ -126,8 +129,10 @@ export function mapCnesRecordToPoint(
 }
 
 /**
- * Adaptador para o snapshot estadual do Cadastro Nacional de Estabelecimentos
- * de Saúde (CNES), publicado pela SES-GO no Portal de Dados Abertos de Goiás.
+ * Adaptador para o Cadastro Nacional de Estabelecimentos de Saúde em Goiás.
+ * Tenta primeiro o DataStore estadual. Se o órgão bloquear ou estiver fora,
+ * preserva somente um snapshot versionado previamente validado, deixando esse
+ * modo explícito no status da fonte e na procedência dos pontos.
  */
 export class CnesAdapter implements SourceAdapter {
   readonly id = 'cnes';
@@ -139,10 +144,19 @@ export class CnesAdapter implements SourceAdapter {
 
   private cachedPoints: MapPoint[] | null = null;
   private lastRetrievedAt: string | null = null;
+  private lastCheckedAt: string | null = null;
+  private mode: CnesDataMode | null = null;
+  private lastLiveError: string | null = null;
 
-  async fetchPoints(): Promise<MapPoint[]> {
-    if (this.cachedPoints) return [...this.cachedPoints];
+  get dataMode(): CnesDataMode | null {
+    return this.mode;
+  }
 
+  get liveError(): string | null {
+    return this.lastLiveError;
+  }
+
+  private async fetchLivePoints(): Promise<MapPoint[]> {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 12_000);
     const retrievedAt = new Date().toISOString();
@@ -154,6 +168,11 @@ export class CnesAdapter implements SourceAdapter {
       });
       if (!response.ok) {
         throw new Error(`CNES/SES-GO respondeu HTTP ${response.status}`);
+      }
+
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.toLowerCase().includes('json')) {
+        throw new Error(`CNES/SES-GO retornou conteúdo inesperado (${contentType || 'sem content-type'})`);
       }
 
       const payload = (await response.json()) as CkanDatastoreResponse;
@@ -169,17 +188,57 @@ export class CnesAdapter implements SourceAdapter {
         throw new Error('Fonte CNES/SES-GO não retornou pontos georreferenciados de Planaltina');
       }
 
-      this.cachedPoints = points;
+      this.mode = 'live';
       this.lastRetrievedAt = retrievedAt;
-      return [...points];
+      this.lastLiveError = null;
+      return points;
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  async fetchPoints(): Promise<MapPoint[]> {
+    if (this.cachedPoints) return [...this.cachedPoints];
+
+    this.lastCheckedAt = new Date().toISOString();
+    try {
+      this.cachedPoints = await this.fetchLivePoints();
+      return [...this.cachedPoints];
+    } catch (error: unknown) {
+      this.lastLiveError = error instanceof Error ? error.message : String(error);
+      if (CNES_FALLBACK_POINTS.length === 0) throw error;
+
+      this.mode = 'snapshot_fallback';
+      this.lastRetrievedAt = CNES_FALLBACK_CAPTURED_AT;
+      this.cachedPoints = CNES_FALLBACK_POINTS.map((point) => ({
+        ...point,
+        provenanceMeta: { ...point.provenanceMeta },
+        tags: [...point.tags],
+      }));
+      return [...this.cachedPoints];
     }
   }
 
   async checkStatus(): Promise<SourceInfo> {
     try {
       const points = await this.fetchPoints();
+      if (this.mode === 'snapshot_fallback') {
+        return {
+          id: this.id,
+          name: this.name,
+          agency: this.agency,
+          municipalCode: this.municipalCode,
+          url: this.url,
+          status: 'snapshot_fallback',
+          statusMessage: `${points.length} ponto de saúde real preservado no último snapshot verificado; a atualização ao vivo não respondeu nesta execução.`,
+          license: points[0]?.provenanceMeta.license ?? this.license,
+          retrievedAt: this.lastRetrievedAt,
+          checkedAt: this.lastCheckedAt,
+          verified: true,
+          notes: `Fallback explícito: nenhum dado vazio substituiu o snapshot conhecido. Erro da atualização ao vivo: ${this.lastLiveError ?? 'não informado'}.`,
+        };
+      }
+
       return {
         id: this.id,
         name: this.name,
@@ -190,7 +249,7 @@ export class CnesAdapter implements SourceAdapter {
         statusMessage: `${points.length} estabelecimentos de saúde georreferenciados carregados para Planaltina, Goiás.`,
         license: this.license,
         retrievedAt: this.lastRetrievedAt,
-        checkedAt: this.lastRetrievedAt,
+        checkedAt: this.lastCheckedAt ?? this.lastRetrievedAt,
         verified: true,
         notes:
           'Snapshot oficial estadual filtrado pelo código CNES/IBGE 521760. Telefones e e-mails da fonte não são replicados no mapa; registros sem coordenadas válidas são excluídos.',
@@ -204,12 +263,12 @@ export class CnesAdapter implements SourceAdapter {
         municipalCode: this.municipalCode,
         url: this.url,
         status: 'error',
-        statusMessage: 'Não foi possível atualizar o snapshot CNES/SES-GO nesta execução.',
+        statusMessage: 'Não foi possível atualizar nem recuperar um snapshot CNES verificado.',
         license: this.license,
         retrievedAt: null,
         checkedAt: new Date().toISOString(),
         verified: false,
-        notes: `A publicação deve preservar o último estado seguro ou bloquear a promoção de dados não verificados. Detalhe técnico: ${message}`,
+        notes: `Publicação bloqueada para esta fonte. Detalhe técnico: ${message}`,
       };
     }
   }
