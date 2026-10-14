@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { MapPoint } from '../../types/index.ts';
 import { DemoMapProvider } from './DemoMapProvider.tsx';
-import { GoogleMapsProvider } from './GoogleMapsProvider.tsx';
-import { Map as MapIcon, Globe } from 'lucide-react';
+import { Map as MapIcon, Globe, Loader2 } from 'lucide-react';
 import { hasGoogleMapsApiKey } from '../../utils/mapProvider.ts';
+
+const GoogleMapsProvider = lazy(() =>
+  import('./GoogleMapsProvider.tsx').then((module) => ({ default: module.GoogleMapsProvider }))
+);
 
 interface MapContainerProps {
   points: MapPoint[];
@@ -84,12 +87,24 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           userLocation={userLocation}
         />
       ) : (
-        <GoogleMapsProvider
-          points={points}
-          selectedPoint={selectedPoint}
-          onSelectPoint={onSelectPoint}
-          onSwitchToDemoMap={() => setProvider('demo')}
-        />
+        <Suspense
+          fallback={
+            <div
+              role="status"
+              className="w-full h-full flex items-center justify-center gap-2 bg-[#F5F0E6] text-sm font-semibold text-[#355E3B]"
+            >
+              <Loader2 size={18} className="animate-spin" />
+              Carregando Google Maps…
+            </div>
+          }
+        >
+          <GoogleMapsProvider
+            points={points}
+            selectedPoint={selectedPoint}
+            onSelectPoint={onSelectPoint}
+            onSwitchToDemoMap={() => setProvider('demo')}
+          />
+        </Suspense>
       )}
     </div>
   );
