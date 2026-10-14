@@ -9,6 +9,7 @@
   --color-linho-card: #FFFFFF;
   --color-linho-muted: #EAE3D2;
   --color-terracota: #BA623D;
+  --color-terracota-aa: #B05835;
   --color-terracota-dark: #984e2e;
   --color-mostarda: #E5B744;
   --color-mostarda-dark: #c49931;
@@ -16,6 +17,18 @@
 
 :root {
   font-family: var(--font-sans);
+}
+
+/*
+ * #BA623D remains the visual terracotta token for decorative strokes and focus rings.
+ * Small text and filled controls use a slightly darker AA-safe variant so white/text
+ * combinations clear the WCAG 2 AA 4.5:1 threshold on white and linen surfaces.
+ */
+.text-\[\#BA623D\] {
+  color: #B05835;
+}
+.bg-\[\#BA623D\] {
+  background-color: #B05835;
 }
 
 /* Accessibility focus-visible rings */
