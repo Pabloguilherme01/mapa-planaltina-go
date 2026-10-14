@@ -106,6 +106,7 @@ export interface MunicipalityOfficialInfo {
 
 export type SourceConnectionStatus =
   | 'connected'
+  | 'snapshot_fallback'
   | 'not_configured'
   | 'pending_integration'
   | 'error';
