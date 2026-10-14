@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Share2, ShieldCheck, AlertCircle, X } from 'lucide-react';
+import { useDialogFocus } from '../../hooks/useDialogFocus.ts';
 
 interface GeolocationConsentModalProps {
   isOpen: boolean;
@@ -14,6 +15,9 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
 }) => {
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+
+  useDialogFocus(isOpen, onClose, dialogRef);
 
   if (!isOpen) return null;
 
@@ -68,10 +72,13 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
 
   return (
     <div
+      ref={dialogRef}
+      tabIndex={-1}
       role="dialog"
       aria-modal="true"
       aria-labelledby="geoConsentTitle"
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans animate-in fade-in"
+      aria-describedby="geoConsentDescription"
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans animate-in fade-in focus:outline-none"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -96,7 +103,7 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
           <h3 id="geoConsentTitle" className="text-base font-bold text-[#121E14]">
             Ativar Geolocalização?
           </h3>
-          <p className="text-xs text-neutral-600 leading-relaxed">
+          <p id="geoConsentDescription" className="text-xs text-neutral-600 leading-relaxed">
             A posição é calculada <strong>exclusivamente no seu aparelho</strong>. Nenhum dado de GPS é armazenado, persistido ou transmitido a servidores ou IA.
           </p>
         </div>
@@ -109,7 +116,10 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
         </div>
 
         {errorMessage && (
-          <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-800">
+          <div
+            role="alert"
+            className="p-3 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-2 text-xs text-rose-800"
+          >
             <AlertCircle size={16} className="shrink-0 mt-0.5" />
             <span>{errorMessage}</span>
           </div>

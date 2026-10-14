@@ -122,7 +122,8 @@ async function navigationFallback(request) {
   const fallbackUrl = url.pathname.startsWith(BASE_PATH + 'fontes')
     ? BASE_PATH + 'fontes/'
     : BASE_PATH;
-  return (await caches.match(fallbackUrl)) || (await caches.match(${quoteSingle(base)}));
+  return (await caches.match(fallbackUrl, { ignoreVary: true })) ||
+    (await caches.match(${quoteSingle(base)}, { ignoreVary: true }));
 }
 
 self.addEventListener('fetch', (event) => {
@@ -142,7 +143,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(
-    caches.match(request).then((cached) => {
+    caches.match(request, { ignoreVary: true }).then((cached) => {
       if (cached) return cached;
       return fetch(request).then((response) => cacheResponse(request, response));
     })
