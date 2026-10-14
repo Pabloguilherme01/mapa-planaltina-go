@@ -30,4 +30,11 @@ describe('contratos de refinamento da interface', () => {
     expect(source).toContain('import.meta.env.BASE_URL');
     expect(source).toContain('navigator.serviceWorker.register');
   });
+
+  it('só promete cache offline quando há service worker controlando a página', () => {
+    const source = read('src/components/Common/OfflineBanner.tsx');
+    expect(source).toContain('navigator.serviceWorker?.controller');
+    expect(source).toContain('controllerchange');
+    expect(source).toContain('snapshots locais');
+  });
 });
