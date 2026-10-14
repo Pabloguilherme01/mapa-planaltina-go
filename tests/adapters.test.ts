@@ -181,6 +181,40 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
     expect(status.notes).toMatch(/fallback|conteúdo inesperado/i);
   });
 
+  it('carrega todas as páginas do CNES antes de declarar conexão completa', async () => {
+    const record = cnesFixture.result.records[0];
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({ success: true, result: { total: 2, records: [record] } }))
+      .mockResolvedValueOnce(Response.json({ success: true, result: { total: 2, records: [{ ...record, cnes: '0112666' }] } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = new CnesAdapter();
+    const points = await adapter.fetchPoints();
+    expect(points.map(point => point.id)).toEqual(['cnes-2437651', 'cnes-0112666']);
+    expect(new URL(fetchMock.mock.calls[1][0]).searchParams.get('offset')).toBe('1');
+    expect(adapter.dataMode).toBe('live');
+  });
+
+  it('não publica coleta parcial se uma página seguinte falha', async () => {
+    vi.stubGlobal('fetch', vi.fn()
+      .mockResolvedValueOnce(Response.json({ success: true, result: { total: 2, records: cnesFixture.result.records } }))
+      .mockRejectedValueOnce(new Error('página indisponível')));
+    const adapter = new CnesAdapter();
+    const points = await adapter.fetchPoints();
+    expect(adapter.dataMode).toBe('snapshot_fallback');
+    expect(points.map(point => point.id)).not.toContain('cnes-2437651');
+    expect(adapter.liveError).toContain('página indisponível');
+  });
+
+  it('interrompe paginação vazia antes do total e preserva snapshot', async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(Response.json({ success: true, result: { total: 2, records: cnesFixture.result.records } }))
+      .mockResolvedValueOnce(Response.json({ success: true, result: { total: 2, records: [] } }));
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = new CnesAdapter();
+    await adapter.fetchPoints();
+    expect(adapter.dataMode).toBe('snapshot_fallback');
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
   it('adaptadores ainda não configurados mantêm datas nulas sem inventar consulta', async () => {
     const prefStatus = await prefeituraAdapter.checkStatus();
     expect(prefStatus.status).toBe('not_configured');

@@ -68,10 +68,12 @@ function joinAddress(record: CnesDatasetRecord): string {
   return [firstLine, secondLine].filter(Boolean).join(' • ');
 }
 
-export function buildCnesDatastoreUrl(limit = 200): string {
+export function buildCnesDatastoreUrl(limit = 200, offset = 0): string {
   const url = new URL(CNES_DATASTORE_URL);
   url.searchParams.set('resource_id', CNES_GOIAS_RESOURCE_ID);
   url.searchParams.set('limit', String(limit));
+  url.searchParams.set('offset', String(offset));
+  url.searchParams.set('sort', 'cnes asc');
   url.searchParams.set('filters', JSON.stringify({ codigo_ibge: CNES_MUNICIPALITY_CODE }));
   return url.toString();
 }
@@ -162,28 +164,39 @@ export class CnesAdapter implements SourceAdapter {
     const retrievedAt = new Date().toISOString();
 
     try {
-      const response = await fetch(buildCnesDatastoreUrl(), {
-        signal: controller.signal,
-        headers: { Accept: 'application/json' },
-      });
-      if (!response.ok) {
-        throw new Error(`CNES/SES-GO respondeu HTTP ${response.status}`);
-      }
+      const records: CnesDatasetRecord[] = [];
+      let total: number | null = null;
+      // Bound the whole collection with one timeout and a finite row budget.
+      do {
+        const response = await fetch(buildCnesDatastoreUrl(200, records.length), {
+          signal: controller.signal,
+          headers: { Accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error(`CNES/SES-GO respondeu HTTP ${response.status}`);
+        const contentType = response.headers.get('content-type') ?? '';
+        if (!contentType.toLowerCase().includes('json')) {
+          throw new Error(`CNES/SES-GO retornou conteúdo inesperado (${contentType || 'sem content-type'})`);
+        }
+        const payload = (await response.json()) as CkanDatastoreResponse;
+        const page = payload.result?.records;
+        const pageTotal = payload.result?.total;
+        if (!payload.success || !Array.isArray(page) || !Number.isInteger(pageTotal) || pageTotal! < 0 || pageTotal! > 10_000) {
+          throw new Error('Resposta inválida do DataStore CNES/SES-GO');
+        }
+        if (total !== null && total !== pageTotal) {
+          throw new Error('Total CNES mudou durante a coleta; snapshot parcial descartado');
+        }
+        total = pageTotal!;
+        if (page.length === 0 && records.length < total) {
+          throw new Error('Paginação CNES incompleta; snapshot parcial descartado');
+        }
+        records.push(...page);
+        if (records.length > total) throw new Error('Contagem CNES inconsistente');
+      } while (records.length < total);
 
-      const contentType = response.headers.get('content-type') ?? '';
-      if (!contentType.toLowerCase().includes('json')) {
-        throw new Error(`CNES/SES-GO retornou conteúdo inesperado (${contentType || 'sem content-type'})`);
-      }
-
-      const payload = (await response.json()) as CkanDatastoreResponse;
-      if (!payload.success || !Array.isArray(payload.result?.records)) {
-        throw new Error('Resposta inválida do DataStore CNES/SES-GO');
-      }
-
-      const points = payload.result.records
+      const points = records
         .map((record) => mapCnesRecordToPoint(record, retrievedAt))
         .filter((point): point is MapPoint => point !== null);
-
       if (points.length === 0) {
         throw new Error('Fonte CNES/SES-GO não retornou pontos georreferenciados de Planaltina');
       }

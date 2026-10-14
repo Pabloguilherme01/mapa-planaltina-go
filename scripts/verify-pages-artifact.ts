@@ -43,6 +43,20 @@ function isFiniteCoordinate(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value !== 0;
 }
 
+function hasText(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0;
+}
+
+function isSourceUrl(value: unknown): boolean {
+  if (!hasText(value)) return false;
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
+  } catch {
+    return false;
+  }
+}
+
 function verifyRealPoint(point: ArtifactPoint): void {
   const provenance = point.provenanceMeta;
   const sourceAllowed =
@@ -50,14 +64,14 @@ function verifyRealPoint(point: ArtifactPoint): void {
 
   if (
     !point.id ||
-    !isFiniteCoordinate(point.lat) ||
-    !isFiniteCoordinate(point.lng) ||
+    !isFiniteCoordinate(point.lat) || Math.abs(point.lat) > 90 ||
+    !isFiniteCoordinate(point.lng) || Math.abs(point.lng) > 180 ||
     !sourceAllowed ||
     provenance?.verificationStatus !== 'verified' ||
-    !provenance.sourceName ||
-    !provenance.sourceUrl?.startsWith('https://') ||
-    !provenance.license ||
-    !provenance.retrievedAt
+    !hasText(provenance.sourceName) ||
+    !isSourceUrl(provenance.sourceUrl) ||
+    !hasText(provenance.license) ||
+    !hasText(provenance.retrievedAt) || !Number.isFinite(Date.parse(provenance.retrievedAt))
   ) {
     throw new Error(
       `Publicação bloqueada: ponto real ${point.id || '(sem id)'} sem proveniência verificável, coordenadas válidas ou metadados obrigatórios.`
@@ -115,13 +129,13 @@ export async function verifyPagesArtifact(root = 'dist'): Promise<void> {
   realPoints.forEach(verifyRealPoint);
 
   if (
-    typeof points.meta?.realCount === 'number' &&
+    !Number.isInteger(points.meta?.realCount) ||
     points.meta.realCount !== realPoints.length
   ) {
     throw new Error('points.json inconsistente: realCount não corresponde aos pontos reais.');
   }
   if (
-    typeof points.meta?.demoCount === 'number' &&
+    !Number.isInteger(points.meta?.demoCount) ||
     points.meta.demoCount !== demoPoints.length
   ) {
     throw new Error('points.json inconsistente: demoCount não corresponde aos pontos DEMO.');
