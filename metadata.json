@@ -1,0 +1,6 @@
+{
+  "name": "Mapa Planaltina GO",
+  "description": "Mapa interativo e explorador de serviços de Planaltina, Goiás (IBGE 5217609) com transparência de fontes, proveniência e modo demonstrativo.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
