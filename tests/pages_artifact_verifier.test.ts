@@ -1,4 +1,4 @@
-import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -151,4 +151,32 @@ describe('verificador do artefato GitHub Pages', () => {
       /PWA|manifest|service worker|ícone/i
     );
   });
+});
+
+it.each([
+  ['latitude fora do intervalo', 'lat', 91],
+  ['longitude fora do intervalo', 'lng', -181],
+  ['URL sem host', 'sourceUrl', 'https://'],
+  ['URL com credenciais', 'sourceUrl', 'https://user:password@example.org/data'],
+  ['data inválida', 'retrievedAt', 'não é uma data'],
+  ['fonte vazia', 'sourceName', '   '],
+  ['licença vazia', 'license', '   '],
+])('bloqueia ponto real com %s', async (_label, field, value) => {
+  const root = await makeArtifact({ realPoint: 'valid' });
+  const path = join(root, 'data', 'points.json');
+  const payload = JSON.parse(await readFile(path, 'utf8'));
+  const point = payload.data[0];
+  if (field === 'lat' || field === 'lng') point[field] = value;
+  else point.provenanceMeta[field] = value;
+  await writeFile(path, JSON.stringify(payload));
+  await expect(verifyPagesArtifact(root)).rejects.toThrow(/proveniência|verifica/i);
+});
+
+it.each(['realCount', 'demoCount'])('exige contagem explícita %s', async (field) => {
+  const root = await makeArtifact({ realPoint: 'valid' });
+  const path = join(root, 'data', 'points.json');
+  const payload = JSON.parse(await readFile(path, 'utf8'));
+  delete payload.meta[field];
+  await writeFile(path, JSON.stringify(payload));
+  await expect(verifyPagesArtifact(root)).rejects.toThrow(/Count/);
 });
