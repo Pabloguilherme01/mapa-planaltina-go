@@ -1,0 +1,31 @@
+name: Browser QA
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: mapa-planaltina-browser-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Preparar Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Instalar dependências do projeto
+        run: npm ci
+      - name: Instalar ferramentas de QA sem alterar o lockfile
+        run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1 @axe-core/playwright@4.13.0
+      - name: Preparar Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Executar fluxos mobile, desktop, PWA e acessibilidade
+        run: npx playwright test --config=playwright.pages.config.mjs

@@ -20,7 +20,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
 
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label="Filtro de categorias cívicas de Planaltina, Goiás"
       className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar"
     >
