@@ -18,7 +18,7 @@ export default defineConfig({
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
   ],
   webServer: {
-    command: 'npm run build:pages && npx vite preview --host 127.0.0.1 --port 4174',
+    command: 'npm run build:pages && VITE_SITE_BASE=/mapa-planaltina-go/ npx vite preview --host 127.0.0.1 --port 4174',
     url: 'http://127.0.0.1:4174/mapa-planaltina-go/',
     reuseExistingServer: false,
     timeout: 120_000,
