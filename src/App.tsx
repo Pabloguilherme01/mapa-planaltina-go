@@ -87,13 +87,15 @@ export default function App() {
     loadData();
   }, [loadData]);
 
-  // Keyboard shortcut Ctrl+K or Cmd+K to focus search
+  // Keyboard shortcut Ctrl+K or Cmd+K to focus the visible search field.
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
-        const searchEl = document.getElementById('search-input');
-        searchEl?.focus();
+        const searchId = window.matchMedia('(min-width: 1024px)').matches
+          ? 'search-input'
+          : 'mobile-search-input';
+        document.getElementById(searchId)?.focus();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -194,7 +196,7 @@ export default function App() {
 
   return (
     <div
-      className={`min-h-screen w-full flex flex-col font-sans select-none overflow-hidden ${
+      className={`min-h-screen w-full flex flex-col font-sans overflow-hidden ${
         highContrast ? 'contrast-125 saturate-150 bg-neutral-900 text-white' : 'bg-[#F5F0E6] text-[#121E14]'
       }`}
     >
