@@ -38,4 +38,28 @@ describe('contratos de refinamento da interface', () => {
     expect(source).toContain('controllerchange');
     expect(source).toContain('snapshots locais');
   });
+
+  it('mantém Google Maps fora do bundle inicial e carrega o provider sob demanda', () => {
+    const source = read('src/components/Map/MapContainer.tsx');
+    expect(source).not.toContain("import { GoogleMapsProvider } from './GoogleMapsProvider.tsx'");
+    expect(source).toContain("import('./GoogleMapsProvider.tsx')");
+    expect(source).toContain('lazy(');
+    expect(source).toContain('<Suspense');
+  });
+
+  it('carrega rotas e superfícies secundárias sob demanda no App', () => {
+    const source = read('src/App.tsx');
+    expect(source).toContain("import('./pages/SourcesPage.tsx')");
+    expect(source).toContain("import('./components/Modals/PointDetailsModal.tsx')");
+    expect(source).toContain("import('./components/Modals/GeolocationConsentModal.tsx')");
+    expect(source).toContain("import('./components/Drawer/AssistantDrawer.tsx')");
+    expect(source).toContain('<Suspense');
+  });
+
+  it('usa gerenciamento compartilhado de foco nos diálogos de consentimento e assistente', () => {
+    const geo = read('src/components/Modals/GeolocationConsentModal.tsx');
+    const assistant = read('src/components/Drawer/AssistantDrawer.tsx');
+    expect(geo).toContain('useDialogFocus');
+    expect(assistant).toContain('useDialogFocus');
+  });
 });
