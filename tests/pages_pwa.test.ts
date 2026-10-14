@@ -45,7 +45,7 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain("const CACHE_NAME = 'mapa-planaltina-v1'");
     expect(source).toContain(`${BASE}data/points.json`);
     expect(source).toContain(`${BASE}fontes/index.html`);
-    expect(source).toContain('event.request.mode === \'navigate\'');
+    expect(source).toContain("request.mode === 'navigate'");
     expect(source).toContain(`caches.match('${BASE}')`);
   });
 });
