@@ -5,6 +5,7 @@ import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { PLANALTINA_GEOJSON } from '../../data/planaltinaGeoJson.ts';
 import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
+import { hasGoogleMapsApiKey } from '../../utils/mapProvider.ts';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 
 interface GoogleMapsProviderProps {
@@ -73,7 +74,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
   // Initial DEMO viewport; not a verified municipal centroid.
   const defaultCenter = { lat: -15.4528, lng: -47.6142 };
 
-  if (!apiKey || apiKey.trim() === '' || apiKey === 'YOUR_API_KEY_HERE') {
+  if (!hasGoogleMapsApiKey(apiKey)) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-[#F5F0E6] text-center">
         <div className="w-16 h-16 rounded-2xl bg-[#BA623D]/10 text-[#BA623D] flex items-center justify-center mb-4">

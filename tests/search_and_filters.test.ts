@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import {
-  pointsRepository,
-  normalizeText,
-} from '../server/repository/PointsRepository.ts';
+import { pointsRepository } from '../server/repository/PointsRepository.ts';
 import { CATEGORIES_LIST, PointCategory } from '../src/types/index.ts';
+import { normalizeText } from '../src/utils/text.ts';
 
 describe('Busca Sem Acentos & Filtros das 9 Categorias', () => {
   it('deve normalizar textos removendo acentos e maiúsculas', () => {
