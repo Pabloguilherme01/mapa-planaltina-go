@@ -1,23 +1,62 @@
 import React, { useEffect, useState } from 'react';
 import { SourceInfo } from '../types/index.ts';
 import { fetchSources } from '../services/apiClient.ts';
+import { CommercialResearchSection } from '../components/Sources/CommercialResearchSection.tsx';
 import {
-  ArrowLeft,
-  ShieldCheck,
-  CheckCircle2,
   AlertCircle,
-  ExternalLink,
-  RefreshCw,
+  ArrowLeft,
   Building2,
+  CheckCircle2,
+  ExternalLink,
   FileCheck,
   HelpCircle,
-  Clock,
   Info,
+  RefreshCw,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SourcesPageProps {
   onBackToMap: () => void;
 }
+
+const provenanceCards = [
+  {
+    title: '1. Oficial',
+    badge: 'Base Institucional',
+    badgeClass: 'bg-emerald-100 text-emerald-900',
+    titleClass: 'text-[#355E3B]',
+    icon: Building2,
+    description:
+      'Registros oriundos de órgãos públicos do Estado de Goiás ou da Prefeitura de Planaltina, Goiás. Requer homologação técnica de vigência.',
+  },
+  {
+    title: '2. Dado aberto verificado',
+    badge: 'Auditável',
+    badgeClass: 'bg-blue-100 text-blue-900',
+    titleClass: 'text-blue-900',
+    icon: FileCheck,
+    description:
+      'Bases públicas auditáveis validadas por código censitário oficial, como a API IBGE 5217609 para identificação do município.',
+  },
+  {
+    title: '3. Comunidade',
+    badge: 'Colaborativo',
+    badgeClass: 'bg-orange-100 text-[#984E2E]',
+    titleClass: 'text-[#984E2E]',
+    icon: ExternalLink,
+    description:
+      'Feições e pesquisas colaborativas alimentadas por moradores e entidades da sociedade civil, sempre separadas de dados oficiais e sujeitas a curadoria.',
+  },
+  {
+    title: '4. DEMO (Simulação Vigente)',
+    badge: 'Simulação',
+    badgeClass: 'bg-[#E5B744] text-[#121E14]',
+    titleClass: 'text-[#78350F]',
+    icon: AlertCircle,
+    description:
+      'Pontos sintéticos criados para homologação da ergonomia do mapa. Totalmente desprovidos de validade cadastral para deslocamento.',
+  },
+] as const;
 
 export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
   const [sources, setSources] = useState<SourceInfo[]>([]);
@@ -43,7 +82,6 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
 
   return (
     <div className="w-full min-h-screen bg-[#F5F0E6] text-[#121E14] font-sans pb-24 lg:pb-12 pt-28 px-4 sm:px-6 lg:px-8 max-w-5xl mx-auto">
-      {/* Navigation & Header */}
       <div className="flex flex-col gap-3 mb-6">
         <button
           type="button"
@@ -69,98 +107,49 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         </div>
       </div>
 
-      {/* Institutional Warning Banner */}
       <div className="bg-[#FFF4DC] border border-[#E5B744]/70 p-4 rounded-2xl mb-6 shadow-sm flex items-start gap-3 text-[#78350F]">
-        <HelpCircle size={22} className="text-[#BA623D] shrink-0 mt-0.5" />
+        <HelpCircle size={22} className="text-[#984E2E] shrink-0 mt-0.5" />
         <div className="text-xs leading-relaxed">
-          <p className="font-extrabold text-[#78350F] text-sm mb-1">
-            Ressalva Institucional de Origem & Verificação:
-          </p>
+          <p className="font-extrabold text-sm mb-1">Ressalva Institucional de Origem & Verificação:</p>
           <p className="mb-1">
-            A indicação de repositório governamental não implica verificação oficial de horários, telefones, condições de tráfego ou endereços físicos para deslocamento.
+            A indicação de repositório governamental ou listagem pública não implica verificação oficial de horários, telefones, condições de tráfego ou endereços físicos para deslocamento.
           </p>
           <p>
-            Todos os pontos de serviços desta versão são <strong>DEMO (simulação ilustrativa)</strong>. A consulta ao IBGE serve <strong>exclusivamente à identificação municipal</strong>, sem cadastrar pontos ou malha oficial. No GitHub Pages, o resultado corresponde à data de consulta registrada na publicação; não representa uma conexão contínua.
+            Os pins do mapa continuam <strong>DEMO (simulação ilustrativa)</strong>. A nova pesquisa comercial aparece apenas nesta página de transparência até que exista geometria auditável e fonte adequada para publicação cartográfica.
           </p>
         </div>
       </div>
 
-      {/* 4 Provenance Levels */}
-      <div className="mb-8">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-[#355E3B] mb-3">
+      <section aria-labelledby="provenance-title" className="mb-8">
+        <h2 id="provenance-title" className="text-xs font-bold uppercase tracking-wider text-[#355E3B] mb-3">
           Classificação Metodológica dos 4 Níveis de Procedência
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {/* 1. Oficial */}
-          <div className="p-4 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-[#355E3B] flex items-center gap-2">
-                <Building2 size={16} />
-                1. Oficial
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-[10px] font-extrabold uppercase">
-                Base Institucional
-              </span>
-            </div>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Registros oriundos de órgãos públicos do Estado de Goiás ou da Prefeitura de Planaltina, Goiás. Requer homologação técnica de vigência.
-            </p>
-          </div>
-
-          {/* 2. Dado aberto verificado */}
-          <div className="p-4 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-blue-900 flex items-center gap-2">
-                <FileCheck size={16} />
-                2. Dado aberto verificado
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-900 text-[10px] font-extrabold uppercase">
-                Auditável
-              </span>
-            </div>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Bases públicas auditáveis validadas por código censitário oficial (ex: API IBGE 5217609 validada para Planaltina, Goiás).
-            </p>
-          </div>
-
-          {/* 3. Comunidade */}
-          <div className="p-4 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-[#BA623D] flex items-center gap-2">
-                <ExternalLink size={16} />
-                3. Comunidade
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-orange-100 text-[#984E2E] text-[10px] font-extrabold uppercase">
-                Colaborativo
-              </span>
-            </div>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Feições colaborativas alimentadas por moradores e entidades da sociedade civil, pendentes de curadoria municipal.
-            </p>
-          </div>
-
-          {/* 4. DEMO (Atual) */}
-          <div className="p-4 rounded-2xl bg-[#FFF9E6] border border-[#E5B744]/70 shadow-sm flex flex-col gap-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-[#78350F] flex items-center gap-2">
-                <AlertCircle size={16} />
-                4. DEMO (Simulação Vigente)
-              </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#E5B744] text-[#121E14] text-[10px] font-extrabold uppercase">
-                Simulação
-              </span>
-            </div>
-            <p className="text-xs text-neutral-700 leading-relaxed">
-              Pontos sintéticos criados para homologação da ergonomia do mapa. <strong>Totalmente desprovidos de validade cadastral para deslocamento.</strong>
-            </p>
-          </div>
+          {provenanceCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <article key={card.title} className="p-4 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col gap-1.5">
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-sm font-bold flex items-center gap-2 ${card.titleClass}`}>
+                    <Icon size={16} />
+                    {card.title}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${card.badgeClass}`}>
+                    {card.badge}
+                  </span>
+                </div>
+                <p className="text-xs text-neutral-600 leading-relaxed">{card.description}</p>
+              </article>
+            );
+          })}
         </div>
-      </div>
+      </section>
 
-      {/* Real Adapter Status Inspection */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-[#355E3B]">
+      <CommercialResearchSection />
+
+      <section aria-labelledby="adapter-status-title">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h2 id="adapter-status-title" className="text-xs font-bold uppercase tracking-wider text-[#355E3B]">
             Status Real dos Adaptadores de Dados (SourceAdapter)
           </h2>
           <button
@@ -174,28 +163,24 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         </div>
 
         {isLoading ? (
-          <div className="p-8 bg-white rounded-2xl border border-neutral-200 text-center text-xs text-neutral-500 animate-pulse">
+          <div role="status" className="p-8 bg-white rounded-2xl border border-neutral-200 text-center text-xs text-neutral-500 animate-pulse">
             Verificando adaptadores municipais...
           </div>
         ) : error ? (
-          <div className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-xs text-rose-800">
+          <div role="alert" className="p-4 bg-rose-50 rounded-2xl border border-rose-200 text-xs text-rose-800">
             {error}
           </div>
         ) : (
           <div className="flex flex-col gap-3">
             {sources.map((src) => (
-              <div
-                key={src.id}
-                className="p-4 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col gap-2"
-              >
+              <article key={src.id} className="p-4 rounded-2xl bg-white border border-neutral-200 shadow-sm flex flex-col gap-2">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-bold text-sm text-[#121E14]">{src.name}</h3>
                       {src.verified ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                          <CheckCircle2 size={12} />
-                          Identificação Ativa
+                          <CheckCircle2 size={12} /> Identificação Ativa
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-neutral-200 text-neutral-700 text-[10px] font-bold">
@@ -219,9 +204,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                   </a>
                 </div>
 
-                <p className="text-xs text-neutral-700 leading-relaxed">
-                  {src.statusMessage}
-                </p>
+                <p className="text-xs text-neutral-700 leading-relaxed">{src.statusMessage}</p>
 
                 <div className="p-2.5 rounded-xl bg-[#F5F0E6] text-[11px] text-neutral-600 flex items-start gap-1.5">
                   <Info size={14} className="text-[#355E3B] shrink-0 mt-0.5" />
@@ -230,23 +213,21 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
 
                 <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-neutral-500 font-medium border-t border-neutral-100">
                   <span>Licença: <strong className="text-neutral-700">{src.license}</strong></span>
-                  <span>•</span>
+                  <span aria-hidden="true">•</span>
                   <span>
                     Data da consulta:{' '}
                     {src.retrievedAt ? (
-                      <strong className="text-neutral-700">
-                        {new Date(src.retrievedAt).toLocaleDateString('pt-BR')}
-                      </strong>
+                      <strong className="text-neutral-700">{new Date(src.retrievedAt).toLocaleDateString('pt-BR')}</strong>
                     ) : (
                       <span className="italic text-neutral-400">Pendente (não configurado)</span>
                     )}
                   </span>
                 </div>
-              </div>
+              </article>
             ))}
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 };
