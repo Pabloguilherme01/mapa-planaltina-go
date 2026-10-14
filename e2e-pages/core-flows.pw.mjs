@@ -50,6 +50,38 @@ test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request 
   expect(await serviceWorker.text()).toContain(`${BASE_PATH}data/points.json`);
 });
 
+test('desktop: catálogo publicado contém saúde real do CNES com proveniência auditável', async ({ page, request }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
+
+  await page.goto('./');
+  const pointsResponse = await request.get(`${page.url()}data/points.json`);
+  expect(pointsResponse.ok()).toBeTruthy();
+  const snapshot = await pointsResponse.json();
+
+  expect(snapshot.meta.mode).toBe('misto_oficial_demo');
+  expect(snapshot.meta.realCount).toBeGreaterThan(0);
+  expect(snapshot.meta.demoCount).toBeGreaterThan(0);
+
+  const realHealthPoint = snapshot.data.find(
+    (point) => point.isDemo === false && point.category === 'Saúde' && point.provenanceMeta?.provenance === 'official'
+  );
+  expect(realHealthPoint, 'esperava ao menos um estabelecimento CNES real').toBeTruthy();
+  expect(realHealthPoint.id).toMatch(/^cnes-\d+/);
+  expect(realHealthPoint.provenanceMeta.verificationStatus).toBe('verified');
+  expect(realHealthPoint.provenanceMeta.sourceUrl).toContain('dadosabertos.go.gov.br');
+
+  const search = page.getByLabel('Buscar locais, órgãos e serviços em Planaltina, Goiás');
+  await search.fill(realHealthPoint.name);
+  await expect(page.getByRole('heading', { name: realHealthPoint.name })).toBeVisible();
+  await expect(page.getByText('Dado real')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Ficha' }).click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog.getByText('Dado real verificado')).toBeVisible();
+  await expect(dialog.getByText('Verificado na fonte')).toBeVisible();
+  await expect(dialog.getByText('Coordenadas publicadas:')).toBeVisible();
+});
+
 test('desktop: recarrega o mapa sem rede depois que o service worker assume o controle', async ({ page, context }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
 
@@ -105,6 +137,7 @@ test('páginas principais não têm violações críticas ou sérias de acessibi
   await page.goto('./fontes/');
   await expect(page.getByRole('heading', { name: 'Fontes & Transparência Territorial' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Âncoras comerciais com checagem pública' })).toBeVisible();
+  await expect(page.getByText('CNES - Estabelecimentos de Saúde de Goiás')).toBeVisible();
 
   const sourcesResults = await new AxeBuilder({ page }).analyze();
   const sourcesBlocking = sourcesResults.violations.filter((violation) => ['critical', 'serious'].includes(violation.impact));
