@@ -36,7 +36,7 @@ const provenanceCards = [
     titleClass: 'text-blue-900',
     icon: FileCheck,
     description:
-      'Bases públicas auditáveis validadas por código censitário oficial, como a API IBGE 5217609 para identificação do município.',
+      'Bases públicas auditáveis validadas por código censitário oficial, como a API IBGE 5217609 e snapshots de contingência cuja origem e geometria foram verificadas separadamente.',
   },
   {
     title: '3. Comunidade',
@@ -59,6 +59,13 @@ const provenanceCards = [
 ] as const;
 
 function statusBadge(source: SourceInfo) {
+  if (source.status === 'snapshot_fallback') {
+    return (
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-bold">
+        <ShieldCheck size={12} /> Snapshot preservado
+      </span>
+    );
+  }
   if (source.verified) {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
@@ -134,10 +141,10 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         <div className="text-xs leading-relaxed">
           <p className="font-extrabold text-sm mb-1">Política de Origem & Verificação</p>
           <p className="mb-1">
-            O mapa agora combina <strong>dados reais com procedência por registro</strong> e pontos <strong>DEMO</strong> claramente identificados. Um registro só é publicado como real quando possui fonte auditável, data de coleta, classificação de procedência e coordenadas válidas.
+            O mapa combina <strong>dados reais com procedência por registro</strong> e pontos <strong>DEMO</strong> claramente identificados. Um registro só é publicado como real quando possui fonte auditável, data de coleta, classificação de procedência e coordenadas válidas.
           </p>
           <p>
-            A primeira camada real é Saúde (CNES/SES-GO). Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento. A pesquisa comercial continua fora dos pins até existir geometria auditável.
+            A camada real inicial é Saúde. O sistema tenta atualizar o CNES/SES-GO e, se o órgão bloquear ou ficar indisponível, preserva somente o último snapshot validado e mostra esse modo explicitamente. Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento.
           </p>
         </div>
       </div>
@@ -229,7 +236,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                   <span>Licença: <strong className="text-neutral-700">{src.license}</strong></span>
                   <span aria-hidden="true">•</span>
                   <span>
-                    Data da consulta:{' '}
+                    Data do snapshot:{' '}
                     {src.retrievedAt ? (
                       <strong className="text-neutral-700">
                         {new Date(src.retrievedAt).toLocaleDateString('pt-BR')}
