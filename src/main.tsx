@@ -1,20 +1,11 @@
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { signalGoogleMapsUnavailable } from './utils/googleMapsErrors.ts';
 
-// Global listener for Maps API quota and auth notifications
-(window as any).gm_authFailure = () => {
-  window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
-};
-
-const origError = console.error;
-console.error = (...args: unknown[]) => {
-  origError.apply(console, args);
-  const msg = args.map((a) => String(a)).join(' ');
-  if (msg.includes('OverQuotaMapError') || msg.includes('QuotaExceededError')) {
-    window.dispatchEvent(new CustomEvent('gmp-quota-exceeded'));
-  }
-};
+// Google Maps chama este callback global quando a autenticação da API falha.
+// O provider ativo consome o evento e degrada para o mapa esquemático DEMO.
+(window as any).gm_authFailure = signalGoogleMapsUnavailable;
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
