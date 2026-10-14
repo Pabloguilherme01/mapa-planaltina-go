@@ -22,7 +22,7 @@ test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', 
   const search = page.getByLabel('Buscar pontos em Planaltina, Goiás');
   await expect(search).toBeVisible();
   await search.fill('termo-inexistente-qa');
-  await expect(page.getByText('Nenhum ponto demonstrativo encontrado com os filtros atuais.')).toBeVisible();
+  await expect(page.getByText('Nenhum ponto encontrado com os filtros atuais.')).toBeVisible();
 
   await page.getByRole('navigation', { name: 'Navegação móvel' }).getByRole('button', { name: /Fontes/i }).click();
   await expect(page).toHaveURL(new RegExp(`${BASE_PATH}fontes/?$`));
