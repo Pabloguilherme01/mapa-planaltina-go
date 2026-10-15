@@ -80,3 +80,13 @@ describe('integração de pontos reais do CNES/SES-GO', () => {
     expect(JSON.stringify(point)).not.toContain('contato@example.org');
   });
 });
+
+it.each(['112666', '0112666'])('mantém identidade da UPA entre live e fallback: %s', (cnes) => {
+  const point = mapCnesRecordToPoint({ ...VALID_RECORD, cnes });
+  expect(point?.id).toBe('cnes-0112666');
+  expect(point?.tags).toContain('CNES 0112666');
+});
+
+it.each(['ABC1234', '12345678', '-112666', '1.12666e5', '0000000', ''])('rejeita identidade CNES malformada: %s', (cnes) => {
+  expect(mapCnesRecordToPoint({ ...VALID_RECORD, cnes })).toBeNull();
+});

@@ -92,7 +92,9 @@ export function mapCnesRecordToPoint(
   const lng = parseCoordinate(record.longitude, 'lng');
   if (lat === null || lng === null) return null;
 
-  const cnes = normalized(record.cnes);
+  const rawCnes = normalized(record.cnes);
+  if (!/^\d{1,7}$/.test(rawCnes) || /^0+$/.test(rawCnes)) return null;
+  const cnes = rawCnes.padStart(7, '0');
   const name = normalized(record.nome_fantasia) || normalized(record.razao_social);
   if (!cnes || !name) return null;
 
