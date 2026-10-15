@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MapPoint } from '../types';
 import { estimateFuelCost, readTrip, routeUrl, tripKey, type TravelMode } from '../utils/mobility';
 import { findDestinations, susStatus } from '../utils/destinationSearch';
+import { favoritesKey, readFavorites, saveFavorite } from '../utils/favoriteTrips';
+import { SavedDestinations } from './SavedDestinations';
 
 type Mode = 'automatico' | 'proxima' | 'repetir' | 'economia' | 'offline' | 'conducao';
 const modes: [Mode, string][] = [['automatico', 'Automático'], ['proxima', 'Próxima viagem'], ['repetir', 'Repetir'], ['economia', 'Economia'], ['offline', 'Sem internet'], ['conducao', 'Condução']];
@@ -18,11 +20,23 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
   const [price, setPrice] = useState('');
   const [query, setQuery] = useState('');
   const [susOnly, setSusOnly] = useState(false);
+  const [favorites, setFavorites] = useState(() => {
+    try { return readFavorites(localStorage.getItem(favoritesKey)); } catch { return []; }
+  });
   const real = useMemo(() => findDestinations(points, '', false), [points]);
   const results = useMemo(() => findDestinations(real, query, susOnly), [real, query, susOnly]);
   const destination = real.find(point => point.id === destinationId);
   const destinationSus = destination ? susStatus(destination) : 'unknown';
   const cost = estimateFuelCost(Number(km), Number(consumption), Number(price));
+  useEffect(() => {
+    const sync = (event: StorageEvent) => {
+      if (event.key === favoritesKey || event.key === null) {
+        try { setFavorites(readFavorites(localStorage.getItem(favoritesKey))); } catch { setFavorites([]); }
+      }
+    };
+    window.addEventListener('storage', sync);
+    return () => window.removeEventListener('storage', sync);
+  }, []);
   useEffect(() => {
     const update = () => setOnline(navigator.onLine);
     window.addEventListener('online', update);
@@ -54,6 +68,15 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
       <div className="flex items-center justify-between gap-3"><h2 id="mobility-title" className="text-xl font-bold">Mobilidade em Planaltina</h2><button type="button" onClick={() => dialog.current?.close()} className="rounded-lg border p-3" aria-label="Fechar planejador">Fechar</button></div>
       <p className="my-3 text-sm">Escolha um destino verificado e abra a navegação. Trânsito e itinerários de ônibus não são calculados aqui.</p>
       <label className="block">Modo de uso<select className={inputStyle} value={mode} onChange={event => choose(event.target.value as Mode)}>{modes.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
+      <SavedDestinations favorites={favorites} points={real} onChoose={trip => {
+        setQuery(''); setSusOnly(false); setDestinationId(trip.id); setTravel(trip.mode);
+        setNotice('Destino salvo selecionado. Confira os dados antes de sair.');
+      }} onRemove={id => {
+        try {
+          const next = readFavorites(localStorage.getItem(favoritesKey)).filter(item => item.id !== id);
+          localStorage.setItem(favoritesKey, JSON.stringify(next)); setFavorites(next); setNotice('Destino removido dos favoritos deste aparelho.');
+        } catch { setNotice('Não foi possível remover o favorito neste navegador.'); }
+      }} />
       <label className="my-3 block">Buscar destino por nome ou endereço<input type="search" className={inputStyle} value={query} onChange={event => { setQuery(event.target.value); setDestinationId(''); }} /></label>
       <label className="my-2 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={susOnly} onChange={event => { setSusOnly(event.target.checked); setDestinationId(''); }} />Somente vínculo SUS informado no CNES</label>
       <p aria-live="polite" className="text-xs">{results.length} destinos disponíveis{susOnly ? ' com vínculo SUS informado' : ''}</p>
@@ -67,7 +90,13 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
       {mode === 'conducao' && <p className="my-3 rounded-lg bg-white p-3">Confira o destino com o veículo parado. Abra a navegação e siga as orientações do aplicativo escolhido.</p>}
       <div className="my-3 flex flex-wrap gap-2"><button type="button" disabled={!destination} className="rounded-lg border border-neutral-500 p-3 disabled:opacity-50" onClick={() => {
         if (!destination) return;
-        try { localStorage.setItem(tripKey, JSON.stringify({ id: destination.id, mode: travel })); setNotice('Viagem salva somente neste navegador. Sua localização não foi armazenada.'); } catch { setNotice('Não foi possível salvar neste navegador.'); }
+        const trip = { id: destination.id, mode: travel };
+        try { localStorage.setItem(tripKey, JSON.stringify(trip)); } catch { setNotice('Não foi possível salvar neste navegador.'); return; }
+        try {
+          const next = saveFavorite(readFavorites(localStorage.getItem(favoritesKey)), trip);
+          localStorage.setItem(favoritesKey, JSON.stringify(next)); setFavorites(next);
+          setNotice('Viagem salva somente neste navegador, com até oito destinos favoritos. Sua localização não foi armazenada.');
+        } catch { setNotice('Última viagem salva. Não foi possível atualizar os favoritos neste navegador.'); }
       }}>Salvar viagem neste aparelho</button><button type="button" className="rounded-lg border border-neutral-500 p-3" onClick={() => { try { localStorage.removeItem(tripKey); setNotice('Viagem salva apagada deste aparelho.'); } catch { setNotice('Armazenamento indisponível.'); } }}>Apagar viagem salva</button></div>
       <p role="status" className="text-sm">{notice}</p>
       <p className="mt-3 text-xs">Salvar é opcional. Sem internet, a consulta depende de uma visita anterior com o aplicativo carregado. Nenhuma rota viária é inventada ou salva como calculada.</p>

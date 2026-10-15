@@ -3,8 +3,11 @@ import { mkdir, copyFile, writeFile } from 'node:fs/promises';
 import { writePagesPwa } from './pagesPwa.ts';
 import { parseMunicipalContext } from '../src/utils/municipalContext';
 import contextSnapshot from '../src/data/municipalContext.json';
+import fuelSnapshot from '../src/data/fuelRegistry.json';
+import { parseFuelRegistry } from '../src/utils/fuelRegistry';
 
 parseMunicipalContext(contextSnapshot);
+parseFuelRegistry(fuelSnapshot);
 
 const SITE_BASE = '/mapa-planaltina-go/';
 

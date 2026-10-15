@@ -3,6 +3,52 @@ import AxeBuilder from '@axe-core/playwright';
 
 const BASE_PATH = '/mapa-planaltina-go/';
 
+test('abastecimento: consulta ANP municipal sem preços, pins ou exportação', async ({ page }) => {
+  await page.goto('fontes/');
+  const registry = page.getByRole('region', { name: 'Abastecimento — cadastro oficial ANP' });
+  await expect(registry.getByRole('status')).toHaveText('17 revendedores encontrados');
+  await registry.getByLabel('Buscar posto por nome ou bairro').fill('f1 itapua');
+  await registry.getByLabel('Bandeira informada na ANP').selectOption('BANDEIRA BRANCA');
+  await expect(registry.getByRole('status')).toHaveText('1 revendedor encontrado');
+  await expect(registry).toContainText('F1 COMBUSTIVEIS E DERIVADOS LTDA');
+  await registry.getByLabel('Bandeira informada na ANP').selectOption('VIBRA');
+  await expect(registry.getByRole('status')).toHaveText('0 revendedores encontrados');
+  await registry.getByRole('button', { name: 'Limpar filtros de postos' }).click();
+  await expect(registry.getByRole('status')).toHaveText('17 revendedores encontrados');
+  await expect(registry).toContainText('não fornece preços, horários ou coordenadas');
+  await expect(registry.getByRole('button', { name: /baixar|exportar|navega/i })).toHaveCount(0);
+  const accessibility = await new AxeBuilder({ page }).include('[aria-labelledby="fuel-title"]').analyze();
+  expect(accessibility.violations.filter(issue => ['critical', 'serious'].includes(issue.impact))).toEqual([]);
+});
+
+test('favoritos: persistem no aparelho, não duplicam e podem ser removidos offline', async ({ page, context }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  let planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  const options = planner.getByLabel('Destino real').locator('option');
+  await expect(options).not.toHaveCount(1);
+  const id = await options.nth(1).getAttribute('value');
+  await planner.getByLabel('Destino real').selectOption(id);
+  await planner.getByRole('button', { name: 'Salvar viagem neste aparelho' }).click();
+  await planner.getByRole('button', { name: 'Salvar viagem neste aparelho' }).click();
+  await expect(planner.locator('summary')).toHaveText('Destinos salvos (1)');
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('planaltina-private-favorites-v1')));
+  expect(stored).toEqual([{ id, mode: 'driving' }]);
+  await page.reload();
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  await planner.locator('summary').click();
+  const saved = planner.locator('details');
+  await saved.getByRole('button', { name: /Usar destino salvo/ }).click();
+  await expect(planner.getByLabel('Destino real')).toHaveValue(id);
+  await context.setOffline(true);
+  await expect(planner.getByRole('link', { name: 'Abrir navegação externa' })).toHaveCount(0);
+  await saved.getByRole('button', { name: /Remover destino salvo/ }).click();
+  await expect(planner.locator('details')).toHaveCount(0);
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem('planaltina-private-favorites-v1')))).toEqual([]);
+  await context.setOffline(false);
+});
+
 test('consulta municipal: dados e filtros sem downloads ou exportações', async ({ page }) => {
   await page.goto('fontes/');
   const context = page.getByRole('region', { name: 'Planaltina em números — IBGE' });

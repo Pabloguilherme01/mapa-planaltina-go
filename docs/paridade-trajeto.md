@@ -16,9 +16,11 @@ Comparação em 15/10/2026 do código local de `trajeto-web`, preservado sem alt
 | Escolas | Cadastro oficial disponível em Fontes, sem coordenadas verificadas para o planejador |
 | CNPJ e comércio | Pesquisa documental existente; falta base municipal com identidade e geometria auditáveis |
 | Corredores, linhas e horários de ônibus | Dependem de fonte de Planaltina; não copiar corredores de Águas Lindas |
-| Postos/preços ANP, consumo histórico e comparação | Pendente adaptação de dados e validação municipal |
+| Postos ANP | Cadastro municipal de 17 revendedores, nome/endereço/bandeira/autorização; sem geometria, preços ou pins presumidos |
+| Preços ANP, consumo histórico e comparação | Pendente fonte municipal e integração próprias |
 | Rotas com alternativas, duração, chegada e tráfego | Pendente provedor de rotas e backend; não estimar com linha reta |
-| Múltiplas rotas offline, destinos frequentes, notificações | Pendente implementação além da última viagem local |
+| Destinos favoritos | Até oito destinos reais no aparelho, seleção e remoção; não armazena origem ou GPS |
+| Múltiplas rotas offline, destinos frequentes automáticos, notificações | Pendente; favoritos não equivalem a rotas calculadas offline |
 | Instalação PWA e cache do catálogo | Infraestrutura existente; teste físico iOS/Android ainda necessário |
 
 ## Verificações desta entrega
@@ -27,4 +29,4 @@ Testes unitários cobrem URLs de deslocamento sem origem, coordenadas inválidas
 
 ## Próximas etapas
 
-Busca de destinos por nome/endereço/CNES e filtro SUS foram adaptados. Avançar favoritos múltiplos, proximidade após consentimento, instalação guiada e preferências acessíveis. Downloads e exportações foram removidos por solicitação do usuário; manter a experiência centrada em mapa e planejamento. Integrações viárias, ônibus e ANP devem entrar separadamente com contratos, fallback auditável e testes municipais. Marcar cada linha como concluída somente com implementação e verificação próprias.
+Busca de destinos por nome/endereço/CNES, filtro SUS e favoritos múltiplos foram adaptados. Avançar proximidade após consentimento, instalação guiada e preferências acessíveis. Downloads e exportações foram removidos por solicitação do usuário; manter a experiência centrada em mapa e planejamento. Integrações viárias, ônibus e preços ANP devem entrar separadamente com contratos, fallback auditável e testes municipais. Marcar cada linha como concluída somente com implementação e verificação próprias.
