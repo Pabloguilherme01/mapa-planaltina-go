@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MapPoint, PointCategory } from '../../types/index.ts';
+import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
 import {
@@ -24,6 +24,8 @@ interface MobileBottomSheetProps {
   onToggleCategory: (cat: PointCategory) => void;
   onSelectAllCategories: () => void;
   categoryCounts: Record<string, number>;
+  selectedProvenance: ProvenanceType | 'all';
+  onSelectProvenance: (value: ProvenanceType | 'all') => void;
 }
 
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
@@ -37,6 +39,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   onToggleCategory,
   onSelectAllCategories,
   categoryCounts,
+  selectedProvenance,
+  onSelectProvenance,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const realCount = points.filter((point) => !point.isDemo).length;
@@ -47,7 +51,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       role="region"
       aria-label="Busca e lista do catálogo territorial"
       className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
-        isExpanded ? 'h-[75vh]' : 'h-[230px]'
+        isExpanded ? 'h-[75vh]' : 'h-[280px]'
       }`}
     >
       <button
@@ -98,6 +102,11 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         />
       </div>
 
+      <label className="mb-2 flex shrink-0 items-center gap-2 text-xs font-bold">Origem dos pontos
+        <select value={selectedProvenance} onChange={event => onSelectProvenance(event.target.value as ProvenanceType | 'all')} className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-400 bg-white px-2">
+          <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
+        </select>
+      </label>
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">

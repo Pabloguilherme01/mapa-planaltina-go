@@ -1,4 +1,5 @@
 import { SchoolRegistrySection } from '../components/Sources/SchoolRegistrySection.tsx';
+import { MunicipalContextSection } from '../components/Sources/MunicipalContextSection.tsx';
 import { snapshotAgeLabel } from '../utils/snapshotDate.ts';
 import React, { useEffect, useState } from 'react';
 import { SourceInfo } from '../types/index.ts';
@@ -176,6 +177,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         </div>
       </section>
 
+      <MunicipalContextSection />
       <SchoolRegistrySection />
       <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="cartography-title">
         <h2 id="cartography-title" className="text-lg font-bold">Cartografia e integrações verificáveis</h2>

@@ -302,6 +302,8 @@ export default function App() {
             </div>
 
             <MobileBottomSheet
+              selectedProvenance={selectedProvenance}
+              onSelectProvenance={setSelectedProvenance}
               points={filteredPoints}
               selectedPoint={selectedPoint}
               onSelectPoint={handleSelectPoint}
