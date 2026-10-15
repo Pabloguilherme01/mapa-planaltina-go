@@ -13,7 +13,7 @@ export function SchoolRegistrySection() {
     <label className="block text-sm font-bold" htmlFor="school-search">Buscar escola por nome, código ou bairro</label>
     <input id="school-search" value={query} onChange={event => setQuery(event.target.value)} className="my-2 min-h-11 w-full rounded-lg border border-neutral-400 p-3" />
     <p role="status" className="text-xs">{schools.length} registros encontrados</p>
-    <ul className="mt-3 max-h-96 overflow-y-auto divide-y divide-neutral-200">
+    <ul tabIndex={0} aria-label="Resultados do cadastro escolar; use as setas para rolar" className="mt-3 max-h-96 overflow-y-auto divide-y divide-neutral-200 focus:outline-2 focus:outline-[#355E3B]">
       {schools.map(item => <li key={item.code} className="py-3 text-sm"><strong>{item.name}</strong><p>Código {item.code} • {item.network} • {item.zone}</p><p>{item.address} — {item.district}</p></li>)}
     </ul>
   </section>;
