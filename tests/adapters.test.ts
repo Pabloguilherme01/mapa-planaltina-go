@@ -246,6 +246,18 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
       expect((await adapter.fetchPoints())[0].id).toBe('cnes-0112666');
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
+  it('rejeita coleta com CNES duplicado após normalização', async () => {
+    const record = cnesFixture.result.records[0];
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({
+      success: true, result: { total: 2, records: [
+        { ...record, cnes: '112666' }, { ...record, cnes: '0112666' },
+      ] },
+    })));
+    const adapter = new CnesAdapter();
+    await adapter.fetchPoints();
+    expect(adapter.dataMode).toBe('snapshot_fallback');
+    expect(adapter.liveError).toMatch(/duplicad/i);
+  });
   it('adaptadores ainda não configurados mantêm datas nulas sem inventar consulta', async () => {
     const prefStatus = await prefeituraAdapter.checkStatus();
     expect(prefStatus.status).toBe('not_configured');

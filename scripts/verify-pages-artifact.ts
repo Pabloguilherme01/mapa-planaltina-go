@@ -118,6 +118,14 @@ export async function verifyPagesArtifact(root = 'dist'): Promise<void> {
     throw new Error('points.json não identifica Planaltina, Goiás pelo IBGE 5217609.');
   }
 
+  const identities = new Set<string>();
+  for (const point of points.data) {
+    if (!hasText(point.id) || point.id !== point.id.trim() || identities.has(point.id)) {
+      throw new Error('Publicação bloqueada: identidade ausente, inválida ou duplicada no catálogo.');
+    }
+    identities.add(point.id);
+  }
+
   const realPoints = points.data.filter((point) => point.isDemo === false);
   const demoPoints = points.data.filter((point) => point.isDemo === true);
   const ambiguousPoints = points.data.filter(

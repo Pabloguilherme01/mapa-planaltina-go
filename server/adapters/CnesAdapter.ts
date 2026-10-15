@@ -162,6 +162,7 @@ export class CnesAdapter implements SourceAdapter {
         return mapCnesRecordToPoint(record, saved.retrievedAt);
       });
       if (points.some((point: MapPoint | null) => point === null)) return null;
+      if (new Set(points.map((point: MapPoint) => point.id)).size !== points.length) return null;
       this.lastRetrievedAt = saved.retrievedAt;
       return points;
     } catch { return null; }
@@ -240,6 +241,9 @@ export class CnesAdapter implements SourceAdapter {
         throw new Error('Fonte CNES/SES-GO não retornou pontos georreferenciados de Planaltina');
       }
 
+      if (new Set(points.map(point => point.id)).size !== points.length) {
+        throw new Error('Coleta CNES com identidade duplicada; snapshot ambíguo descartado');
+      }
       await this.preserveSnapshot(records, retrievedAt);
       this.mode = 'live';
       this.lastRetrievedAt = retrievedAt;
