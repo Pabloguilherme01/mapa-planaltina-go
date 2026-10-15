@@ -1,3 +1,5 @@
+import { SchoolRegistrySection } from '../components/Sources/SchoolRegistrySection.tsx';
+import { snapshotAgeLabel } from '../utils/snapshotDate.ts';
 import React, { useEffect, useState } from 'react';
 import { SourceInfo } from '../types/index.ts';
 import { fetchSources } from '../services/apiClient.ts';
@@ -174,6 +176,16 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         </div>
       </section>
 
+      <SchoolRegistrySection />
+      <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="cartography-title">
+        <h2 id="cartography-title" className="text-lg font-bold">Cartografia e integrações verificáveis</h2>
+        <p className="my-2 text-sm">Limite municipal: malha simplificada do IBGE, código 5217609, obtida em 15/10/2026 UTC. Não substitui levantamento cadastral. Registros CNES fora da malha ficam separados para revisão, sem alterar a coordenada original.</p>
+        <a className="inline-flex min-h-11 items-center underline mr-4" href={`${import.meta.env.BASE_URL}data/territorial-review.json`}>Ver registros em revisão territorial</a>
+        <a className="inline-flex min-h-11 items-center underline" href="https://servicodados.ibge.gov.br/api/v3/malhas/municipios/5217609?formato=application/vnd.geo+json&qualidade=maxima" target="_blank" rel="noreferrer">Fonte da malha IBGE</a>
+        <p className="my-2 text-sm">Ônibus: integração de linhas e horários ainda não validada. Consulte o canal oficial; não são calculados itinerários nem chegadas em tempo real neste mapa.</p>
+        <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/pt-br/servicos/consultar-linhas-do-servico-rodoviario-interestadual-semiurbano-de-passageiros" target="_blank" rel="noreferrer">Consultar linhas na ANTT</a>
+        <p className="my-2 text-sm">Ruas OpenStreetMap são opcionais e online. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>
+      </section>
       <CommercialResearchSection />
 
       <section aria-labelledby="adapter-status-title">
@@ -226,6 +238,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
                 </div>
 
                 <p className="text-xs text-neutral-700 leading-relaxed">{src.statusMessage}</p>
+                <p className="text-xs text-neutral-700">{snapshotAgeLabel(src.retrievedAt)}</p>
 
                 <div className="p-2.5 rounded-xl bg-[#F5F0E6] text-[11px] text-neutral-600 flex items-start gap-1.5">
                   <Info size={14} className="text-[#355E3B] shrink-0 mt-0.5" />

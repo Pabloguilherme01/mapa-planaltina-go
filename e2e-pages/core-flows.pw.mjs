@@ -152,3 +152,15 @@ test('páginas principais não têm violações críticas ou sérias de acessibi
   const sourcesBlocking = sourcesResults.violations.filter((violation) => ['critical', 'serious'].includes(violation.impact));
   expect(sourcesBlocking, JSON.stringify(sourcesBlocking, null, 2)).toEqual([]);
 });
+
+test('cartografia local e cadastro SEDUC distinguem geometria de registro cadastral', async ({ page }) => {
+  await page.goto('./');
+  await expect(page.getByLabel('Mapa geográfico de Planaltina com limite IBGE')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ruas online desativadas' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ver município' })).toBeVisible();
+  await page.goto('./fontes/');
+  await expect(page.getByRole('heading', { name: 'Educação — cadastro oficial SEDUC' })).toBeVisible();
+  await page.getByLabel('Buscar escola por nome, código ou bairro').fill('52188442');
+  await expect(page.getByText('ESCOLA CRESCER E SABER', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 registros encontrados', { exact: true })).toBeVisible();
+});

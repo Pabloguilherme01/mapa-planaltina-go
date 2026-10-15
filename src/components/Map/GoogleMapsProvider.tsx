@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { PLANALTINA_GEOJSON } from '../../data/planaltinaGeoJson.ts';
+import { MUNICIPAL_BOUNDARY as PLANALTINA_GEOJSON } from '../../data/municipalBoundary.ts';
 import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { hasGoogleMapsApiKey } from '../../utils/mapProvider.ts';
@@ -133,7 +133,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
           <MapLayers points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} />
         </Map>
       </APIProvider>
-      <div className="absolute bottom-3 left-3 bg-white px-3 py-2 text-xs text-[#121E14] rounded shadow">Camada GeoJSON DEMO — geometria sintética, sem limite municipal oficial.</div>
+      <div className="absolute bottom-3 left-3 bg-white px-3 py-2 text-xs text-[#121E14] rounded shadow">Limite municipal simplificado: IBGE • consulte a procedência de cada ponto.</div>
     </div>
   );
 };

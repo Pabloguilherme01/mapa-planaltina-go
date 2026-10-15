@@ -50,8 +50,8 @@ async function makeArtifact(options?: ArtifactOptions) {
   const realPoint = {
     id: 'cnes-2437651',
     isDemo: false,
-    lat: -15.45,
-    lng: -47.60,
+    lat: -15.45293,
+    lng: -47.60913,
     provenanceMeta:
       options?.realPoint === 'invalid'
         ? { provenance: 'official' }
@@ -193,4 +193,13 @@ it.each(['duplicate', 'blank', 'missing'])('bloqueia identidade de ponto inváli
   if (mode === 'missing') delete payload.data[1].id;
   await writeFile(path, JSON.stringify(payload));
   await expect(verifyPagesArtifact(root)).rejects.toThrow(/identidade|duplicad/i);
+});
+it('bloqueia ponto real fora da malha municipal apesar do código no catálogo', async () => {
+  const root = await makeArtifact({ realPoint: 'valid' });
+  const path = join(root, 'data', 'points.json');
+  const payload = JSON.parse(await readFile(path, 'utf8'));
+  payload.data[0].lat = -15.7939;
+  payload.data[0].lng = -47.8828;
+  await writeFile(path, JSON.stringify(payload));
+  await expect(verifyPagesArtifact(root)).rejects.toThrow(/malha municipal/);
 });

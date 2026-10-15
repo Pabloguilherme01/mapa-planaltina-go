@@ -6,3 +6,9 @@ export function isSnapshotDate(value: unknown, now = Date.now()): value is strin
   const canonical = value.includes('.') ? value : value.replace('Z', '.000Z');
   return new Date(timestamp).toISOString() === canonical;
 }
+
+export function snapshotAgeLabel(value: unknown, now = Date.now()): string {
+  if (!isSnapshotDate(value, now)) return 'Data de coleta indisponível';
+  const days = Math.floor((now - Date.parse(value)) / 86_400_000);
+  return days === 0 ? 'Coleta de hoje' : `Coleta há ${days} dias${days >= 30 ? ' — confirme atualizações na fonte' : ''}`;
+}

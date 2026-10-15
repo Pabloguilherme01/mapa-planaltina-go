@@ -5,7 +5,8 @@ export default defineConfig({
   testMatch: '**/*.pw.mjs',
   timeout: 30_000,
   expect: { timeout: 8_000 },
-  fullyParallel: true,
+  fullyParallel: false,
+  workers: 1,
   reporter: [['list']],
   use: {
     baseURL: 'http://127.0.0.1:4174/mapa-planaltina-go/',
@@ -14,6 +15,7 @@ export default defineConfig({
     serviceWorkers: 'allow',
   },
   projects: [
+    { name: 'mobile-webkit', use: { ...devices['iPhone 13'] } },
     { name: 'mobile-chromium', use: { ...devices['Pixel 7'] } },
     { name: 'desktop-chromium', use: { ...devices['Desktop Chrome'] } },
   ],

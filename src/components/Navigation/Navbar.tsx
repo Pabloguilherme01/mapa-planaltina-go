@@ -13,6 +13,8 @@ import {
 export type ActiveTab = 'map' | 'assistant' | 'sources';
 
 interface NavbarProps {
+  realCount?: number;
+  demoCount?: number;
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
   onRequestGeolocation: () => void;
@@ -21,6 +23,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
+  realCount = 0,
+  demoCount = 0,
   activeTab,
   onSelectTab,
   onRequestGeolocation,
@@ -34,10 +38,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center gap-2 mx-auto text-center">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E5B744] text-[#121E14] text-[11px] uppercase font-extrabold tracking-wider">
             <Wrench size={12} />
-            DEMO
+            Catálogo
           </span>
           <p className="text-xs text-[#78350F] font-semibold">
-            Modo demonstrativo — locais ilustrativos, não use para deslocamento. Dados não verificados.
+            {realCount} reais • {demoCount} DEMO. Confira fonte e data; DEMO não serve para deslocamento.
           </p>
         </div>
       </div>
