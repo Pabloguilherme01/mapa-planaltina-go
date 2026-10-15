@@ -236,11 +236,11 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
     } finally { await rm(dir, { recursive: true, force: true }); }
   });
 
-  it('rejeita snapshot persistido adulterado e usa contingência versionada', async () => {
+  it.each(['invalid', '2026-02-30T00:00:00Z', '9999-01-01T00:00:00Z', '2026-10-14'])('rejeita data adulterada no snapshot: %s', async (retrievedAt) => {
     const dir = await mkdtemp(join(tmpdir(), 'cnes-cache-'));
     try {
       const path = join(dir, 'snapshot.json');
-      await writeFile(path, JSON.stringify({ version: 1, retrievedAt: 'invalid', records: cnesFixture.result.records }));
+      await writeFile(path, JSON.stringify({ version: 1, retrievedAt, records: cnesFixture.result.records }));
       vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
       const adapter = new CnesAdapter(path);
       expect((await adapter.fetchPoints())[0].id).toBe('cnes-0112666');
