@@ -133,7 +133,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
               Fontes & Transparência Territorial
             </h1>
             <p className="text-xs text-neutral-600 font-medium">
-              Planaltina, Goiás • Código IBGE 5217609 • Rota /fontes
+              Planaltina, Goiás • Código IBGE 5217609
             </p>
           </div>
         </div>
@@ -152,10 +152,8 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         </div>
       </div>
 
-      <section aria-labelledby="provenance-title" className="mb-8">
-        <h2 id="provenance-title" className="text-xs font-bold uppercase tracking-wider text-[#355E3B] mb-3">
-          Classificação Metodológica dos 4 Níveis de Procedência
-        </h2>
+      <details className="mb-6 rounded-xl border border-neutral-300 p-3">
+        <summary className="min-h-11 cursor-pointer py-3 text-sm font-bold text-[#355E3B]">Como classificamos a procedência</summary>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {provenanceCards.map((card) => {
             const Icon = card.icon;
@@ -175,15 +173,14 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
             );
           })}
         </div>
-      </section>
+      </details>
 
       <MunicipalContextSection />
       <SchoolRegistrySection />
       <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="cartography-title">
         <h2 id="cartography-title" className="text-lg font-bold">Cartografia e integrações verificáveis</h2>
         <p className="my-2 text-sm">Limite municipal: malha simplificada do IBGE, código 5217609, obtida em 15/10/2026 UTC. Não substitui levantamento cadastral. Registros CNES fora da malha ficam separados para revisão, sem alterar a coordenada original.</p>
-        <a className="inline-flex min-h-11 items-center underline mr-4" href={`${import.meta.env.BASE_URL}data/territorial-review.json`}>Ver registros em revisão territorial</a>
-        <a className="inline-flex min-h-11 items-center underline" href="https://servicodados.ibge.gov.br/api/v3/malhas/municipios/5217609?formato=application/vnd.geo+json&qualidade=maxima" target="_blank" rel="noreferrer">Fonte da malha IBGE</a>
+        <a className="inline-flex min-h-11 items-center underline" href="https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html" target="_blank" rel="noreferrer">Cartografia no IBGE</a>
         <p className="my-2 text-sm">Ônibus: integração de linhas e horários ainda não validada. Consulte o canal oficial; não são calculados itinerários nem chegadas em tempo real neste mapa.</p>
         <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/pt-br/servicos/consultar-linhas-do-servico-rodoviario-interestadual-semiurbano-de-passageiros" target="_blank" rel="noreferrer">Consultar linhas na ANTT</a>
         <p className="my-2 text-sm">Ruas OpenStreetMap são opcionais e online. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>

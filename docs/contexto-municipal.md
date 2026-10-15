@@ -19,13 +19,15 @@ npm run verify:pages
 
 O script consulta somente endpoints fixos do IBGE. Qualquer falha HTTP, TLS, JSON ou contrato mantém o snapshot anterior; só troca o arquivo depois de validar as duas respostas. `--use-system-ca` usa as autoridades confiáveis do Windows, sem desativar a verificação TLS. Coleta não muda automaticamente o período censitário. Não há cron novo nem publicação automática desses dados.
 
-## Consulta e exportações
+## Consulta
 
-- IBGE: download JSON com ano, unidades, códigos e URLs de procedência.
-- SEDUC: busca por múltiplos termos sem acentos, filtros cumulativos por rede e zona, limpeza de filtros e download CSV somente das escolas encontradas.
-- CSV: separador `;`, BOM UTF-8 para acentos, campos escapados, fonte/coleta/referência e ausência de geometria em cada linha. Não inclui telefone/e-mail. Células que poderiam executar fórmulas são prefixadas com apóstrofo.
+- IBGE: indicadores e distritos consultáveis na página com referência, coleta e acesso à fonte institucional.
+- SEDUC: busca por múltiplos termos sem acentos e filtros cumulativos por rede e zona; limpeza aparece somente quando há filtros ativos.
+- Downloads e exportações foram removidos da interface e do código de consulta por preferência do usuário. Snapshots internos continuam necessários ao build, à auditoria e ao funcionamento offline.
 - Cadastro SEDUC continua na referência **2024**, com 63 registros. Filtro não é confirmação de atendimento ou funcionamento atual. Não há geometria escolar.
 - No celular, o filtro de procedência compartilha estado com o desktop e aplica-se ao mapa e à lista. DEMO continua separado e excluído do planejador.
+- No planejador, busca por palavras combina nome, endereço e identificador CNES. Filtro SUS exige indicação explícita `Vínculo SUS: SIM` em registro oficial CNES verificado; ausência ou conflito não vira SIM. Vínculo cadastral não confirma atendimento atual.
+- Registros diferentes com nome igual não são fundidos: o identificador oficial continua distinguindo estabelecimentos. Arquivo cartográfico esquemático sem referências foi removido; o mapa geográfico permanece com a malha IBGE.
 
 ## Fontes
 

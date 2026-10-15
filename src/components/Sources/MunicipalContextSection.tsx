@@ -1,6 +1,5 @@
 import snapshot from '../../data/municipalContext.json';
-import { DISTRICTS_URL, INDICATORS_URL, parseMunicipalContext } from '../../utils/municipalContext';
-import { downloadText } from '../../utils/registryTools';
+import { parseMunicipalContext } from '../../utils/municipalContext';
 
 const context = parseMunicipalContext(snapshot);
 
@@ -16,9 +15,7 @@ export function MunicipalContextSection() {
     <p className="text-sm">A lista de distritos não informa centros ou limites distritais nesta integração; não cria pins nem classifica endereços automaticamente.</p>
     <p className="mt-2 text-xs">Coleta: {new Date(context.retrievedAt).toLocaleDateString('pt-BR')}. Snapshot preservado na versão publicada. Dados públicos do IBGE; mantenha a atribuição e consulte as condições da fonte ao reutilizar.</p>
     <div className="mt-3 flex flex-wrap gap-3 text-sm">
-      <a className="inline-flex min-h-11 items-center underline" href={INDICATORS_URL} target="_blank" rel="noreferrer">Fonte dos indicadores IBGE</a>
-      <a className="inline-flex min-h-11 items-center underline" href={DISTRICTS_URL} target="_blank" rel="noreferrer">Fonte dos distritos IBGE</a>
-      <button className="min-h-11 rounded-lg border border-neutral-500 px-3 font-semibold" type="button" onClick={() => downloadText('planaltina-contexto-ibge.json', JSON.stringify({ ...context, sources: [INDICATORS_URL, DISTRICTS_URL], notice: 'Indicadores referência 2022; distritos sem geometria. Atribuir ao IBGE.' }, null, 2), 'application/json;charset=utf-8')}>Baixar dados IBGE (JSON)</button>
+      <a className="inline-flex min-h-11 items-center underline" href="https://www.ibge.gov.br/cidades-e-estados/go/planaltina.html" target="_blank" rel="noreferrer">Consultar Planaltina no IBGE</a>
     </div>
   </section>;
 }
