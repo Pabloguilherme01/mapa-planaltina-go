@@ -15,6 +15,7 @@ import { OfflineBanner } from './components/Common/OfflineBanner.tsx';
 import { normalizeText } from './utils/text.ts';
 import { Loader2, Trees, X } from 'lucide-react';
 import { pageRoute, sitePath } from './utils/routing.ts';
+import { MobilityHub } from './components/MobilityHub.tsx';
 
 const SourcesPage = lazy(() =>
   import('./pages/SourcesPage.tsx').then((module) => ({ default: module.SourcesPage }))
@@ -312,6 +313,7 @@ export default function App() {
               onSelectAllCategories={handleSelectAllCategories}
               categoryCounts={categoryCounts}
             />
+            <MobilityHub points={allPoints} selectedPoint={selectedPoint} />
           </main>
         </div>
       )}
