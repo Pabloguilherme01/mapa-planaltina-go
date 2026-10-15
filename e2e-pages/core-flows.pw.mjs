@@ -1,36 +1,31 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { readFile } from 'node:fs/promises';
 
 const BASE_PATH = '/mapa-planaltina-go/';
 
-test('dados municipais: IBGE, filtros escolares e exportações auditáveis', async ({ page }) => {
+test('consulta municipal: dados e filtros sem downloads ou exportações', async ({ page }) => {
   await page.goto('fontes/');
   const context = page.getByRole('region', { name: 'Planaltina em números — IBGE' });
   await expect(context).toBeVisible();
   await expect(context).toContainText('105.031');
   await expect(context).toContainText('Córrego Rico');
   await expect(context).toContainText('São Gabriel de Goiás');
-  const jsonDownload = page.waitForEvent('download');
-  await context.getByRole('button', { name: 'Baixar dados IBGE (JSON)' }).click();
-  const json = JSON.parse(await readFile(await (await jsonDownload).path(), 'utf8'));
-  expect(json.municipalityCode).toBe('5217609');
-  expect(json.referenceYear).toBe('2022');
-  expect(json.indicators).toHaveLength(3);
+  await expect(page.getByRole('button', { name: /baixar|exportar/i })).toHaveCount(0);
+  await expect(page.locator('a[download]')).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Ver registros em revisão territorial' })).toHaveCount(0);
+  const provenance = page.locator('details').filter({ hasText: 'Como classificamos a procedência' });
+  await expect(provenance).not.toHaveAttribute('open', '');
+  await provenance.locator('summary').click();
+  await expect(provenance).toHaveAttribute('open', '');
   const schools = page.getByRole('region', { name: 'Educação — cadastro oficial SEDUC' });
   await schools.getByLabel('Buscar escola por nome, código ou bairro').fill('mario andrade');
   await schools.getByLabel('Rede de ensino').selectOption('Estadual');
   await schools.getByLabel('Zona da escola').selectOption('Urbana');
   await expect(schools.getByRole('status')).toHaveText('1 registro encontrado');
-  const csvDownload = page.waitForEvent('download');
-  await schools.getByRole('button', { name: 'Baixar escolas filtradas (CSV)' }).click();
-  const csv = await readFile(await (await csvDownload).path(), 'utf8');
-  expect(csv).toContain('52050807');
-  expect(csv).toContain('2024');
-  expect(csv).not.toContain('52050785');
+  await expect(schools).toContainText('52050807');
+  await expect(schools).toContainText('2024');
   await schools.getByLabel('Rede de ensino').selectOption('Privada');
   await expect(schools.getByRole('status')).toHaveText('0 registros encontrados');
-  await expect(schools.getByRole('button', { name: 'Baixar escolas filtradas (CSV)' })).toBeDisabled();
   await schools.getByRole('button', { name: 'Limpar filtros escolares' }).click();
   await expect(schools.getByRole('status')).toHaveText('63 registros encontrados');
   const accessibility = await new AxeBuilder({ page }).include('[aria-labelledby="municipal-context-title"]').include('[aria-labelledby="schools-title"]').analyze();
@@ -40,11 +35,15 @@ test('dados municipais: IBGE, filtros escolares e exportações auditáveis', as
 test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Filtro mobile específico');
   await page.goto('./');
-  await page.getByLabel('Origem dos pontos').selectOption('demo');
-  await expect(page.locator('#mobile-results-heading')).toHaveText('20 pontos no catálogo');
-  await page.getByLabel('Origem dos pontos').selectOption('official');
-  await expect(page.locator('#mobile-results-heading')).not.toHaveText('20 pontos no catálogo');
-  await expect(page.locator('#mobile-results-heading')).not.toHaveText('0 pontos no catálogo');
+  const response = await page.request.get(`${new URL(BASE_PATH, page.url())}data/points.json`);
+  expect(response.ok()).toBeTruthy();
+  const { data: points } = await response.json();
+  expect(points.some(point => !point.isDemo)).toBeTruthy();
+  for (const provenance of ['demo', 'official', 'verified_open_data', 'community', 'all']) {
+    await page.getByLabel('Origem dos pontos').selectOption(provenance);
+    const expected = points.filter(point => provenance === 'all' || point.provenanceMeta.provenance === provenance).length;
+    await expect(page.locator('#mobile-results-heading')).toHaveText(`${expected} pontos no catálogo`);
+  }
 });
 
 test('planejador: modos, viagem privada, economia e consulta offline', async ({ page, context }) => {
@@ -56,6 +55,17 @@ test('planejador: modos, viagem privada, economia e consulta offline', async ({ 
   const data = await response.json();
   const points = Array.isArray(data) ? data : data.data;
   const real = points.find(point => !point.isDemo && point.provenanceMeta.verificationStatus === 'verified');
+  await planner.getByLabel('Buscar destino por nome ou endereço').fill(real.id);
+  await expect(planner.getByLabel('Destino real').locator('option')).toHaveCount(2);
+  await planner.getByLabel('Buscar destino por nome ou endereço').fill('destino-inexistente-qa');
+  await expect(planner.getByText('0 destinos disponíveis', { exact: true })).toBeVisible();
+  await expect(planner.getByRole('link', { name: 'Abrir navegação externa' })).toHaveCount(0);
+  await planner.getByLabel('Buscar destino por nome ou endereço').fill('');
+  await planner.getByLabel('Somente vínculo SUS informado no CNES').check();
+  const susIds = points.filter(point => !point.isDemo && point.tags.includes('Vínculo SUS: SIM')).map(point => point.id).sort();
+  const actualIds = await planner.getByLabel('Destino real').locator('option').evaluateAll(options => options.map(option => option.value).filter(Boolean).sort());
+  expect(actualIds).toEqual(susIds);
+  await planner.getByLabel('Somente vínculo SUS informado no CNES').uncheck();
   await planner.getByLabel('Destino real').selectOption(real.id);
   await planner.getByLabel('Deslocamento').selectOption('walking');
   await expect(planner.getByRole('link', { name: 'Abrir navegação externa' })).toHaveAttribute('href', /travelmode=walking/);

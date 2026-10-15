@@ -27,4 +27,4 @@ Testes unitários cobrem URLs de deslocamento sem origem, coordenadas inválidas
 
 ## Próximas etapas
 
-Adaptar busca de destinos e favoritos múltiplos; filtros de proximidade apenas após consentimento; exportação com procedência; instalação guiada e preferências acessíveis. Integrações viárias, ônibus e ANP devem entrar separadamente com contratos, fallback auditável e testes municipais. Marcar cada linha como concluída somente com implementação e verificação próprias.
+Busca de destinos por nome/endereço/CNES e filtro SUS foram adaptados. Avançar favoritos múltiplos, proximidade após consentimento, instalação guiada e preferências acessíveis. Downloads e exportações foram removidos por solicitação do usuário; manter a experiência centrada em mapa e planejamento. Integrações viárias, ônibus e ANP devem entrar separadamente com contratos, fallback auditável e testes municipais. Marcar cada linha como concluída somente com implementação e verificação próprias.
