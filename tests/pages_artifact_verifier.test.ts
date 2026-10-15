@@ -159,6 +159,9 @@ it.each([
   ['URL sem host', 'sourceUrl', 'https://'],
   ['URL com credenciais', 'sourceUrl', 'https://user:password@example.org/data'],
   ['data inválida', 'retrievedAt', 'não é uma data'],
+  ['dia inexistente', 'retrievedAt', '2026-02-30T00:00:00Z'],
+  ['data futura', 'retrievedAt', '9999-01-01T00:00:00Z'],
+  ['data sem horário UTC', 'retrievedAt', '2026-10-14'],
   ['fonte vazia', 'sourceName', '   '],
   ['licença vazia', 'license', '   '],
 ])('bloqueia ponto real com %s', async (_label, field, value) => {

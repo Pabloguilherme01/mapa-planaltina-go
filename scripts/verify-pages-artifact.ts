@@ -1,3 +1,4 @@
+import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join, resolve } from 'node:path';
@@ -71,7 +72,7 @@ function verifyRealPoint(point: ArtifactPoint): void {
     !hasText(provenance.sourceName) ||
     !isSourceUrl(provenance.sourceUrl) ||
     !hasText(provenance.license) ||
-    !hasText(provenance.retrievedAt) || !Number.isFinite(Date.parse(provenance.retrievedAt))
+    !isSnapshotDate(provenance.retrievedAt)
   ) {
     throw new Error(
       `Publicação bloqueada: ponto real ${point.id || '(sem id)'} sem proveniência verificável, coordenadas válidas ou metadados obrigatórios.`

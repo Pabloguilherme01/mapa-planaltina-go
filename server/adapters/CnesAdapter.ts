@@ -1,3 +1,4 @@
+import { isSnapshotDate } from '../../src/utils/snapshotDate.ts';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { MapPoint, MUNICIPALITY_CODE, SourceInfo } from '../../src/types/index.ts';
@@ -154,8 +155,7 @@ export class CnesAdapter implements SourceAdapter {
     if (!this.snapshotPath) return null;
     try {
       const saved = JSON.parse(await readFile(this.snapshotPath, 'utf8'));
-      if (saved.version !== 1 || typeof saved.retrievedAt !== 'string' ||
-          !Number.isFinite(Date.parse(saved.retrievedAt)) || !Array.isArray(saved.records) ||
+      if (saved.version !== 1 || !isSnapshotDate(saved.retrievedAt) || !Array.isArray(saved.records) ||
           saved.records.length === 0 || saved.records.length > 10_000) return null;
       const points = saved.records.map((record: CnesDatasetRecord) => {
         if (!record || Object.values(record).some(value => typeof value !== 'string')) return null;
