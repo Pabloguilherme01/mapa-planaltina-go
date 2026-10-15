@@ -35,11 +35,15 @@ test('consulta municipal: dados e filtros sem downloads ou exportações', async
 test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Filtro mobile específico');
   await page.goto('./');
-  await page.getByLabel('Origem dos pontos').selectOption('demo');
-  await expect(page.locator('#mobile-results-heading')).toHaveText('20 pontos no catálogo');
-  await page.getByLabel('Origem dos pontos').selectOption('official');
-  await expect(page.locator('#mobile-results-heading')).not.toHaveText('20 pontos no catálogo');
-  await expect(page.locator('#mobile-results-heading')).not.toHaveText('0 pontos no catálogo');
+  const response = await page.request.get(`${new URL(BASE_PATH, page.url())}data/points.json`);
+  expect(response.ok()).toBeTruthy();
+  const { data: points } = await response.json();
+  expect(points.some(point => !point.isDemo)).toBeTruthy();
+  for (const provenance of ['demo', 'official', 'verified_open_data', 'community', 'all']) {
+    await page.getByLabel('Origem dos pontos').selectOption(provenance);
+    const expected = points.filter(point => provenance === 'all' || point.provenanceMeta.provenance === provenance).length;
+    await expect(page.locator('#mobile-results-heading')).toHaveText(`${expected} pontos no catálogo`);
+  }
 });
 
 test('planejador: modos, viagem privada, economia e consulta offline', async ({ page, context }) => {
