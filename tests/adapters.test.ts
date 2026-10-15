@@ -258,6 +258,31 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
     expect(adapter.dataMode).toBe('snapshot_fallback');
     expect(adapter.liveError).toMatch(/duplicad/i);
   });
+  it('compartilha uma coleta entre chamadas concorrentes de pontos e status', async () => {
+    const fetchMock = vi.fn(async () => Response.json(cnesFixture));
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = new CnesAdapter();
+    const [first, second, status] = await Promise.all([
+      adapter.fetchPoints(), adapter.fetchPoints(), adapter.checkStatus(),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(first).toEqual(second);
+    expect(status.status).toBe('connected');
+    expect(first[0]).not.toBe(second[0]);
+  });
+
+  it.each(['live', 'fallback'])('isola alterações feitas pelo consumidor no modo %s', async (mode) => {
+    vi.stubGlobal('fetch', mode === 'live'
+      ? vi.fn(async () => Response.json(cnesFixture))
+      : vi.fn().mockRejectedValue(new Error('offline')));
+    const adapter = new CnesAdapter();
+    const first = await adapter.fetchPoints();
+    const original = structuredClone(first);
+    first[0].name = 'ALTERADO';
+    first[0].tags.push('ALTERADO');
+    first[0].provenanceMeta.verificationStatus = 'pending';
+    expect(await adapter.fetchPoints()).toEqual(original);
+  });
   it('adaptadores ainda não configurados mantêm datas nulas sem inventar consulta', async () => {
     const prefStatus = await prefeituraAdapter.checkStatus();
     expect(prefStatus.status).toBe('not_configured');
