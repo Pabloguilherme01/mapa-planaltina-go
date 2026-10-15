@@ -185,6 +185,7 @@ export class CnesAdapter implements SourceAdapter {
   }
 
   private cachedPoints: MapPoint[] | null = null;
+  private pendingPoints: Promise<MapPoint[]> | null = null;
   private lastRetrievedAt: string | null = null;
   private lastCheckedAt: string | null = null;
   private mode: CnesDataMode | null = null;
@@ -255,7 +256,14 @@ export class CnesAdapter implements SourceAdapter {
   }
 
   async fetchPoints(): Promise<MapPoint[]> {
-    if (this.cachedPoints) return [...this.cachedPoints];
+    if (this.cachedPoints) return structuredClone(this.cachedPoints);
+    const pending = this.pendingPoints ?? (this.pendingPoints = this.loadPoints().finally(() => {
+      this.pendingPoints = null;
+    }));
+    return structuredClone(await pending);
+  }
+
+  private async loadPoints(): Promise<MapPoint[]> {
 
     this.lastCheckedAt = new Date().toISOString();
     try {
