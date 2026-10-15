@@ -1,0 +1,178 @@
+{
+  "version": 1,
+  "retrievedAt": "2026-10-15T11:55:53.549Z",
+  "sourceSha256": "28814cd2dad3c593e2d41608e5159461eaf4c211123f92ddcab65461d7afa535",
+  "geometry": "not_provided",
+  "items": [
+    {
+      "id": "1292386",
+      "authorization": "PR/GO0242333",
+      "name": "3S 04 COMERCIO DE DERIVADOS DE PETROLEO LTDA",
+      "address": "QUADRA 04, MR1,  SN • LOTE  16",
+      "district": "SETOR NORTE",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1292258",
+      "authorization": "PR/GO0242244",
+      "name": "3S IMIGRANTES COMERCIO DE DERIVADOS DE PETROLEO LTDA",
+      "address": "QUADRA 12 MR 09,  SN • LOTE  25",
+      "district": "SETOR OESTE",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1161474",
+      "authorization": "PR/GO0079004",
+      "name": "AB-COMERCIO DE COMBUSTIVEIS LTDA",
+      "address": "AVENIDA PLANALTO S/N GO 118 KM,  32 • KM    32",
+      "district": "SAO GABRIEL DE GOIAS",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1274169",
+      "authorization": "PR/GO0210197",
+      "name": "AUTO POSTO INDAIA III LTDA",
+      "address": "RODOVIA GO 118 KM 05 CHACARAS 1882 E 1882K,  SN",
+      "district": "LOTEAMENTO CHACARAS SANTA MARIA",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1319810",
+      "authorization": "PR/GO0253151",
+      "name": "AUTO POSTO PLANALTINA LTDA",
+      "address": "QUADRA QC 1,  SN • LOTE  01",
+      "district": "ITAPUÃ I",
+      "brand": "IPIRANGA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1318339",
+      "authorization": "PR/GO0252651",
+      "name": "BM REDE DE POSTOS WK LTDA",
+      "address": "QUADRA QUADRA 42,  S/N • LOTE  02 A 14",
+      "district": "ITAPUA II",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1291542",
+      "authorization": "PR/GO0241787",
+      "name": "F1 COMBUSTIVEIS E DERIVADOS LTDA",
+      "address": "QUADRA QI 01,  SN • LOTE  03",
+      "district": "ITAPUA I",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1278707",
+      "authorization": "PR/GO0216945",
+      "name": "FUTURO COMERCIO DE COMBUSTIVEIS E DERIVADOS LTDA",
+      "address": "QUADRA QUADRA 05,  MR 01 • LOTE  16 A 20",
+      "district": "SETOR NORTE",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1040988",
+      "authorization": "PR/GO0191490",
+      "name": "J&M COMERCIO DE COMBUSTIVEIS LTDA",
+      "address": "AREA ESPECIAL,  2-B",
+      "district": "SETOR OESTE",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1003067",
+      "authorization": "PR/GO0012356",
+      "name": "MF COMBUSTIVEIS LUBRIFICANTES & SERVICOS LTDA",
+      "address": "QUADRA 7 MR 10,  SN • LOTE  17 A 22",
+      "district": "SETOR LESTE",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1319430",
+      "authorization": "PR/GO0253048",
+      "name": "PETROLL SETOR SUL LUBRIFICANTES E DERIVADOS LTDA",
+      "address": "QUADRA QA 12,  SN • LOTE  11 A 13 MC",
+      "district": "SETOR SUL",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1299049",
+      "authorization": "PR/GO0245311",
+      "name": "POSTO DE COMBUSTIVEIS ABASTECE CRISTAL LTDA",
+      "address": "QUADRA QA 5 MC,  S/N • LOTE  06 07 08 MC",
+      "district": "SETOR LESTE",
+      "brand": "VIBRA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1289923",
+      "authorization": "PR/GO0239344",
+      "name": "POSTO DE COMBUSTIVEIS ABASTECE ITAPUA LTDA",
+      "address": "QUADRA QR 4,  S/N • LOTE  33",
+      "district": "ITAPUÃ I",
+      "brand": "VIBRA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1303456",
+      "authorization": "PR/GO0247389",
+      "name": "POSTO DE COMBUSTIVEIS ABASTECE TOTAL VILLE LTDA",
+      "address": "QUADRA QA 5 MR,  S/N • LOTE  06 07 08 MR",
+      "district": "SETOR LESTE",
+      "brand": "VIBRA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1310911",
+      "authorization": "PR/GO0250127",
+      "name": "POSTO IDEAL SETOR LESTE PLANALTINA LTDA",
+      "address": "SETOR DE MANSOES LESTE,  24/B",
+      "district": "SETOR LESTE",
+      "brand": "IPIRANGA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1263389",
+      "authorization": "PR/GO0199116",
+      "name": "PRIME DERIVADOS DE PETROLEO LTDA",
+      "address": "QUADRA 2 MR 1,  SN • LOTE  16",
+      "district": "SETOR NORTE",
+      "brand": "BANDEIRA BRANCA",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    },
+    {
+      "id": "1009391",
+      "authorization": "PR/GO0009886",
+      "name": "VR COMBUSTIVEIS LTDA",
+      "address": "RODOVIA GO 118,  S/N • KM    05                  CXPST 021",
+      "district": "LOTEAMENTO CHACARAS SANTA MARIA",
+      "brand": "RAIZEN",
+      "municipality": "PLANALTINA",
+      "uf": "GO"
+    }
+  ]
+}
