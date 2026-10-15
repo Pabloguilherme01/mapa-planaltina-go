@@ -1,3 +1,5 @@
+import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { MapPoint, MUNICIPALITY_CODE, SourceInfo } from '../../src/types/index.ts';
 import { CNES_FALLBACK_CAPTURED_AT, CNES_FALLBACK_POINTS } from '../data/cnesPlanaltinaFallback.ts';
 import { SourceAdapter } from './SourceAdapter.ts';
@@ -144,6 +146,41 @@ export class CnesAdapter implements SourceAdapter {
   readonly url = CNES_GOIAS_RESOURCE_URL;
   readonly license = CNES_LICENSE_NOTICE;
 
+  constructor(private readonly snapshotPath?: string) {}
+
+  private async restoredSnapshot(): Promise<MapPoint[] | null> {
+    if (!this.snapshotPath) return null;
+    try {
+      const saved = JSON.parse(await readFile(this.snapshotPath, 'utf8'));
+      if (saved.version !== 1 || typeof saved.retrievedAt !== 'string' ||
+          !Number.isFinite(Date.parse(saved.retrievedAt)) || !Array.isArray(saved.records) ||
+          saved.records.length === 0 || saved.records.length > 10_000) return null;
+      const points = saved.records.map((record: CnesDatasetRecord) => {
+        if (!record || Object.values(record).some(value => typeof value !== 'string')) return null;
+        return mapCnesRecordToPoint(record, saved.retrievedAt);
+      });
+      if (points.some((point: MapPoint | null) => point === null)) return null;
+      this.lastRetrievedAt = saved.retrievedAt;
+      return points;
+    } catch { return null; }
+  }
+
+  private async preserveSnapshot(records: CnesDatasetRecord[], retrievedAt: string): Promise<void> {
+    if (!this.snapshotPath) return;
+    const fields: (keyof CnesDatasetRecord)[] = ['cnes', 'razao_social', 'nome_fantasia',
+      'logradouro', 'numero', 'complemento', 'bairro', 'cep', 'latitude', 'longitude',
+      'codigo_ibge', 'uf', 'municipio', 'tipo_estabelecimento', 'vinculo_sus'];
+    const safeRecords = records.filter(record => mapCnesRecordToPoint(record, retrievedAt))
+      .map(record => Object.fromEntries(fields.map(key => [key, normalized(record[key])])));
+    try {
+      await mkdir(dirname(this.snapshotPath), { recursive: true });
+      await writeFile(`${this.snapshotPath}.tmp`, JSON.stringify({ version: 1, retrievedAt, records: safeRecords }));
+      await rename(`${this.snapshotPath}.tmp`, this.snapshotPath);
+    } catch (error) {
+      console.warn('Não foi possível persistir snapshot CNES; coleta live mantida.', error instanceof Error ? error.message : String(error));
+    }
+  }
+
   private cachedPoints: MapPoint[] | null = null;
   private lastRetrievedAt: string | null = null;
   private lastCheckedAt: string | null = null;
@@ -201,6 +238,7 @@ export class CnesAdapter implements SourceAdapter {
         throw new Error('Fonte CNES/SES-GO não retornou pontos georreferenciados de Planaltina');
       }
 
+      await this.preserveSnapshot(records, retrievedAt);
       this.mode = 'live';
       this.lastRetrievedAt = retrievedAt;
       this.lastLiveError = null;
@@ -219,6 +257,12 @@ export class CnesAdapter implements SourceAdapter {
       return [...this.cachedPoints];
     } catch (error: unknown) {
       this.lastLiveError = error instanceof Error ? error.message : String(error);
+      const restored = await this.restoredSnapshot();
+      if (restored) {
+        this.mode = 'snapshot_fallback';
+        this.cachedPoints = restored;
+        return [...restored];
+      }
       if (CNES_FALLBACK_POINTS.length === 0) throw error;
 
       this.mode = 'snapshot_fallback';

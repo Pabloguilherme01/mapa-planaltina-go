@@ -1,3 +1,6 @@
+import { mkdtemp, readFile, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { IbgeAdapter } from '../server/adapters/IbgeAdapter.ts';
 import { PrefeituraAdapter } from '../server/adapters/PrefeituraAdapter.ts';
@@ -214,6 +217,34 @@ describe('Adaptadores de Dados Modulares (SourceAdapter)', () => {
     await adapter.fetchPoints();
     expect(adapter.dataMode).toBe('snapshot_fallback');
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+  it('preserva coleta live entre instâncias sem armazenar contatos', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'cnes-cache-'));
+    try {
+      const path = join(dir, 'snapshot.json');
+      const record = { ...cnesFixture.result.records[0], telefone: 'PRIVADO', email: 'PRIVADO' };
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ success: true, result: { total: 1, records: [record] } })));
+      const live = new CnesAdapter(path);
+      const original = await live.fetchPoints();
+      const saved = await readFile(path, 'utf8');
+      expect(saved).not.toContain('PRIVADO');
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+      const restored = new CnesAdapter(path);
+      expect(await restored.fetchPoints()).toEqual(original);
+      expect((await restored.checkStatus()).status).toBe('snapshot_fallback');
+      expect(await readFile(path, 'utf8')).toBe(saved);
+    } finally { await rm(dir, { recursive: true, force: true }); }
+  });
+
+  it('rejeita snapshot persistido adulterado e usa contingência versionada', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'cnes-cache-'));
+    try {
+      const path = join(dir, 'snapshot.json');
+      await writeFile(path, JSON.stringify({ version: 1, retrievedAt: 'invalid', records: cnesFixture.result.records }));
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
+      const adapter = new CnesAdapter(path);
+      expect((await adapter.fetchPoints())[0].id).toBe('cnes-0112666');
+    } finally { await rm(dir, { recursive: true, force: true }); }
   });
   it('adaptadores ainda não configurados mantêm datas nulas sem inventar consulta', async () => {
     const prefStatus = await prefeituraAdapter.checkStatus();

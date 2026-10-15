@@ -126,3 +126,9 @@ A ordem recomendada segue o mesmo padrão de qualidade desta camada CNES:
 ## Verificação
 
 Há testes para busca, filtros, procedência, integração CNES live, fallback last-known-good, rejeição de geometria inválida, falha do IBGE, assistente, roteamento do Pages, disponibilidade do Google Maps, acessibilidade, PWA, reload offline e integridade do artefato. O Browser QA lê os snapshots publicados, exige ao menos um ponto real de Saúde, valida a procedência e abre sua ficha para confirmar que a UI o apresenta como dado real verificado.
+
+## Retenção CNES entre builds
+
+O Pages restaura um cache do snapshot CNES e o adapter tenta a fonte ao vivo primeiro. Somente uma coleta completa e validada substitui o arquivo, por gravação temporária e renomeação. São persistidos apenas campos cadastrais usados no mapa, sem telefone, e-mail ou URL de contato. Na falha live, os registros persistidos são revalidados pelo filtro municipal e coordenadas; conservam a data original e status snapshot_fallback. Snapshot inválido ou ausente usa a contingência versionada.
+
+PRs podem restaurar cache, mas não gravam o cache de produção. O cache só é salvo no fluxo da main após verify:pages. O cache do GitHub pode expirar/ser removido; não equivale a arquivo histórico permanente. O primeiro snapshot completo só estará disponível após uma coleta live bem-sucedida com essa versão. Para uso local, configure CNES_SNAPSHOT_PATH com um arquivo fora do controle de versão. Não sincronize caches entre municípios.

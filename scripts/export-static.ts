@@ -4,7 +4,7 @@ import { IbgeAdapter, PrefeituraAdapter, CnesAdapter, InepAdapter, OsmAdapter } 
 
 const demoPoints = await pointsRepository.list();
 const ibge = new IbgeAdapter();
-const cnes = new CnesAdapter();
+const cnes = new CnesAdapter(process.env.CNES_SNAPSHOT_PATH);
 const prefeitura = new PrefeituraAdapter();
 const inep = new InepAdapter();
 const osm = new OsmAdapter();
