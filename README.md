@@ -132,3 +132,19 @@ Há testes para busca, filtros, procedência, integração CNES live, fallback l
 O Pages restaura um cache do snapshot CNES e o adapter tenta a fonte ao vivo primeiro. Somente uma coleta completa e validada substitui o arquivo, por gravação temporária e renomeação. São persistidos apenas campos cadastrais usados no mapa, sem telefone, e-mail ou URL de contato. Na falha live, os registros persistidos são revalidados pelo filtro municipal e coordenadas; conservam a data original e status snapshot_fallback. Snapshot inválido ou ausente usa a contingência versionada.
 
 PRs podem restaurar cache, mas não gravam o cache de produção. O cache só é salvo no fluxo da main após verify:pages. O cache do GitHub pode expirar/ser removido; não equivale a arquivo histórico permanente. O primeiro snapshot completo só estará disponível após uma coleta live bem-sucedida com essa versão. Para uso local, configure CNES_SNAPSHOT_PATH com um arquivo fora do controle de versão. Não sincronize caches entre municípios.
+
+## Entrega cartográfica e catálogo de Educação
+
+Mapa padrão: Leaflet carregado sob demanda, com limite simplificado oficial IBGE (malhas API v3, codarea 5217609), agrupamento por proximidade no zoom e pontos geográficos. Não usar o antigo GeoJSON didático para delimitação real. A simplificação não substitui cadastro/levantamento de precisão. CNES coletado é preservado no cache; na publicação, pontos fora da malha são separados em data/territorial-review.json para revisão, sem mover coordenadas. A contagem real do mapa pode ser menor que a coleta da fonte.
+
+Ruas online OpenStreetMap são opcionais, com atribuição visível, carregadas só por ação do usuário. Nenhum prefetch ou cache offline de tiles externos; service worker intercepta apenas mesma origem. Sem rede, vetor municipal e catálogo continuam disponíveis. Serviço de tiles não tem SLA; para uso de grande escala, escolher fornecedor/hospedagem com capacidade e termos adequados.
+
+Educação: 63 registros SEDUC da referência 2024, coletados do recurso CSV escolas_endereco_seduc_2025, disponíveis em Fontes com busca por código/nome/bairro. Filtragem por Município=Planaltina e maior ano efetivamente disponível; telefones excluídos. CSV não contém geometria, logo não se transforma endereço em pin. INEP e coordenadas escolares permanecem integração pendente. Tentativa complementar Overpass bloqueada com HTTP 406; nenhum dado fictício usado no lugar.
+
+Ônibus: canal oficial ANTT vinculado em Fontes. Linhas, paradas, GTFS, tarifas e horários operacionais ainda não foram validados; não há roteamento ou previsão de chegada. Pesquisa comercial permanece separada, sem pins até existir geometria verificável. API Gemini/rotas com custos não foram ativadas; o assistente local distingue REAL/DEMO e mostra fontes e datas.
+
+Operação: coleta CNES agendada às segundas-feiras 12h UTC (9h São Paulo), sujeita à disponibilidade do GitHub/fontes. Snapshots publicados arquivados por 90 dias em Artifacts com SHA/run, além do cache de contingência. Isso é retenção limitada, não arquivo eterno. Revisar escolas anualmente na fonte SEDUC antes de atualizar o snapshot versionado. Indicação de idade mostra aviso após 30 dias, sem descartar automaticamente o último snapshot válido.
+
+Rollback: abrir PR revertendo o squash desta entrega, aprovar testes/tipos/build/Browser QA e integrar para gerar novo Pages. Manter a última versão dos artefatos e verificar points/sources/territorial-review após deploy. Não alterar coordenadas da fonte para passar no teste territorial.
+
+QA: Chromium mobile/desktop e WebKit emulado iPhone no CI, um worker por vez; não equivale a teste em aparelhos físicos. Antes de anunciar navegação de campo, validar pessoalmente em iPhone/Android, rede móvel e condições de acesso locais. Nenhuma promessa de paridade territorial completa com o Trajeto.

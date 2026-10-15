@@ -39,8 +39,8 @@ export const AssistantDrawer: React.FC<AssistantDrawerProps> = ({
       id: 'welcome',
       role: 'assistant',
       content:
-        'Olá! Sou o Assistente Cívico do Mapa de Planaltina, Goiás (IBGE 5217609). Posso responder perguntas sobre os pontos demonstrativos cadastrados nas 9 categorias (Saúde, Educação, Transporte, Segurança, Serviços Públicos, Comércio, Lazer, Meio Ambiente e Rural).',
-      isDemoNotice: 'Modo demonstrativo — locais ilustrativos, não use para deslocamento.',
+        'Olá! Sou o Assistente Cívico do Mapa de Planaltina, Goiás (IBGE 5217609). Posso consultar o snapshot carregado, distinguindo registros reais e demonstrativos nas 9 categorias (Saúde, Educação, Transporte, Segurança, Serviços Públicos, Comércio, Lazer, Meio Ambiente e Rural).',
+      isDemoNotice: 'Consulta local com fonte e data. DEMO é ilustrativo; confirme funcionamento e atendimento nos canais oficiais.',
     },
   ]);
   const [inputValue, setInputValue] = useState<string>('');

@@ -1,3 +1,4 @@
+import { inPlanaltina } from '../src/utils/territory.ts';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { pointsRepository } from '../server/repository/PointsRepository.ts';
 import { IbgeAdapter, PrefeituraAdapter, CnesAdapter, InepAdapter, OsmAdapter } from '../server/adapters/SourceAdapter.ts';
@@ -13,7 +14,9 @@ const osm = new OsmAdapter();
 // quando o órgão bloqueia/indisponibiliza a consulta, preserva somente o último
 // snapshot real previamente validado. A publicação continua bloqueada se nem
 // atualização nem fallback fornecerem ao menos um ponto real verificável.
-const realHealthPoints = await cnes.fetchPoints();
+const collectedHealthPoints = await cnes.fetchPoints();
+const realHealthPoints = collectedHealthPoints.filter(point => inPlanaltina(point.lat, point.lng));
+const territorialReview = collectedHealthPoints.filter(point => !inPlanaltina(point.lat, point.lng));
 if (realHealthPoints.length === 0) {
   throw new Error('Publicação bloqueada: nenhum ponto real verificado do CNES foi obtido.');
 }
@@ -43,6 +46,8 @@ const data = [...realHealthPoints, ...demoPoints];
 const sources = await Promise.all(
   [ibge, prefeitura, cnes, inep, osm].map((adapter) => adapter.checkStatus())
 );
+const cnesStatus = sources.find(source => source.id === 'cnes');
+if (cnesStatus) cnesStatus.notes += ` Triagem pela malha IBGE: ${realHealthPoints.length} pins aceitos; ${territorialReview.length} registros separados para revisão.`;
 const ibgeStatus = sources.find((source) => source.id === 'ibge');
 if (ibgeStatus?.status === 'connected') {
   ibgeStatus.statusMessage =
@@ -66,6 +71,7 @@ await writeFile(
       total: data.length,
       count: data.length,
       realCount: realHealthPoints.length,
+      territorialReviewCount: territorialReview.length,
       demoCount: demoPoints.length,
       municipality: 'Planaltina, Goiás',
       ibgeCode: '5217609',
@@ -90,4 +96,5 @@ await writeFile(
     },
   })
 );
+await writeFile('public/data/territorial-review.json', JSON.stringify({ source: 'CNES/SES-GO', boundary: 'IBGE 5217609 — malha simplificada', reason: 'Fora da malha simplificada; requer revisão, sem correção automática de coordenadas.', data: territorialReview }));
 await writeFile('public/data/municipality.json', JSON.stringify(municipality));

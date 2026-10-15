@@ -1,3 +1,4 @@
+import { inPlanaltina } from '../src/utils/territory.ts';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -136,6 +137,7 @@ export async function verifyPagesArtifact(root = 'dist'): Promise<void> {
     throw new Error('Publicação bloqueada: existem pontos sem classificação explícita DEMO/real.');
   }
   realPoints.forEach(verifyRealPoint);
+  if (realPoints.some(point => !inPlanaltina(point.lat!, point.lng!))) throw new Error('Publicação bloqueada: ponto real fora da malha municipal IBGE.');
 
   if (
     !Number.isInteger(points.meta?.realCount) ||

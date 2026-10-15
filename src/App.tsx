@@ -223,6 +223,8 @@ export default function App() {
       <OfflineBanner />
 
       <Navbar
+        realCount={allPoints.filter(point => !point.isDemo).length}
+        demoCount={allPoints.filter(point => point.isDemo).length}
         activeTab={activeTab}
         onSelectTab={handleTabSelect}
         onRequestGeolocation={() => setIsGeoConsentOpen(true)}

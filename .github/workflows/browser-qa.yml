@@ -25,8 +25,8 @@ jobs:
         run: npm ci
       - name: Instalar ferramentas de QA sem alterar o lockfile
         run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1 @axe-core/playwright@4.13.0
-      - name: Preparar Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Preparar Chromium e WebKit
+        run: npx playwright install --with-deps chromium webkit
       - name: Executar fluxos mobile, desktop, PWA e acessibilidade
         run: npx playwright test --config=playwright.pages.config.mjs
       - name: Preservar traces e screenshots em falhas
