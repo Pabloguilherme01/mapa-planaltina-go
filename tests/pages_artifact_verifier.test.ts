@@ -180,3 +180,14 @@ it.each(['realCount', 'demoCount'])('exige contagem explícita %s', async (field
   await writeFile(path, JSON.stringify(payload));
   await expect(verifyPagesArtifact(root)).rejects.toThrow(/Count/);
 });
+
+it.each(['duplicate', 'blank', 'missing'])('bloqueia identidade de ponto inválida: %s', async (mode) => {
+  const root = await makeArtifact({ realPoint: 'valid' });
+  const path = join(root, 'data', 'points.json');
+  const payload = JSON.parse(await readFile(path, 'utf8'));
+  if (mode === 'duplicate') payload.data[1].id = payload.data[0].id;
+  if (mode === 'blank') payload.data[1].id = '   ';
+  if (mode === 'missing') delete payload.data[1].id;
+  await writeFile(path, JSON.stringify(payload));
+  await expect(verifyPagesArtifact(root)).rejects.toThrow(/identidade|duplicad/i);
+});
