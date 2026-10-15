@@ -1,0 +1,215 @@
+{
+  "version": 1,
+  "retrievedAt": "2026-10-15T11:23:05.370Z",
+  "indicators": [
+    {
+      "id": "93",
+      "variavel": "População residente",
+      "unidade": "Pessoas",
+      "resultados": [
+        {
+          "classificacoes": [],
+          "series": [
+            {
+              "localidade": {
+                "id": "5217609",
+                "nivel": {
+                  "id": "N6",
+                  "nome": "Município"
+                },
+                "nome": "Planaltina (GO)"
+              },
+              "serie": {
+                "2022": "105031"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "6318",
+      "variavel": "Área da unidade territorial",
+      "unidade": "Quilômetros quadrados",
+      "resultados": [
+        {
+          "classificacoes": [],
+          "series": [
+            {
+              "localidade": {
+                "id": "5217609",
+                "nivel": {
+                  "id": "N6",
+                  "nome": "Município"
+                },
+                "nome": "Planaltina (GO)"
+              },
+              "serie": {
+                "2022": "2558.924"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "614",
+      "variavel": "Densidade demográfica",
+      "unidade": "Habitante por quilômetro quadrado",
+      "resultados": [
+        {
+          "classificacoes": [],
+          "series": [
+            {
+              "localidade": {
+                "id": "5217609",
+                "nivel": {
+                  "id": "N6",
+                  "nome": "Município"
+                },
+                "nome": "Planaltina (GO)"
+              },
+              "serie": {
+                "2022": "41.04"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "districts": [
+    {
+      "id": 521760905,
+      "nome": "Planaltina",
+      "municipio": {
+        "id": 5217609,
+        "nome": "Planaltina",
+        "microrregiao": {
+          "id": 52012,
+          "nome": "Entorno de Brasília",
+          "mesorregiao": {
+            "id": 5204,
+            "nome": "Leste Goiano",
+            "UF": {
+              "id": 52,
+              "sigla": "GO",
+              "nome": "Goiás",
+              "regiao": {
+                "id": 5,
+                "sigla": "CO",
+                "nome": "Centro-Oeste"
+              }
+            }
+          }
+        },
+        "regiao-imediata": {
+          "id": 520020,
+          "nome": "Águas Lindas de Goiás",
+          "regiao-intermediaria": {
+            "id": 5206,
+            "nome": "Luziânia - Águas Lindas de Goiás",
+            "UF": {
+              "id": 52,
+              "sigla": "GO",
+              "nome": "Goiás",
+              "regiao": {
+                "id": 5,
+                "sigla": "CO",
+                "nome": "Centro-Oeste"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 521760910,
+      "nome": "Córrego Rico",
+      "municipio": {
+        "id": 5217609,
+        "nome": "Planaltina",
+        "microrregiao": {
+          "id": 52012,
+          "nome": "Entorno de Brasília",
+          "mesorregiao": {
+            "id": 5204,
+            "nome": "Leste Goiano",
+            "UF": {
+              "id": 52,
+              "sigla": "GO",
+              "nome": "Goiás",
+              "regiao": {
+                "id": 5,
+                "sigla": "CO",
+                "nome": "Centro-Oeste"
+              }
+            }
+          }
+        },
+        "regiao-imediata": {
+          "id": 520020,
+          "nome": "Águas Lindas de Goiás",
+          "regiao-intermediaria": {
+            "id": 5206,
+            "nome": "Luziânia - Águas Lindas de Goiás",
+            "UF": {
+              "id": 52,
+              "sigla": "GO",
+              "nome": "Goiás",
+              "regiao": {
+                "id": 5,
+                "sigla": "CO",
+                "nome": "Centro-Oeste"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": 521760915,
+      "nome": "São Gabriel de Goiás",
+      "municipio": {
+        "id": 5217609,
+        "nome": "Planaltina",
+        "microrregiao": {
+          "id": 52012,
+          "nome": "Entorno de Brasília",
+          "mesorregiao": {
+            "id": 5204,
+            "nome": "Leste Goiano",
+            "UF": {
+              "id": 52,
+              "sigla": "GO",
+              "nome": "Goiás",
+              "regiao": {
+                "id": 5,
+                "sigla": "CO",
+                "nome": "Centro-Oeste"
+              }
+            }
+          }
+        },
+        "regiao-imediata": {
+          "id": 520020,
+          "nome": "Águas Lindas de Goiás",
+          "regiao-intermediaria": {
+            "id": 5206,
+            "nome": "Luziânia - Águas Lindas de Goiás",
+            "UF": {
+              "id": 52,
+              "sigla": "GO",
+              "nome": "Goiás",
+              "regiao": {
+                "id": 5,
+                "sigla": "CO",
+                "nome": "Centro-Oeste"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

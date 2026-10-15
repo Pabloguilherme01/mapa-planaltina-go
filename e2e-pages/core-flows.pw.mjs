@@ -1,7 +1,51 @@
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
+import { readFile } from 'node:fs/promises';
 
 const BASE_PATH = '/mapa-planaltina-go/';
+
+test('dados municipais: IBGE, filtros escolares e exportações auditáveis', async ({ page }) => {
+  await page.goto('fontes/');
+  const context = page.getByRole('region', { name: 'Planaltina em números — IBGE' });
+  await expect(context).toBeVisible();
+  await expect(context).toContainText('105.031');
+  await expect(context).toContainText('Córrego Rico');
+  await expect(context).toContainText('São Gabriel de Goiás');
+  const jsonDownload = page.waitForEvent('download');
+  await context.getByRole('button', { name: 'Baixar dados IBGE (JSON)' }).click();
+  const json = JSON.parse(await readFile(await (await jsonDownload).path(), 'utf8'));
+  expect(json.municipalityCode).toBe('5217609');
+  expect(json.referenceYear).toBe('2022');
+  expect(json.indicators).toHaveLength(3);
+  const schools = page.getByRole('region', { name: 'Educação — cadastro oficial SEDUC' });
+  await schools.getByLabel('Buscar escola por nome, código ou bairro').fill('mario andrade');
+  await schools.getByLabel('Rede de ensino').selectOption('Estadual');
+  await schools.getByLabel('Zona da escola').selectOption('Urbana');
+  await expect(schools.getByRole('status')).toHaveText('1 registro encontrado');
+  const csvDownload = page.waitForEvent('download');
+  await schools.getByRole('button', { name: 'Baixar escolas filtradas (CSV)' }).click();
+  const csv = await readFile(await (await csvDownload).path(), 'utf8');
+  expect(csv).toContain('52050807');
+  expect(csv).toContain('2024');
+  expect(csv).not.toContain('52050785');
+  await schools.getByLabel('Rede de ensino').selectOption('Privada');
+  await expect(schools.getByRole('status')).toHaveText('0 registros encontrados');
+  await expect(schools.getByRole('button', { name: 'Baixar escolas filtradas (CSV)' })).toBeDisabled();
+  await schools.getByRole('button', { name: 'Limpar filtros escolares' }).click();
+  await expect(schools.getByRole('status')).toHaveText('63 registros encontrados');
+  const accessibility = await new AxeBuilder({ page }).include('[aria-labelledby="municipal-context-title"]').include('[aria-labelledby="schools-title"]').analyze();
+  expect(accessibility.violations.filter(issue => ['critical', 'serious'].includes(issue.impact))).toEqual([]);
+});
+
+test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Filtro mobile específico');
+  await page.goto('./');
+  await page.getByLabel('Origem dos pontos').selectOption('demo');
+  await expect(page.locator('#mobile-results-heading')).toHaveText('20 pontos no catálogo');
+  await page.getByLabel('Origem dos pontos').selectOption('official');
+  await expect(page.locator('#mobile-results-heading')).not.toHaveText('20 pontos no catálogo');
+  await expect(page.locator('#mobile-results-heading')).not.toHaveText('0 pontos no catálogo');
+});
 
 test('planejador: modos, viagem privada, economia e consulta offline', async ({ page, context }) => {
   await page.goto('./');
@@ -197,5 +241,5 @@ test('cartografia local e cadastro SEDUC distinguem geometria de registro cadast
   await expect(page.getByRole('heading', { name: 'Educação — cadastro oficial SEDUC' })).toBeVisible();
   await page.getByLabel('Buscar escola por nome, código ou bairro').fill('52188442');
   await expect(page.getByText('ESCOLA CRESCER E SABER', { exact: true })).toBeVisible();
-  await expect(page.getByText('1 registros encontrados', { exact: true })).toBeVisible();
+  await expect(page.getByText('1 registro encontrado', { exact: true })).toBeVisible();
 });

@@ -1,6 +1,10 @@
 import { spawnSync } from 'node:child_process';
 import { mkdir, copyFile, writeFile } from 'node:fs/promises';
 import { writePagesPwa } from './pagesPwa.ts';
+import { parseMunicipalContext } from '../src/utils/municipalContext';
+import contextSnapshot from '../src/data/municipalContext.json';
+
+parseMunicipalContext(contextSnapshot);
 
 const SITE_BASE = '/mapa-planaltina-go/';
 
