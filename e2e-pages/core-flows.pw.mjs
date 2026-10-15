@@ -3,6 +3,41 @@ import AxeBuilder from '@axe-core/playwright';
 
 const BASE_PATH = '/mapa-planaltina-go/';
 
+test('planejador: modos, viagem privada, economia e consulta offline', async ({ page, context }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  await expect(planner).toBeVisible();
+  const response = await page.request.get(`${new URL(BASE_PATH, page.url())}data/points.json`);
+  const data = await response.json();
+  const points = Array.isArray(data) ? data : data.data;
+  const real = points.find(point => !point.isDemo && point.provenanceMeta.verificationStatus === 'verified');
+  await planner.getByLabel('Destino real').selectOption(real.id);
+  await planner.getByLabel('Deslocamento').selectOption('walking');
+  await expect(planner.getByRole('link', { name: 'Abrir navegação externa' })).toHaveAttribute('href', /travelmode=walking/);
+  await planner.getByRole('button', { name: 'Salvar viagem neste aparelho' }).click();
+  await expect(planner.getByRole('status')).toContainText('somente neste navegador');
+  await planner.getByLabel('Modo de uso').selectOption('economia');
+  await planner.getByLabel('Distância (km)').fill('100');
+  await planner.getByLabel('Consumo (km/l)').fill('10');
+  await planner.getByLabel('Preço (R$/l)').fill('6');
+  await expect(planner.locator('output')).toContainText(/60,00/);
+  await planner.getByLabel('Destino real').selectOption('');
+  await planner.getByLabel('Modo de uso').selectOption('repetir');
+  await expect(planner.getByLabel('Destino real')).toHaveValue(real.id);
+  await context.setOffline(true);
+  await expect(planner.getByRole('link', { name: 'Abrir navegação externa' })).toHaveCount(0);
+  await expect(planner.getByText(/Consulta offline: endereço/)).toBeVisible();
+  await context.setOffline(false);
+  await planner.getByRole('button', { name: 'Apagar viagem salva' }).click();
+  await planner.getByLabel('Modo de uso').selectOption('repetir');
+  await expect(planner.getByRole('status')).toContainText('Nenhuma viagem válida');
+  const accessibility = await new AxeBuilder({ page }).include('dialog').analyze();
+  expect(accessibility.violations.filter(issue => ['critical', 'serious'].includes(issue.impact))).toEqual([]);
+  await page.keyboard.press('Escape');
+  await expect(planner).not.toBeVisible();
+});
+
 async function waitForServiceWorkerControl(page) {
   await page.evaluate(async () => {
     if (!('serviceWorker' in navigator)) throw new Error('Service worker indisponível');
