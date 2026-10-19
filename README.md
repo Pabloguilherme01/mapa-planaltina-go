@@ -110,7 +110,33 @@ npm start
 
 Configure `GEMINI_API_KEY` somente no ambiente do servidor e `GEMINI_MODEL` conforme o modelo autorizado. Nenhuma chave privada deve ser inserida no frontend ou no repositório. Texto livre de modelo não deve ser promovido a fato territorial sem evidência cadastrada.
 
-Depois de hospedar a API HTTPS com CORS restrito ao site, configure `VITE_API_BASE_URL`. As rotas `/api/points`, `/api/sources`, `/api/municipality`, `/api/assistant` e `/api/health` estão implementadas. A publicação oficial atual continua sendo o snapshot estático do GitHub Pages.
+**API Express opcional — catálogo real somente com snapshot validado.** A API de produção
+requer `NODE_ENV=production` e `CATALOG_SNAPSHOT_PATH` apontando para o
+`points.json` auditado do mesmo build. Se o arquivo estiver ausente, ilegível,
+tiver município diferente de 5217609, registros reais sem procedência/geometria
+ou contagens incompatíveis, o servidor **não inicia**; nunca substitui um snapshot
+inválido por pontos demonstrativos. Sem esta configuração, apenas ambiente de
+desenvolvimento/teste usa o repositório DEMO explícito.
+
+Exemplo de preparação com snapshot local (não é publicação automática de API):
+
+```bash
+npm ci
+npm run build:pages
+npm run build
+NODE_ENV=production CATALOG_SNAPSHOT_PATH=dist/data/points.json npm start
+```
+
+O primeiro build exporta um catálogo municipal auditado; o segundo gera o frontend
+e o servidor Express. Para hospedagem de verdade, exigir HTTPS e limites de custo,
+rever CORS/origens confiáveis, proxy, rate limiting centralizado, segredos e
+observabilidade. O assistente seleciona IDs do catálogo ativo e identifica REAL/DEMO
+por registro; não usa texto livre do Gemini como prova territorial. As rotas
+`/api/points`, `/api/sources`, `/api/municipality`, `/api/assistant` e
+`/api/health` continuam opcionais. `/api/sources` consulta adaptadores e pode
+refletir status de coleta diferente da data do snapshot carregado, que deve ser
+lida no registro. **O GitHub Pages permanece estático e não ativa nem consome
+esta API por configuração de ambiente.**
 
 PostgreSQL/PostGIS permanece como evolução futura para ingestão maior, histórico e consultas espaciais.
 
