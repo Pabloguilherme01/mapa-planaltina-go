@@ -49,6 +49,18 @@ test('favoritos: persistem no aparelho, não duplicam e podem ser removidos offl
   await context.setOffline(false);
 });
 
+test('ANTT: fontes operacionais oficiais são consultáveis sem publicar horários não validados', async ({ page }) => {
+  await page.goto('fontes/');
+  const transport = page.getByRole('region', { name: 'Transporte semiurbano — fontes oficiais ANTT' });
+  await expect(transport).toContainText('Planaltina-GO');
+  await expect(transport).toContainText('não são informados como itinerários confirmados');
+  const hours = transport.getByRole('link', { name: 'Consultar quadro de horários na ANTT' });
+  const lines = transport.getByRole('link', { name: 'Consultar empresas, linhas e tarifas na ANTT' });
+  await expect(hours).toHaveAttribute('href', 'https://www.gov.br/antt/pt-br/assuntos/passageiros/transportesemiurbano/informacoes-operacionais-do-semiurbano/quadro-de-horarios');
+  await expect(lines).toHaveAttribute('href', 'https://www.gov.br/antt/pt-br/assuntos/passageiros/transportesemiurbano/informacoes-operacionais-do-semiurbano/relacao-de-empresas-linhas-e-tarifas');
+  await expect(transport.getByRole('button', { name: /navegar|comprar|partir/i })).toHaveCount(0);
+});
+
 test('consulta municipal: dados e filtros sem downloads ou exportações', async ({ page }) => {
   await page.goto('fontes/');
   const context = page.getByRole('region', { name: 'Planaltina em números — IBGE' });

@@ -187,6 +187,25 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/pt-br/servicos/consultar-linhas-do-servico-rodoviario-interestadual-semiurbano-de-passageiros" target="_blank" rel="noreferrer">Consultar linhas na ANTT</a>
         <p className="my-2 text-sm">Ruas OpenStreetMap são opcionais e online. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>
       </section>
+      <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="antt-official-title">
+        <h2 id="antt-official-title" className="text-lg font-bold">Transporte semiurbano — fontes oficiais ANTT</h2>
+        <p className="my-2 text-sm">
+          A ANTT publica quadros de horários e relações de empresas, linhas e tarifas.
+          Esses documentos são fontes de consulta, não dados operacionais já integrados a este mapa.
+          Horários, preços e pontos de embarque ainda não são informados como itinerários confirmados
+          para Planaltina-GO; é necessário distinguir Planaltina-GO de Planaltina-DF e confirmar
+          a vigência diretamente com a ANTT e a operadora.
+        </p>
+        <div className="flex flex-col gap-1">
+          <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/antt/pt-br/assuntos/passageiros/transportesemiurbano/informacoes-operacionais-do-semiurbano/quadro-de-horarios" target="_blank" rel="noopener noreferrer">
+            Consultar quadro de horários na ANTT
+          </a>
+          <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/antt/pt-br/assuntos/passageiros/transportesemiurbano/informacoes-operacionais-do-semiurbano/relacao-de-empresas-linhas-e-tarifas" target="_blank" rel="noopener noreferrer">
+            Consultar empresas, linhas e tarifas na ANTT
+          </a>
+        </div>
+        <p className="mt-2 text-xs text-neutral-600">Não há previsão de chegada, tarifa atual calculada ou roteamento de ônibus neste aplicativo.</p>
+      </section>
       <CommercialResearchSection />
 
       <section aria-labelledby="adapter-status-title">
