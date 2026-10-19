@@ -56,7 +56,8 @@ CREATE TABLE IF NOT EXISTS planaltina_points (
     -- PostGIS Point with SRID 4326 (WGS 84 GPS Lat/Lng)
     geom geometry(Point, 4326) NOT NULL,
     
-    zone VARCHAR(32) DEFAULT 'Urbana',
+    -- Sem classificação explícita na fonte, nunca inferir que o ponto seja urbano.
+    zone VARCHAR(32) NOT NULL DEFAULT 'Não classificada',
     is_demo BOOLEAN NOT NULL DEFAULT TRUE,
     demo_disclaimer TEXT NOT NULL DEFAULT 'Modo demonstrativo — locais ilustrativos, não use para deslocamento.',
     
@@ -74,6 +75,11 @@ CREATE TABLE IF NOT EXISTS planaltina_points (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- O CREATE TABLE IF NOT EXISTS não atualiza o default em bancos anteriores.
+-- Não reclassificar os registros existentes: manter o que cada fonte declarou.
+ALTER TABLE planaltina_points
+    ALTER COLUMN zone SET DEFAULT 'Não classificada';
 
 -- 4. PostGIS Spatial GIST Index for high-performance spatial queries (BBox / ST_DWithin)
 CREATE INDEX IF NOT EXISTS idx_planaltina_points_geom 
