@@ -26,6 +26,8 @@ describe('prompt do assistente com catálogo territorial misto', () => {
     expect(request).toBeDefined();
     expect(request.config.systemInstruction).toMatch(/pontos REAIS verificados e pontos DEMO/);
     expect(request.config.systemInstruction).not.toMatch(/catálogo demonstrativo cadastrado/i);
+    expect(request.config.systemInstruction).not.toMatch(/APENAS ESTES EXISTEM/);
+    expect(request.config.systemInstruction).toMatch(/não é uma relação completa/i);
     expect(answer.evidenceIds).toEqual(['cnes-0112666']);
     expect(answer.reply).toContain('REAL verificado');
     expect(answer.isDemoNotice).toBe('');
