@@ -100,10 +100,10 @@ apiRouter.get('/points', async (req: Request, res: Response) => {
       },
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta de pontos.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao listar pontos: ${msg}`,
+      error: 'Catálogo temporariamente indisponível.',
     });
   }
 });
