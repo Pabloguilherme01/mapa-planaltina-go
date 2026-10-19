@@ -12,6 +12,9 @@ parseFuelRegistry(fuelSnapshot);
 const SITE_BASE = '/mapa-planaltina-go/';
 
 process.env.VITE_STATIC_MODE = 'true';
+// O Pages é estático: não deve apontar para o backend demonstrativo nem herdar
+// VITE_API_BASE_URL de ambientes externos.
+process.env.VITE_API_BASE_URL = '';
 process.env.VITE_SITE_BASE = SITE_BASE;
 const exportData = spawnSync(process.execPath, ['--import', 'tsx', 'scripts/export-static.ts'], { stdio: 'inherit', env: process.env });
 if (exportData.status !== 0) process.exit(exportData.status || 1);
