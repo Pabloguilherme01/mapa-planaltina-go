@@ -48,10 +48,10 @@ apiRouter.get('/municipality', async (_req: Request, res: Response) => {
       data,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta municipal.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao obter dados do município: ${msg}`,
+      error: 'Serviço municipal temporariamente indisponível.',
     });
   }
 });
@@ -114,10 +114,10 @@ apiRouter.get('/points', async (req: Request, res: Response) => {
       },
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta de pontos.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao listar pontos: ${msg}`,
+      error: 'Catálogo temporariamente indisponível.',
     });
   }
 });
@@ -142,10 +142,10 @@ apiRouter.get('/sources', async (_req: Request, res: Response) => {
       },
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta de fontes.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao inspecionar fontes: ${msg}`,
+      error: 'Consulta de fontes temporariamente indisponível.',
     });
   }
 });
