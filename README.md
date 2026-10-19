@@ -148,7 +148,9 @@ execute `npm run build:pages` por último para regenerar o
 `dist/data/points.json` com validação e proteger o frontend estático.
 Antes de iniciar, confira se esse arquivo existe e passou por `npm run verify:pages`. Para hospedagem de verdade, exigir HTTPS e limites de custo,
 rever CORS/origens confiáveis, proxy, rate limiting centralizado, segredos e
-observabilidade. O assistente seleciona IDs do catálogo ativo e identifica REAL/DEMO
+observabilidade. O Express opcional limita corpos JSON a 16 KiB e devolve
+mensagens HTTP genéricas para JSON malformado, payload excessivo e parâmetros
+inválidos, sem divulgar detalhes de exceções ou campos internos do schema. O assistente seleciona IDs do catálogo ativo e identifica REAL/DEMO
 por registro; não usa texto livre do Gemini como prova territorial. As rotas
 `/api/points`, `/api/sources`, `/api/municipality`, `/api/assistant` e
 `/api/health` continuam opcionais. `/api/sources` consulta adaptadores e pode
