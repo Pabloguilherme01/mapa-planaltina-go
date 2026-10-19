@@ -2,6 +2,7 @@ import { appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
+import { verifyPublishedCompanionResources } from './published-site-health.ts';
 
 export interface PublishedSnapshotHealth {
   status: 'healthy' | 'stale';
@@ -88,6 +89,7 @@ async function main() {
   });
   if (!response.ok) throw new Error(`Catálogo indisponível (HTTP ${response.status}).`);
   const health = assessPublishedSnapshot(await response.json());
+  const surface = await verifyPublishedCompanionResources(url);
   const summary = [
     '## Saúde do snapshot de Planaltina-GO',
     '',
@@ -95,6 +97,7 @@ async function main() {
     `- Pontos reais: **${health.realCount}**`,
     `- Registro real mais antigo: **${health.oldestAgeDays} dias**`,
     `- Modo da fonte: **${health.sourceMode}**`,
+    `- Recursos da experiência pública confirmados: **${surface.checked.join(', ')}**`,
     '',
     'Idade é calculada pela coleta dos registros reais, não pela hora do deploy.',
   ].join('\n');
