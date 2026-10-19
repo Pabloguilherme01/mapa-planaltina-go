@@ -129,13 +129,24 @@ Exemplo de preparação com snapshot local (não é publicação automática de 
 
 ```bash
 npm ci
-npm run build:pages
 npm run build
+npm run build:pages
 NODE_ENV=production CATALOG_SNAPSHOT_PATH=dist/data/points.json npm start
 ```
 
-O primeiro build exporta um catálogo municipal auditado; o segundo gera o frontend
-e o servidor Express. Para hospedagem de verdade, exigir HTTPS e limites de custo,
+Em PowerShell, depois dos dois builds:
+
+```powershell
+$env:NODE_ENV = 'production'
+$env:CATALOG_SNAPSHOT_PATH = (Resolve-Path 'dist/data/points.json').Path
+npm start
+```
+
+**A ordem dos builds é obrigatória:** `npm run build` gera o servidor Express
+(`server.js`) e pode limpar o diretório `dist` ao compilar o Vite; por isso,
+execute `npm run build:pages` por último para regenerar o
+`dist/data/points.json` com validação e proteger o frontend estático.
+Antes de iniciar, confira se esse arquivo existe e passou por `npm run verify:pages`. Para hospedagem de verdade, exigir HTTPS e limites de custo,
 rever CORS/origens confiáveis, proxy, rate limiting centralizado, segredos e
 observabilidade. O assistente seleciona IDs do catálogo ativo e identifica REAL/DEMO
 por registro; não usa texto livre do Gemini como prova territorial. As rotas
