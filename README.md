@@ -148,3 +148,29 @@ Operação: coleta CNES agendada às segundas-feiras 12h UTC (9h São Paulo), su
 Rollback: abrir PR revertendo o squash desta entrega, aprovar testes/tipos/build/Browser QA e integrar para gerar novo Pages. Manter a última versão dos artefatos e verificar points/sources/territorial-review após deploy. Não alterar coordenadas da fonte para passar no teste territorial.
 
 QA: Chromium mobile/desktop e WebKit emulado iPhone no CI, um worker por vez; não equivale a teste em aparelhos físicos. Antes de anunciar navegação de campo, validar pessoalmente em iPhone/Android, rede móvel e condições de acesso locais. Nenhuma promessa de paridade territorial completa com o Trajeto.
+
+
+## Vigia independente do snapshot publicado
+
+O workflow `.github/workflows/snapshot-health.yml` consulta diariamente o
+`data/points.json` publicado, em horário diferente da coleta semanal do CNES.
+Pode ser executado manualmente com `workflow_dispatch` e gera um resumo no
+GitHub Actions. Ele verifica município IBGE, presença de pontos reais, contagens,
+identidades, proveniência e datas UTC válidas. Um registro real com 30 dias ou
+mais de idade sinaliza falha na Action para investigação; os dados DEMO não
+participam da idade.
+
+A idade é calculada pelo campo original `retrievedAt`: restaurar um snapshot
+anterior **não** reinicia a contagem. Esta verificação é somente leitura:
+não remove pontos, não altera o deploy nem substitui o last-known-good.
+Falhas podem aparecer nas notificações configuradas do GitHub Actions; uma
+execução agendada do GitHub não é garantia de pontualidade. Para produção
+crítica, completar o monitoramento com uma checagem externa independente.
+
+Execução local, exigindo rede HTTPS:
+
+```sh
+npm ci
+npx tsx scripts/snapshot-health.ts
+npm test -- tests/snapshot_health.test.ts
+```
