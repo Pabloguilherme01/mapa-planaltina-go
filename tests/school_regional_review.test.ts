@@ -9,7 +9,7 @@ describe('transparência da regional do cadastro SEDUC', () => {
     expect(result.regionalReviewCount).toBe(26);
     expect(result.reviewCodes).toContain('52074072');
     expect(result.reviewCodes).not.toContain('52050793');
-    expect(result.confirmedLocationCount).toBe(0);
+    expect(SCHOOL_REGISTRY.geometry).toBe('not_provided');
   });
 
   it('não interpreta CRE diferente como município distinto ou coordenada verificada', () => {
@@ -21,7 +21,7 @@ describe('transparência da regional do cadastro SEDUC', () => {
 
   it('admite a lista vazia sem afirmar geometrias', () => {
     expect(summarizeSchoolRegionals([])).toEqual({
-      total: 0, regionalReviewCount: 0, reviewCodes: [], confirmedLocationCount: 0,
+      total: 0, regionalReviewCount: 0, reviewCodes: [],
     });
   });
 });
