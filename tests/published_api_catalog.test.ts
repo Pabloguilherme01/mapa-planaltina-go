@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { parsePublishedCatalog } from '../server/repository/publishedCatalog.ts';
 import { CNES_FALLBACK_POINTS } from '../server/data/cnesPlanaltinaFallback.ts';
-import { DEMO_DISCLAIMER_TEXT, ORIGIN_DISCLAIMER_TEXT } from '../src/types/index.ts';
+import { DEMO_DISCLAIMER_TEXT, ORIGIN_DISCLAIMER_TEXT, type MapPoint } from '../src/types/index.ts';
 
-const verified = () => structuredClone(CNES_FALLBACK_POINTS[0]);
-const demo = () => ({
+const verified = (): MapPoint => structuredClone(CNES_FALLBACK_POINTS[0]);
+const demo = (): MapPoint => ({
   ...verified(),
   id: 'demo-validation',
   name: 'Destino fictício (DEMO)',
