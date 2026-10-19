@@ -34,7 +34,6 @@ export class AssistantService {
   async answer(payload: AssistantRequestPayload): Promise<AssistantResponsePayload> {
     const corpusPoints = await pointsRepository.getAllForCorpus();
     const validPointIds = new Set(corpusPoints.map((p) => p.id));
-    const demoNotice = corpusPoints.some(point => point.isDemo) ? DEMO_DISCLAIMER_TEXT : '';
 
     if (!this.ai || !this.isConfigured()) {
       // Local fallback heuristic search directly on corpus if API key is not present
@@ -127,6 +126,7 @@ ${JSON.stringify(compactCorpus, null, 2)}
       }
       const validatedEvidenceIds = parsed.foundInCorpus ? [...new Set(parsed.evidenceIds)] : [];
       const selected = corpusPoints.filter((point) => validatedEvidenceIds.includes(point.id));
+      const demoNotice = selected.some(point => point.isDemo) ? DEMO_DISCLAIMER_TEXT : '';
       const reply = selected.length
         ? `Registros carregados em Planaltina, Goiás:\n\n${selected.map((point) => `• ${point.name} (${point.category}) — ${point.isDemo ? 'DEMO' : 'REAL verificado'} — ${point.provenanceMeta.provenance}`).join('\n')}\n\nConsulte os detalhes e a procedência no mapa. ${demoNotice}`
         : 'Não consta nos dados carregados de Planaltina, Goiás.';
@@ -151,7 +151,6 @@ ${JSON.stringify(compactCorpus, null, 2)}
     message: string,
     corpus: MapPoint[]
   ): AssistantResponsePayload {
-    const demoNotice = corpus.some(point => point.isDemo) ? DEMO_DISCLAIMER_TEXT : '';
     const normMsg = message
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -178,6 +177,7 @@ ${JSON.stringify(compactCorpus, null, 2)}
 
     if (matched.length > 0) {
       const topMatches = matched.slice(0, 3);
+      const demoNotice = topMatches.some(point => point.isDemo) ? DEMO_DISCLAIMER_TEXT : '';
       const names = topMatches.map((p) => `• ${p.name} (${p.category}) — ${p.isDemo ? 'DEMO' : 'REAL verificado'}`).join('\n');
       return {
         reply: `Localizamos os seguintes pontos cadastrados em Planaltina, Goiás:\n\n${names}\n\nSelecione um ponto no mapa para inspecionar seus metadados de proveniência e descrição.`,
@@ -193,7 +193,7 @@ ${JSON.stringify(compactCorpus, null, 2)}
         'Não encontramos registros correspondentes à sua busca no catálogo carregado de Planaltina, Goiás. Experimente buscar pelas 9 categorias do mapa (ex: Saúde, Educação, Transporte, Rural, Meio Ambiente) ou termos como "UBS", "escola" ou "feira".',
       evidenceIds: [],
       foundInCorpus: false,
-      isDemoNotice: demoNotice,
+      isDemoNotice: '',
       modelUsed: 'Gemini indisponível — busca local no catálogo',
     };
   }
