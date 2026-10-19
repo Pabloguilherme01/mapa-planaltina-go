@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MUNICIPAL_BOUNDARY } from '../../data/municipalBoundary.ts';
 import { MapPoint } from '../../types/index.ts';
+import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
 export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation }: {
   points: MapPoint[]; selectedPoint: MapPoint | null; onSelectPoint: (point: MapPoint | null) => void;
@@ -34,12 +35,10 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     const group = L.layerGroup().addTo(instance);
     const render = () => {
       group.clearLayers();
-      const buckets = new Map<string, MapPoint[]>();
-      for (const point of points) {
+      const buckets = groupMapPoints(points, instance.getZoom(), (point) => {
         const pixel = instance.project([point.lat, point.lng]);
-        const key = instance.getZoom() < 17 ? `${Math.floor(pixel.x / 44)}:${Math.floor(pixel.y / 44)}` : point.id;
-        buckets.set(key, [...(buckets.get(key) ?? []), point]);
-      }
+        return { x: pixel.x, y: pixel.y };
+      });
       for (const bucket of buckets.values()) {
         if (bucket.length > 1) {
           const bounds = L.latLngBounds(bucket.map(point => L.latLng(point.lat, point.lng)));
