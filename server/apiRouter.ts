@@ -1,5 +1,4 @@
 import { Router, Request, Response } from 'express';
-import { z } from 'zod';
 import {
   IbgeAdapter,
   PrefeituraAdapter,
@@ -9,7 +8,9 @@ import {
 } from './adapters/SourceAdapter.ts';
 import { pointsRepository } from './repository/PointsRepository.ts';
 import { assistantService } from './gemini/assistantService.ts';
-import { PointCategory, ProvenanceType } from '../src/types/index.ts';
+import { PointsQuerySchema } from './security/pointQuery.ts';
+import { createAssistantRateLimiter } from './security/assistantRateLimiter.ts';
+import { AssistantRequestSchema } from './security/assistantRequest.ts';
 
 export const apiRouter = Router();
 
@@ -28,36 +29,11 @@ const allAdapters = [
   osmAdapter,
 ];
 
-// Simple in-memory rate limiter for Assistant API
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
-const RATE_LIMIT_MAX = 20;
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
-
-function checkRateLimit(ip: string): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW_MS });
-    return true;
-  }
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return false;
-  }
-  entry.count += 1;
-  return true;
-}
-
-// Zod schema for Assistant POST
-const AssistantRequestSchema = z.object({
-  message: z.string().min(1, 'Mensagem não pode estar vazia').max(500, 'Mensagem muito longa'),
-  history: z
-    .array(
-      z.object({
-        role: z.enum(['user', 'assistant']),
-        content: z.string(),
-      })
-    )
-    .optional(),
+// Ativa-se somente no servidor. Não confiar no X-Forwarded-For fornecido pelo cliente.
+const checkRateLimit = createAssistantRateLimiter({
+  maxRequests: 20,
+  windowMs: 60_000,
+  maxClients: 10_000,
 });
 
 /**
@@ -72,10 +48,10 @@ apiRouter.get('/municipality', async (_req: Request, res: Response) => {
       data,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta municipal.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao obter dados do município: ${msg}`,
+      error: 'Serviço municipal temporariamente indisponível.',
     });
   }
 });
@@ -86,34 +62,20 @@ apiRouter.get('/municipality', async (_req: Request, res: Response) => {
  */
 apiRouter.get('/points', async (req: Request, res: Response) => {
   try {
-    const query = typeof req.query.q === 'string' ? req.query.q : undefined;
-    const categoriesParam = req.query.categories;
-    const provenanceParam = req.query.provenance;
-    const zoneParam = typeof req.query.zone === 'string' ? req.query.zone : undefined;
-    const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
-    const offset = typeof req.query.offset === 'string' ? parseInt(req.query.offset, 10) : undefined;
-
-    let categories: PointCategory[] | undefined;
-    if (categoriesParam) {
-      const rawCats = Array.isArray(categoriesParam)
-        ? categoriesParam
-        : [categoriesParam];
-      categories = rawCats.map((c) => String(c) as PointCategory);
+    const parsed = PointsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Filtros ou paginação inválidos.',
+      });
     }
-
-    let provenance: ProvenanceType[] | undefined;
-    if (provenanceParam) {
-      const rawProv = Array.isArray(provenanceParam)
-        ? provenanceParam
-        : [provenanceParam];
-      provenance = rawProv.map((p) => String(p) as ProvenanceType);
-    }
+    const { q: query, categories, provenance, zone, limit, offset } = parsed.data;
 
     const points = await pointsRepository.list({
       query,
       categories,
       provenance,
-      zone: zoneParam as any,
+      zone,
       limit,
       offset,
     });
@@ -122,7 +84,7 @@ apiRouter.get('/points', async (req: Request, res: Response) => {
       query,
       categories,
       provenance,
-      zone: zoneParam as any,
+      zone,
     });
 
     res.json({
@@ -138,10 +100,10 @@ apiRouter.get('/points', async (req: Request, res: Response) => {
       },
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta de pontos.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao listar pontos: ${msg}`,
+      error: 'Catálogo temporariamente indisponível.',
     });
   }
 });
@@ -166,10 +128,10 @@ apiRouter.get('/sources', async (_req: Request, res: Response) => {
       },
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha na consulta de fontes.', err instanceof Error ? err.name : 'Erro desconhecido');
     res.status(500).json({
       success: false,
-      error: `Erro ao inspecionar fontes: ${msg}`,
+      error: 'Consulta de fontes temporariamente indisponível.',
     });
   }
 });
@@ -179,8 +141,9 @@ apiRouter.get('/sources', async (_req: Request, res: Response) => {
  * Responde dúvidas cívicas estritamente limitadas ao corpus cadastrado
  */
 apiRouter.post('/assistant', async (req: Request, res: Response) => {
-  const clientIp =
-    (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1';
+  // req.ip usa exclusivamente os proxies que o Express explicitamente confia.
+  // No servidor atual, trust proxy permanece desativado por padrão.
+  const clientIp = req.ip ?? req.socket.remoteAddress ?? '';
 
   if (!checkRateLimit(clientIp)) {
     return res.status(429).json({
@@ -205,10 +168,10 @@ apiRouter.post('/assistant', async (req: Request, res: Response) => {
       data: result,
     });
   } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+    console.error('Falha interna no serviço de assistente.', err instanceof Error ? err.name : 'Erro desconhecido');
     return res.status(500).json({
       success: false,
-      error: `Erro ao processar consulta do assistente: ${msg}`,
+      error: 'Assistente temporariamente indisponível. Tente novamente mais tarde.',
     });
   }
 });

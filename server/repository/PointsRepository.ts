@@ -4,13 +4,14 @@ import {
   ORIGIN_DISCLAIMER_TEXT,
   PointCategory,
   ProvenanceType,
+  PointZone,
 } from '../../src/types/index.ts';
 
 export interface PointsFilterCriteria {
   query?: string;
   categories?: PointCategory[];
   provenance?: ProvenanceType[];
-  zone?: 'Urbana' | 'Rural' | 'Distrital';
+  zone?: PointZone;
   limit?: number;
   offset?: number;
 }
