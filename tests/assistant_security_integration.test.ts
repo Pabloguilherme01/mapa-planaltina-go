@@ -19,6 +19,29 @@ afterAll(async () => {
 });
 
 describe('proteção HTTP da API do assistente', () => {
+  it('não devolve rastreamento nem detalhes para JSON malformado', async () => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{"message":',
+    });
+    expect(response.status).toBe(400);
+    expect(response.headers.get('content-type')).toContain('application/json');
+    const payload = await response.json() as Record<string, unknown>;
+    expect(payload).toEqual({ success: false, error: 'JSON inválido.' });
+  });
+
+  it('recusa corpo excessivo antes de consultar o assistente', async () => {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: 'x'.repeat(20_000) }),
+    });
+    expect(response.status).toBe(413);
+    const payload = await response.json() as Record<string, unknown>;
+    expect(payload).toEqual({ success: false, error: 'Requisição excede o tamanho permitido.' });
+  });
+
   it('não permite contornar 20 requisições por minuto falsificando X-Forwarded-For', async () => {
     for (let index = 0; index < 21; index++) {
       const response = await fetch(url, {
@@ -30,6 +53,11 @@ describe('proteção HTTP da API do assistente', () => {
         body: JSON.stringify({ message: '' }),
       });
       expect(response.status).toBe(index === 20 ? 429 : 400);
+      if (index === 0) {
+        const payload = await response.json() as Record<string, unknown>;
+        expect(payload).toEqual({ success: false, error: 'Parâmetros inválidos.' });
+        expect(payload).not.toHaveProperty('details');
+      }
     }
   });
 
