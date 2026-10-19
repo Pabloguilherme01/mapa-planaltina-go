@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { loadPublishedCatalog, parsePublishedCatalog } from '../server/repository/publishedCatalog.ts';
 import { InMemoryPointsRepository } from '../server/repository/PointsRepository.ts';
+import { createExpressApp } from '../server/index.ts';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -27,6 +28,27 @@ const fixture = () => ({
   success: true,
   data: [verified(), demo()],
   meta: { ibgeCode: '5217609', realCount: 1, demoCount: 1 },
+});
+
+describe('isolamento entre preview estático e backend Express', () => {
+  it('recusa iniciar a API em produção sem snapshot verificado', () => {
+    const oldEnv = process.env.NODE_ENV;
+    const oldPath = process.env.CATALOG_SNAPSHOT_PATH;
+    const oldStatic = process.env.VITE_STATIC_MODE;
+    try {
+      process.env.NODE_ENV = 'production';
+      delete process.env.CATALOG_SNAPSHOT_PATH;
+      delete process.env.VITE_STATIC_MODE;
+      expect(() => createExpressApp()).toThrow(/CATALOG_SNAPSHOT_PATH/);
+    } finally {
+      if (oldEnv === undefined) delete process.env.NODE_ENV;
+      else process.env.NODE_ENV = oldEnv;
+      if (oldPath === undefined) delete process.env.CATALOG_SNAPSHOT_PATH;
+      else process.env.CATALOG_SNAPSHOT_PATH = oldPath;
+      if (oldStatic === undefined) delete process.env.VITE_STATIC_MODE;
+      else process.env.VITE_STATIC_MODE = oldStatic;
+    }
+  });
 });
 
 describe('catálogo de snapshot compartilhável com a API', () => {
