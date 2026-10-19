@@ -8,9 +8,12 @@ import {
   SourceInfo,
 } from '../types/index.ts';
 import { staticAssistant } from './staticAssistant.ts';
+import { resolveApiRouting } from './apiRoutingConfig.ts';
 
-const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
-const staticMode = import.meta.env.VITE_STATIC_MODE === 'true' && !apiBase;
+const { apiBase, staticMode } = resolveApiRouting(
+  import.meta.env.VITE_STATIC_MODE,
+  import.meta.env.VITE_API_BASE_URL
+);
 const endpoint = (name: string) => staticMode
   ? `${import.meta.env.BASE_URL}data/${name}.json`
   : `${apiBase}/api/${name}`;
