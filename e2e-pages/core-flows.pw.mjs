@@ -190,7 +190,7 @@ test('desktop: ficha de ponto prende e restaura o foco do teclado', async ({ pag
   const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   const first = dialog.getByRole('button', { name: 'Fechar ficha cadastral' });
-  const last = dialog.getByRole('button', { name: 'Fechar Ficha' });
+  const last = dialog.getByRole('button', { name: 'Fechar Ficha', exact: true });
   await expect(first).toBeFocused();
   expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
   await page.keyboard.press('Shift+Tab');
