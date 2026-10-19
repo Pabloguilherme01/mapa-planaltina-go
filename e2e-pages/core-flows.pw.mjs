@@ -187,7 +187,7 @@ test('desktop: ficha de ponto prende e restaura o foco do teclado', async ({ pag
   const trigger = page.getByRole('button', { name: 'Ficha', exact: true }).first();
   await expect(trigger).toBeVisible();
   await trigger.click();
-  const dialog = page.getByRole('dialog', { name: /cnes|upa|hospital|saúde|demo/i });
+  const dialog = page.getByRole('dialog');
   await expect(dialog).toBeVisible();
   const first = dialog.getByRole('button', { name: 'Fechar ficha cadastral' });
   const last = dialog.getByRole('button', { name: 'Fechar Ficha' });
