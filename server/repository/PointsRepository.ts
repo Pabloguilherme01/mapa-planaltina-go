@@ -571,9 +571,12 @@ export class InMemoryPointsRepository implements PointsRepository {
   }
 }
 
-const configuredSnapshot = process.env.CATALOG_SNAPSHOT_PATH;
-// Produção sem snapshot deve falhar explicitamente, nunca anunciar DEMO como real.
-if (process.env.NODE_ENV === 'production' && !configuredSnapshot) {
+// O exportador do GitHub Pages sempre gera seu próprio snapshot auditado.
+// Nunca exigir um arquivo de API no build estático nem consumir o arquivo do backend.
+const isStaticBuild = process.env.VITE_STATIC_MODE === 'true';
+const configuredSnapshot = isStaticBuild ? undefined : process.env.CATALOG_SNAPSHOT_PATH;
+// API Express em produção só inicializa com um snapshot validado.
+if (!isStaticBuild && process.env.NODE_ENV === 'production' && !configuredSnapshot) {
   throw new Error('API em produção exige CATALOG_SNAPSHOT_PATH para o catálogo municipal verificado.');
 }
 const published = configuredSnapshot ? loadPublishedCatalog(configuredSnapshot) : null;
