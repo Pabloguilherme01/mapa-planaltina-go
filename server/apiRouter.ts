@@ -6,7 +6,7 @@ import {
   InepAdapter,
   OsmAdapter,
 } from './adapters/SourceAdapter.ts';
-import { pointsRepository } from './repository/PointsRepository.ts';
+import { catalogSourceMode, pointsRepository } from './repository/PointsRepository.ts';
 import { assistantService } from './gemini/assistantService.ts';
 import { PointsQuerySchema } from './security/pointQuery.ts';
 import { createAssistantRateLimiter } from './security/assistantRateLimiter.ts';
@@ -95,8 +95,10 @@ apiRouter.get('/points', async (req: Request, res: Response) => {
         count: points.length,
         municipality: 'Planaltina, Goiás',
         ibgeCode: '5217609',
-        mode: 'demonstrativo',
-        disclaimer: 'Modo demonstrativo — locais ilustrativos, não use para deslocamento.',
+        mode: catalogSourceMode === 'verified_snapshot' ? 'misto_oficial_demo' : 'demonstrativo',
+        disclaimer: catalogSourceMode === 'verified_snapshot'
+          ? 'Catálogo municipal validado com pontos reais e DEMO identificados. Consulte a origem e a data de cada registro.'
+          : 'Modo demonstrativo — locais ilustrativos, não use para deslocamento.',
       },
     });
   } catch (err: unknown) {
