@@ -69,6 +69,13 @@ npm run preview
 
 O `build:pages` gera um **snapshot auditável**. Ele exige pelo menos um ponto real verificável, vindo da fonte live ou do last-known-good. O JSON final informa `realCount`, `demoCount`, município, código IBGE, modo `misto_oficial_demo` e `realSourceMode` (`live` ou `snapshot_fallback`).
 
+**Proteção de configuração:** a publicação GitHub Pages sempre utiliza o snapshot
+estático verificado, inclusive se `VITE_API_BASE_URL` estiver definido no ambiente
+de execução. O build Pages limpa essa variável antes de gerar os arquivos e o
+cliente prioriza `VITE_STATIC_MODE=true`. A API Express continua disponível somente
+em builds específicos de servidor, e deve ter catálogo/procedência compatíveis antes
+de qualquer ativação pública.
+
 O Pages hospeda HTML, CSS e JavaScript e não executa o servidor Express. O resultado da coleta é congelado no build e servido por `public/data/points.json`/`dist/data/points.json`, portanto a aplicação não depende do CNES a cada abertura pelo usuário.
 
 ## Robustez, PWA e degradação controlada
