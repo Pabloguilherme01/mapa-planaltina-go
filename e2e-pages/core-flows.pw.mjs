@@ -181,6 +181,28 @@ test('mobile: busca e rota de fontes funcionam sem quebrar o layout principal', 
   await expect(page.getByText('Pendente de geometria')).toHaveCount(4);
 });
 
+test('desktop: ficha de ponto prende e restaura o foco do teclado', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Navegação por teclado desktop');
+  await page.goto('./');
+  const trigger = page.getByRole('button', { name: 'Ficha', exact: true }).first();
+  await expect(trigger).toBeVisible();
+  await trigger.click();
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  const first = dialog.getByRole('button', { name: 'Fechar ficha cadastral' });
+  const last = dialog.getByRole('button', { name: 'Fechar Ficha', exact: true });
+  await expect(first).toBeFocused();
+  expect(await page.evaluate(() => document.body.style.overflow)).toBe('hidden');
+  await page.keyboard.press('Shift+Tab');
+  await expect(last).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(first).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(dialog).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  expect(await page.evaluate(() => document.body.style.overflow)).not.toBe('hidden');
+});
+
 test('desktop: mapa e artefatos PWA estão acessíveis', async ({ page, request }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Cobertura desktop específica');
   await page.goto('./');
