@@ -189,7 +189,11 @@ O workflow `.github/workflows/snapshot-health.yml` consulta diariamente o
 `data/points.json` publicado, em horário diferente da coleta semanal do CNES.
 Pode ser executado manualmente com `workflow_dispatch` e gera um resumo no
 GitHub Actions. Ele verifica município IBGE, presença de pontos reais, contagens,
-identidades, proveniência e datas UTC válidas. Um registro real com 30 dias ou
+identidades, proveniência e datas UTC válidas. Também verifica que a página
+`/fontes/`, o arquivo `data/sources.json`, o manifesto PWA e o service worker
+estão publicados no mesmo domínio, e correspondem ao município e à base URL.
+Falhas HTTP, respostas HTML no lugar de JSON ou recursos estáticos inconsistentes
+reprovam o monitor sem alterar o site. Um registro real com 30 dias ou
 mais de idade sinaliza falha na Action para investigação; os dados DEMO não
 participam da idade.
 
@@ -205,5 +209,5 @@ Execução local, exigindo rede HTTPS:
 ```sh
 npm ci
 npx tsx scripts/snapshot-health.ts
-npm test -- tests/snapshot_health.test.ts
+npm test -- tests/snapshot_health.test.ts tests/published_site_health.test.ts
 ```
