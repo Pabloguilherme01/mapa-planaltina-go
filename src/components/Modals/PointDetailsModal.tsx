@@ -1,4 +1,5 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
+import { useDialogFocus } from '../../hooks/useDialogFocus.ts';
 import { MapPoint } from '../../types/index.ts';
 import { PROVENANCE_CONFIG } from '../../utils/provenanceMeta.ts';
 import { X, Lock, AlertTriangle, ExternalLink, BadgeCheck } from 'lucide-react';
@@ -10,42 +11,7 @@ interface PointDetailsModalProps {
 
 export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onClose }) => {
   const modalRef = useRef<HTMLDivElement>(null);
-  const previouslyFocusedElement = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!point) return;
-    previouslyFocusedElement.current = document.activeElement as HTMLElement;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
-      if (e.key === 'Tab' && modalRef.current) {
-        const focusable = modalRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        if (focusable.length === 0) return;
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        if (e.shiftKey && document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        } else if (!e.shiftKey && document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    setTimeout(() => modalRef.current?.querySelector<HTMLElement>('button')?.focus(), 50);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      previouslyFocusedElement.current?.focus?.();
-    };
-  }, [point, onClose]);
+  useDialogFocus(Boolean(point), onClose, modalRef);
 
   if (!point) return null;
 
