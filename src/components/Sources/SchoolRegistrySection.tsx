@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { SCHOOL_REGISTRY } from '../../data/schoolRegistry.ts';
-import { filterSchools } from '../../utils/registryTools';
+import { filterSchools, summarizeSchoolRegionals } from '../../utils/registryTools';
 
 export function SchoolRegistrySection() {
   const [query, setQuery] = useState('');
   const [network, setNetwork] = useState('');
   const [zone, setZone] = useState('');
   const schools = filterSchools(SCHOOL_REGISTRY.items, query, network, zone);
+  const regionalReview = summarizeSchoolRegionals(SCHOOL_REGISTRY.items);
   return <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="schools-title">
     <h2 id="schools-title" className="text-lg font-bold">Educação — cadastro oficial SEDUC</h2>
     <p className="my-2 text-sm">{SCHOOL_REGISTRY.items.length} escolas na referência {SCHOOL_REGISTRY.referenceYear}. O arquivo não fornece coordenadas: estes registros não são pins nem confirmação de funcionamento atual.</p>
     <p className="text-xs">Licença: {SCHOOL_REGISTRY.license}. Coleta: {new Date(SCHOOL_REGISTRY.retrievedAt).toLocaleDateString('pt-BR')}.</p>
+    <p className="my-2 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-xs">
+      <strong>Revisão cadastral pendente:</strong> {regionalReview.regionalReviewCount} de {regionalReview.total} registros
+      citam uma Coordenação Regional de Educação diferente da CRE Planaltina.
+      Essa diferença não comprova que a escola pertença a outro município.
+      Antes de transformar registros em destinos no mapa, confirmar município, situação
+      e código no <a className="underline" href="https://www.gov.br/inep/pt-br/acesso-a-informacao/dados-abertos/inep-data/catalogo-de-escolas/" target="_blank" rel="noreferrer">Catálogo de Escolas do INEP</a>.
+      Não há coordenadas verificadas neste arquivo SEDUC.
+    </p>
     <a className="inline-flex min-h-11 items-center underline" href={SCHOOL_REGISTRY.sourceUrl} target="_blank" rel="noreferrer">Consultar fonte SEDUC</a>
     <label className="block text-sm font-bold" htmlFor="school-search">Buscar escola por nome, código ou bairro</label>
     <input id="school-search" value={query} onChange={event => setQuery(event.target.value)} className="my-2 min-h-11 w-full rounded-lg border border-neutral-400 p-3" />
