@@ -148,7 +148,12 @@ execute `npm run build:pages` por último para regenerar o
 `dist/data/points.json` com validação e proteger o frontend estático.
 Antes de iniciar, confira se esse arquivo existe e passou por `npm run verify:pages`. Para hospedagem de verdade, exigir HTTPS e limites de custo,
 rever CORS/origens confiáveis, proxy, rate limiting centralizado, segredos e
-observabilidade. O Express opcional limita corpos JSON a 16 KiB e devolve
+observabilidade. Em uma eventual API separada, configure
+`API_ALLOWED_ORIGIN=https://pabloguilherme01.github.io` **somente no servidor**
+para permitir chamadas do Pages no navegador; por padrão não há CORS cruzado.
+A variável aceita exclusivamente uma origem HTTPS completa, sem wildcard,
+caminho ou credenciais. O preflight de origem não permitida recebe 403.
+**CORS não é autenticação nem substitui limite de requisições ou firewall.** O Express opcional limita corpos JSON a 16 KiB e devolve
 mensagens HTTP genéricas para JSON malformado, payload excessivo e parâmetros
 inválidos, sem divulgar detalhes de exceções ou campos internos do schema. O assistente seleciona IDs do catálogo ativo e identifica REAL/DEMO
 por registro; não usa texto livre do Gemini como prova territorial. As rotas
