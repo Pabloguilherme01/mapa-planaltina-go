@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { z } from 'zod';
-import { CATEGORIES_LIST, MUNICIPALITY_CODE, type MapPoint } from '../../src/types/index.ts';
+import { MUNICIPALITY_CODE, type MapPoint } from '../../src/types/index.ts';
 import { isSnapshotDate } from '../../src/utils/snapshotDate.ts';
 import { inPlanaltina } from '../../src/utils/territory.ts';
 
@@ -17,7 +17,7 @@ const provenance = z.object({
 const point = z.object({
   id: z.string().trim().min(1),
   name: z.string().trim().min(1),
-  category: z.enum(CATEGORIES_LIST),
+  category: z.enum(['Saúde', 'Educação', 'Transporte', 'Segurança', 'Serviços Públicos', 'Comércio', 'Lazer', 'Meio Ambiente', 'Rural']),
   description: z.string(),
   lat: z.number().finite().min(-90).max(90),
   lng: z.number().finite().min(-180).max(180),
