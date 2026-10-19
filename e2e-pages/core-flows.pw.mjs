@@ -70,6 +70,8 @@ test('consulta municipal: dados e filtros sem downloads ou exportações', async
   await expect(schools.getByRole('status')).toHaveText('1 registro encontrado');
   await expect(schools).toContainText('52050807');
   await expect(schools).toContainText('2024');
+  await expect(schools).toContainText('26 de 63 registros');
+  await expect(schools.getByRole('link', { name: 'Catálogo de Escolas do INEP' })).toHaveAttribute('href', /gov\.br\/inep/);
   await schools.getByLabel('Rede de ensino').selectOption('Privada');
   await expect(schools.getByRole('status')).toHaveText('0 registros encontrados');
   await schools.getByRole('button', { name: 'Limpar filtros escolares' }).click();
