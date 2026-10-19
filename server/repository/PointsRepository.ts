@@ -6,6 +6,7 @@ import {
   ProvenanceType,
   PointZone,
 } from '../../src/types/index.ts';
+import { loadPublishedCatalog } from './publishedCatalog.ts';
 
 export interface PointsFilterCriteria {
   query?: string;
@@ -501,7 +502,11 @@ const SYNTHETIC_DEMO_POINTS: MapPoint[] = [
 ];
 
 export class InMemoryPointsRepository implements PointsRepository {
-  private points: MapPoint[] = [...SYNTHETIC_DEMO_POINTS];
+  private points: MapPoint[];
+
+  constructor(points: readonly MapPoint[] = SYNTHETIC_DEMO_POINTS) {
+    this.points = points.map(point => structuredClone(point));
+  }
 
   async list(criteria?: PointsFilterCriteria): Promise<MapPoint[]> {
     let result = [...this.points];
@@ -566,4 +571,11 @@ export class InMemoryPointsRepository implements PointsRepository {
   }
 }
 
-export const pointsRepository = new InMemoryPointsRepository();
+const configuredSnapshot = process.env.CATALOG_SNAPSHOT_PATH;
+// Produção sem snapshot deve falhar explicitamente, nunca anunciar DEMO como real.
+if (process.env.NODE_ENV === 'production' && !configuredSnapshot) {
+  throw new Error('API em produção exige CATALOG_SNAPSHOT_PATH para o catálogo municipal verificado.');
+}
+const published = configuredSnapshot ? loadPublishedCatalog(configuredSnapshot) : null;
+export const catalogSourceMode = published ? 'verified_snapshot' as const : 'demo' as const;
+export const pointsRepository = new InMemoryPointsRepository(published?.points);
