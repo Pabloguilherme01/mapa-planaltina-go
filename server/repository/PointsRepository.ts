@@ -575,10 +575,8 @@ export class InMemoryPointsRepository implements PointsRepository {
 // Nunca exigir um arquivo de API no build estático nem consumir o arquivo do backend.
 const isStaticBuild = process.env.VITE_STATIC_MODE === 'true';
 const configuredSnapshot = isStaticBuild ? undefined : process.env.CATALOG_SNAPSHOT_PATH;
-// API Express em produção só inicializa com um snapshot validado.
-if (!isStaticBuild && process.env.NODE_ENV === 'production' && !configuredSnapshot) {
-  throw new Error('API em produção exige CATALOG_SNAPSHOT_PATH para o catálogo municipal verificado.');
-}
+// A exigência da API de produção é aplicada ao iniciar Express, não neste
+// import: o Vite preview pode importar o repositório durante o Browser QA.
 const published = configuredSnapshot ? loadPublishedCatalog(configuredSnapshot) : null;
 export const catalogSourceMode = published ? 'verified_snapshot' as const : 'demo' as const;
 export const pointsRepository = new InMemoryPointsRepository(published?.points);
