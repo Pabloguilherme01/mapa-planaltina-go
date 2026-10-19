@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { parsePublishedCatalog } from '../server/repository/publishedCatalog.ts';
+import { loadPublishedCatalog, parsePublishedCatalog } from '../server/repository/publishedCatalog.ts';
+import { InMemoryPointsRepository } from '../server/repository/PointsRepository.ts';
+import { mkdtemp, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { CNES_FALLBACK_POINTS } from '../server/data/cnesPlanaltinaFallback.ts';
 import { DEMO_DISCLAIMER_TEXT, ORIGIN_DISCLAIMER_TEXT, type MapPoint } from '../src/types/index.ts';
 
@@ -26,6 +30,28 @@ const fixture = () => ({
 });
 
 describe('catálogo de snapshot compartilhável com a API', () => {
+  it('fornece pontos reais ao mesmo repositório usado pela busca e assistente', async () => {
+    const { points } = parsePublishedCatalog(fixture());
+    const repo = new InMemoryPointsRepository(points);
+    expect((await repo.getAllForCorpus()).some(p => !p.isDemo)).toBe(true);
+    expect((await repo.list({ provenance: ['verified_open_data'] })).map(p => p.id)).toEqual(['cnes-0112666']);
+    expect(await repo.count()).toBe(2);
+  });
+
+  it('carrega um snapshot persistido e rejeita arquivo corrompido sem usar DEMO como fallback', async () => {
+    const dir = await mkdtemp(join(tmpdir(), 'planaltina-api-snapshot-'));
+    const file = join(dir, 'points.json');
+    try {
+      await writeFile(file, JSON.stringify(fixture()));
+      expect(loadPublishedCatalog(file).realCount).toBe(1);
+      await writeFile(file, '{ arquivo inválido');
+      expect(() => loadPublishedCatalog(file)).toThrow(/Snapshot municipal|snapshot municipal/i);
+      expect(() => loadPublishedCatalog(join(dir, 'missing.json'))).toThrow(/Snapshot municipal|snapshot municipal/i);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
   it('aceita catálogo municipal com reais verificados e DEMO rotulados', () => {
     const result = parsePublishedCatalog(fixture());
     expect(result.realCount).toBe(1);
