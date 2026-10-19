@@ -9,7 +9,7 @@ import {
 } from './adapters/SourceAdapter.ts';
 import { pointsRepository } from './repository/PointsRepository.ts';
 import { assistantService } from './gemini/assistantService.ts';
-import { PointCategory, ProvenanceType } from '../src/types/index.ts';
+import { PointsQuerySchema } from './security/pointQuery.ts';
 
 export const apiRouter = Router();
 
@@ -86,34 +86,20 @@ apiRouter.get('/municipality', async (_req: Request, res: Response) => {
  */
 apiRouter.get('/points', async (req: Request, res: Response) => {
   try {
-    const query = typeof req.query.q === 'string' ? req.query.q : undefined;
-    const categoriesParam = req.query.categories;
-    const provenanceParam = req.query.provenance;
-    const zoneParam = typeof req.query.zone === 'string' ? req.query.zone : undefined;
-    const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
-    const offset = typeof req.query.offset === 'string' ? parseInt(req.query.offset, 10) : undefined;
-
-    let categories: PointCategory[] | undefined;
-    if (categoriesParam) {
-      const rawCats = Array.isArray(categoriesParam)
-        ? categoriesParam
-        : [categoriesParam];
-      categories = rawCats.map((c) => String(c) as PointCategory);
+    const parsed = PointsQuerySchema.safeParse(req.query);
+    if (!parsed.success) {
+      return res.status(400).json({
+        success: false,
+        error: 'Filtros ou paginação inválidos.',
+      });
     }
-
-    let provenance: ProvenanceType[] | undefined;
-    if (provenanceParam) {
-      const rawProv = Array.isArray(provenanceParam)
-        ? provenanceParam
-        : [provenanceParam];
-      provenance = rawProv.map((p) => String(p) as ProvenanceType);
-    }
+    const { q: query, categories, provenance, zone, limit, offset } = parsed.data;
 
     const points = await pointsRepository.list({
       query,
       categories,
       provenance,
-      zone: zoneParam as any,
+      zone,
       limit,
       offset,
     });
@@ -122,7 +108,7 @@ apiRouter.get('/points', async (req: Request, res: Response) => {
       query,
       categories,
       provenance,
-      zone: zoneParam as any,
+      zone,
     });
 
     res.json({
