@@ -110,7 +110,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
             points={points}
             selectedPoint={selectedPoint}
             onSelectPoint={onSelectPoint}
-            onSwitchToDemoMap={() => setProvider('demo')}
+            onSwitchToDemoMap={() => setProvider('geographic')}
           />
         </Suspense>
       )}
