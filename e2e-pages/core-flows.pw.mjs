@@ -475,6 +475,10 @@ test('catálogo completo: permite explorar registros sem conhecer nome e procura
   const docs = panel.getByRole('region', { name: 'Cadastros sem geolocalização' });
   await expect(docs).toBeVisible();
   await expect(docs).toContainText('Catálogo complementar (101)');
+  await docs.getByRole('button', { name: 'Serviços digitais (16)' }).click();
+  await expect(docs).toContainText('Emitir ou consultar IPTU');
+  await expect(docs).toContainText('Mostrando 8 de 16');
+  await docs.getByRole('button', { name: 'Todos (101)' }).click();
   await expect(docs.getByRole('button', { name: 'Mostrar mais registros' })).toBeVisible();
   await docs.getByRole('button', { name: 'Mostrar mais registros' }).click();
   await expect(docs).toContainText('Mostrando 16 de 101');
