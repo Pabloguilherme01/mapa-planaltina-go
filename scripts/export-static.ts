@@ -112,7 +112,7 @@ await writeFile(
       demoCount: publicDemoPoints.length,
       municipality: 'Planaltina, Goiás',
       ibgeCode: '5217609',
-      mode: publishDemo ? 'misto_oficial_demo' : 'catalogo_real_comunitario',
+      mode: publishDemo ? 'misto_oficial_demo' : communityPoints.length > 0 ? 'catalogo_real_comunitario' : 'catalogo_real_institucional',
       realSourceMode: cnes.dataMode,
       disclaimer:
         'Saúde CNES é verificada; locais colaborativos OSM têm geometria mapeada, mas existência e atendimento não verificados. Confirme a fonte antes do deslocamento.',
