@@ -64,8 +64,8 @@ function verifyRealPoint(point: ArtifactPoint): void {
   const confirmed = provenance?.provenance === 'official' || provenance?.provenance === 'verified_open_data';
   const community = provenance?.provenance === 'community' &&
     (provenance.verificationStatus === 'unverified' || provenance.verificationStatus === 'pending') &&
-    /^osm-(node|way|relation)-[1-9]\\d*$/.test(point.id ?? '') &&
-    /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\\d*$/.test(provenance.sourceUrl ?? '');
+    /^osm-(node|way|relation)-[1-9]\d*$/.test(point.id ?? '') &&
+    /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\d*$/.test(provenance.sourceUrl ?? '');
   const sourceAllowed = confirmed || community;
 
   if (
