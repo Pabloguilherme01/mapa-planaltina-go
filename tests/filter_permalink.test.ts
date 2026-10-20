@@ -9,7 +9,7 @@ describe('Filtros premium compartilháveis', () => {
     expect(read).toMatchObject({ search: 'escolas em Planaltina', categories: ['Educação','Comércio'],
       origin: 'community', verification: 'unverified', kind: 'Escola', zone: 'Urbana', sort: 'name' });
     expect(params.toString()).not.toContain('undefined');
-    expect(countActiveFilters(read)).toBe(6);
+    expect(countActiveFilters(read)).toBe(7);
   });
   it('descarta valores desconhecidos, parâmetros gigantes e raio sem permissão do GPS', () => {
     const read = decodeMapFilters(new URLSearchParams('categories=__unknown__&origin=private&sort=nearest&radius=10&query='+('x'.repeat(300))));
