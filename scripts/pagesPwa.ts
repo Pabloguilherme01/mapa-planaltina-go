@@ -88,6 +88,12 @@ export function buildServiceWorkerSource({
   return `const CACHE_NAME = ${quoteSingle(cacheName)};
 const CACHE_PREFIX = 'mapa-planaltina-';
 const BASE_PATH = ${quoteSingle(base)};
+const REFRESHABLE_DATA = new Set([
+  ${quoteSingle(base+'data/points.json')},
+  ${quoteSingle(base+'data/sources.json')},
+  ${quoteSingle(base+'data/municipality.json')},
+  ${quoteSingle(base+'data/road-graph.json')},
+]);
 const PRECACHE_URLS = ${JSON.stringify(precacheUrls, null, 2)};
 
 self.addEventListener('install', (event) => {
@@ -112,8 +118,12 @@ self.addEventListener('activate', (event) => {
 
 async function cacheResponse(request, response) {
   if (!response || !response.ok) return response;
-  const cache = await caches.open(CACHE_NAME);
-  await cache.put(request, response.clone());
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.put(request, response.clone());
+  } catch (error) {
+    // Falha de armazenamento ou cota offline não deve impedir o acesso online.
+  }
   return response;
 }
 
@@ -134,11 +144,26 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin || !url.pathname.startsWith(BASE_PATH)) return;
 
   if (request.mode === 'navigate') {
+    // Usar a página de rede; evitar gravar cada URL de pesquisa e seus filtros no cache.
     event.respondWith(
-      fetch(request)
-        .then((response) => cacheResponse(request, response))
-        .catch(() => navigationFallback(request))
+      fetch(request).catch(() => navigationFallback(request))
     );
+    return;
+  }
+
+  if (REFRESHABLE_DATA.has(url.pathname)) {
+    // Online-first: os cadastros e a malha podem ser atualizados diariamente;
+    // offline: usar somente o último arquivo validado que o aparelho já possui.
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(request);
+        if (fresh.ok) return cacheResponse(request, fresh);
+        const cached = await caches.match(request, { ignoreVary: true });
+        return cached || fresh;
+      } catch (error) {
+        return await caches.match(request, { ignoreVary: true }) || Response.error();
+      }
+    })());
     return;
   }
 
