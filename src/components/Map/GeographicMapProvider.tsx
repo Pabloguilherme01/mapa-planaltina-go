@@ -1,6 +1,7 @@
 import type { LocalRoute } from '../../utils/roadGraph.ts';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
+import { Layers2, MapPinned, Navigation2, Route, Info } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 import { MUNICIPAL_BOUNDARY } from '../../data/municipalBoundary.ts';
 import { MapPoint } from '../../types/index.ts';
@@ -23,9 +24,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     map.current = instance;
     const zoom = L.control.zoom({ position: 'topright' }).addTo(instance);
     zoom.getContainer()!.style.marginTop = '76px';
-    L.control.scale({ metric: true, imperial: false, position: 'bottomright' }).addTo(instance);
-    const attribution = L.control.attribution({ position: 'topleft' }).addTo(instance);
-    attribution.getContainer()!.style.marginTop = '116px';
+    L.control.scale({ metric: true, imperial: false, position: 'bottomleft' }).addTo(instance);
+    L.control.attribution({ position: 'bottomright' }).addTo(instance);
     L.geoJSON(MUNICIPAL_BOUNDARY as GeoJSON.GeoJsonObject, {
       style: { color: '#355E3B', fillOpacity: 0.04, weight: 2 },
       attribution: 'Limite simplificado: IBGE',
@@ -58,9 +58,9 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
       const real = !point.isDemo;
       const icon = L.divIcon({ className: 'municipal-marker', iconSize: [32, 32], iconAnchor: [16, 16],
         html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:0 1px 5px #555"></span>` });
-      const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${real ? 'REAL' : 'DEMO'}`, keyboard: true }).addTo(group);
+      const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`, keyboard: true }).addTo(group);
       marker.on('click', () => onSelectPoint(point));
-      marker.getElement()?.setAttribute('aria-label', `${point.name} — ${real ? 'REAL' : 'DEMO'}`);
+      marker.getElement()?.setAttribute('aria-label', `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`);
       }
     };
     render();
@@ -92,15 +92,37 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
   }, [streets]);
   return <div className="relative h-full w-full">
     <div ref={host} className="h-full w-full bg-[#e9eee5]" style={{ zIndex: 0 }} aria-label="Mapa geográfico de Planaltina com limite IBGE" />
-    <div className="absolute left-3 top-3 z-10 flex flex-wrap gap-2 max-w-[65%]">
-      <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow" aria-pressed={streets}
-        onClick={() => { setTileError(false); setStreets(!streets); }}>Ruas online {streets ? 'ativadas' : 'desativadas'}</button>
-      <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow"
-        onClick={() => map.current?.fitBounds(L.geoJSON(MUNICIPAL_BOUNDARY as GeoJSON.GeoJsonObject).getBounds())}>Ver município</button>
-      {routePreview && <button className="touch-target rounded-xl bg-[#355E3B] px-3 py-2 text-xs font-bold text-white shadow" onClick={onClearRoute}>Limpar percurso · {(routePreview.distanceMeters/1000).toFixed(1)} km aprox.</button>}
-      {userLocation && <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow" onClick={() => map.current?.setView([userLocation.lat, userLocation.lng], 15)}>Minha posição</button>}
-      {tileError && <p role="status" className="rounded bg-white p-2 text-xs">Ruas indisponíveis. Limite e pontos continuam disponíveis.</p>}
+    <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-6rem)] flex-wrap gap-2" aria-label="Controles do mapa">
+      <button type="button" className="touch-target inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-3 py-2 text-xs font-bold text-[#355E3B] shadow-lg backdrop-blur"
+        aria-pressed={streets} aria-label={streets ? 'Ruas online ativadas' : 'Ruas online desativadas'}
+        onClick={() => { setTileError(false); setStreets(!streets); }}>
+        <Layers2 size={16} /> Ruas <span className={streets ? 'text-emerald-700' : 'text-neutral-600'}>{streets ? 'ON' : 'OFF'}</span>
+      </button>
+      <button type="button" className="touch-target inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-3 py-2 text-xs font-bold text-[#355E3B] shadow-lg backdrop-blur"
+        aria-label="Ver município" onClick={() => map.current?.fitBounds(L.geoJSON(MUNICIPAL_BOUNDARY as GeoJSON.GeoJsonObject).getBounds(),{padding:[24,24]})}>
+        <MapPinned size={16} /> <span className="hidden sm:inline">Município</span>
+      </button>
+      {userLocation && <button type="button" className="touch-target inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-3 py-2 text-xs font-bold text-[#355E3B] shadow-lg"
+        onClick={() => map.current?.setView([userLocation.lat,userLocation.lng],15)}>
+        <Navigation2 size={16} /> <span className="hidden sm:inline">Minha posição</span>
+      </button>}
+      {tileError && <p role="status" className="rounded-xl bg-white/95 p-2 text-xs">Ruas online indisponíveis; os pontos e o limite municipal continuam visíveis.</p>}
     </div>
-    <p className="absolute bottom-8 left-2 z-10 max-w-[60%] rounded bg-white/95 p-2 text-[10px]">Limite IBGE simplificado • cores por categoria • <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors (ODbL)</a>. Dados comunitários não verificados; ruas online sem download offline.</p>
+    {routePreview && <div className="absolute bottom-14 right-3 z-20 max-w-[min(310px,75vw)] rounded-2xl border border-neutral-300 bg-white/95 p-3 shadow-xl backdrop-blur"
+       role="status" aria-label="Rota local calculada">
+      <p className="flex items-center gap-2 text-sm font-extrabold text-[#355E3B]"><Route size={17}/> Percurso cartográfico</p>
+      <p className="mt-1 text-xl font-black">{(routePreview.distanceMeters/1000).toFixed(1)} km <span className="text-xs font-medium">aproximadamente</span></p>
+      {(routePreview.startAccessMeters > 20 || routePreview.endAccessMeters > 20) &&
+        <p className="mt-1 text-xs text-orange-800">Trechos de acesso fora da malha: {routePreview.startAccessMeters} m no início e {routePreview.endAccessMeters} m no fim.</p>}
+      <button type="button" className="touch-target mt-2 w-full rounded-lg bg-[#355E3B] px-3 py-2 text-xs font-bold text-white" onClick={onClearRoute}>Limpar percurso</button>
+    </div>}
+    <details className="absolute bottom-11 left-3 z-10 max-w-[min(345px,68vw)] rounded-xl border border-neutral-200 bg-white/95 text-[11px] shadow-md backdrop-blur">
+      <summary className="touch-target flex cursor-pointer items-center gap-2 px-3 py-2 font-bold text-[#355E3B]"><Info size={15}/> Legenda e procedência</summary>
+      <div className="border-t border-neutral-200 p-3 text-neutral-700">
+        <p>Limite municipal: IBGE. Marcadores coloridos identificam categorias.</p>
+        <p className="mt-1">Local colaborativo não equivale a estabelecimento verificado. Rotas são estimativas na rede OSM, sem trânsito ao vivo.</p>
+        <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="mt-2 inline-block underline">© OpenStreetMap contributors (ODbL)</a>
+      </div>
+    </details>
   </div>;
 }
