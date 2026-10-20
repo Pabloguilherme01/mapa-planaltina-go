@@ -8,12 +8,22 @@ export function DirectoryResults({ search, categories, browse = false }: {
   search: string; categories: PointCategory[]; browse?: boolean;
 }) {
   const [visible, setVisible] = useState(8);
+  const [group, setGroup] = useState<'all' | 'school' | 'fuel' | 'commercial' | 'digital'>('all');
   const matches = useMemo(() => search.trim()
     ? findCatalogResources(search, categories)
     : browse ? browseCatalogResources(categories) : [], [search, categories, browse]);
-  useEffect(() => { setVisible(8); }, [search, categories, browse]);
+  useEffect(() => { setVisible(8); setGroup('all'); }, [search, categories, browse]);
   if ((!search.trim() && !browse) || matches.length === 0) return null;
-  const shown = matches.slice(0, visible);
+  const categoriesCount = {
+    all: matches.length,
+    school: matches.filter(x => x.type === 'directory' && x.kind === 'school').length,
+    fuel: matches.filter(x => x.type === 'directory' && x.kind === 'fuel').length,
+    commercial: matches.filter(x => x.type === 'directory' && x.kind === 'commercial').length,
+    digital: matches.filter(x => x.type === 'digital').length,
+  };
+  const listed = matches.filter(x => group === 'all' ||
+    (group === 'digital' ? x.type === 'digital' : x.type === 'directory' && x.kind === group));
+  const shown = listed.slice(0, visible);
   const digitalCount = matches.filter(x => x.type === 'digital').length;
   const documentaryCount = matches.length - digitalCount;
   return <section aria-label="Cadastros sem geolocalização"
@@ -25,7 +35,25 @@ export function DirectoryResults({ search, categories, browse = false }: {
       {documentaryCount} cadastros documentais sem coordenadas confirmadas e {digitalCount} serviços digitais.
       Não geramos pinos nem rotas para esses registros.
     </p>
+    <div role="group" aria-label="Filtrar catálogo complementar"
+      className="mb-2 flex flex-wrap gap-1.5">
+      {([
+        ['all', 'Todos'],
+        ['school', 'Escolas'],
+        ['fuel', 'Postos'],
+        ['commercial', 'Comércio'],
+        ['digital', 'Serviços digitais'],
+      ] as const).map(([id, label]) => (
+        <button key={id} type="button" aria-pressed={group === id}
+          onClick={() => { setGroup(id); setVisible(8); }}
+          className={`touch-target rounded-lg border px-2 text-[11px] font-bold
+            ${group === id ? 'bg-[#355E3B] text-white' : 'border-neutral-300 text-[#355E3B]'}`}>
+          {label} ({categoriesCount[id]})
+        </button>
+      ))}
+    </div>
     <ul className="space-y-2">
+      {listed.length === 0 && <li className="text-xs text-neutral-600">Nenhum registro nesta categoria. Experimente Todos.</li>}
       {shown.map(item => <li key={item.id}
         className="rounded-xl border border-neutral-200 bg-[#F5F0E6] px-3 py-2">
         <div className="flex items-start gap-2">
@@ -50,11 +78,11 @@ export function DirectoryResults({ search, categories, browse = false }: {
       </li>)}
     </ul>
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      {matches.length > shown.length && <button className="touch-target rounded-lg border border-neutral-400 px-3 text-xs font-bold"
-        type="button" onClick={() => setVisible(v => Math.min(v + 8, matches.length))}>
+      {listed.length > shown.length && <button className="touch-target rounded-lg border border-neutral-400 px-3 text-xs font-bold"
+        type="button" onClick={() => setVisible(v => Math.min(v + 8, listed.length))}>
           Mostrar mais registros
         </button>}
-      <span className="text-[11px] text-neutral-600" role="status">Mostrando {shown.length} de {matches.length}</span>
+      <span className="text-[11px] text-neutral-600" role="status">Mostrando {shown.length} de {listed.length}</span>
       <a className="touch-target inline-flex items-center gap-1 rounded-lg border border-neutral-400 px-2 text-xs font-bold"
         href={sitePath('/fontes', import.meta.env.BASE_URL)}>
         <MapPinOff size={14} /> Ver cadastros por fonte
