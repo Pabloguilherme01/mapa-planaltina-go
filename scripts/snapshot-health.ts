@@ -41,6 +41,8 @@ export function assessPublishedSnapshot(
   const seen = new Set<string>();
   let demoCount = 0;
   let realCount = 0;
+  let verifiedCount = 0;
+  let communityCount = 0;
   let oldest = 0;
   for (const value of payload.data) {
     if (!record(value) || typeof value.id !== 'string' || !value.id.trim() || seen.has(value.id)) {
@@ -73,11 +75,14 @@ export function assessPublishedSnapshot(
       throw new Error('Ponto real sem classificação de procedência ou data válida.');
     }
     realCount++;
-    if (verified) oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt));
+    if (community) communityCount++;
+    if (verified) { verifiedCount++; oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt)); }
   }
   if (
-    realCount === 0 ||
+    verifiedCount === 0 ||
     payload.meta.realCount !== realCount ||
+    (payload.meta.verifiedCount !== undefined && payload.meta.verifiedCount !== verifiedCount) ||
+    (payload.meta.communityCount !== undefined && payload.meta.communityCount !== communityCount) ||
     payload.meta.demoCount !== demoCount
   ) {
     throw new Error('Contagens reais/DEMO inconsistentes no catálogo.');
