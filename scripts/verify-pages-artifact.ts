@@ -61,15 +61,19 @@ function isSourceUrl(value: unknown): boolean {
 
 function verifyRealPoint(point: ArtifactPoint): void {
   const provenance = point.provenanceMeta;
-  const sourceAllowed =
-    provenance?.provenance === 'official' || provenance?.provenance === 'verified_open_data';
+  const confirmed = provenance?.provenance === 'official' || provenance?.provenance === 'verified_open_data';
+  const community = provenance?.provenance === 'community' &&
+    (provenance.verificationStatus === 'unverified' || provenance.verificationStatus === 'pending') &&
+    /^osm-(node|way|relation)-[1-9]\\d*$/.test(point.id ?? '') &&
+    /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\\d*$/.test(provenance.sourceUrl ?? '');
+  const sourceAllowed = confirmed || community;
 
   if (
     !point.id ||
     !isFiniteCoordinate(point.lat) || Math.abs(point.lat) > 90 ||
     !isFiniteCoordinate(point.lng) || Math.abs(point.lng) > 180 ||
     !sourceAllowed ||
-    provenance?.verificationStatus !== 'verified' ||
+    (confirmed && provenance?.verificationStatus !== 'verified') ||
     !hasText(provenance.sourceName) ||
     !isSourceUrl(provenance.sourceUrl) ||
     !hasText(provenance.license) ||
