@@ -4,15 +4,19 @@ import { estimateFuelCost, readTrip, routeUrl, tripKey, type TravelMode, type Ex
 import { findDestinations, susStatus } from '../utils/destinationSearch';
 import { favoritesKey, readFavorites, saveFavorite } from '../utils/favoriteTrips';
 import { SavedDestinations } from './SavedDestinations';
+import { distanceMeters } from '../utils/catalogFilters.ts';
 import { planLocalRoute, validateRoadGraph, type RoadGraph, type LocalRoute } from '../utils/roadGraph.ts';
 
 type Mode = 'automatico' | 'proxima' | 'repetir' | 'economia' | 'offline' | 'conducao';
 const modes: [Mode, string][] = [['automatico', 'Automático'], ['proxima', 'Próxima viagem'], ['repetir', 'Repetir'], ['economia', 'Economia'], ['offline', 'Sem internet'], ['conducao', 'Condução']];
 
-export function MobilityHub({ points, selectedPoint, userLocation, onRoutePreview }: {
+export function MobilityHub({ points, selectedPoint, userLocation, onRoutePreview, mapOrigin, mapDestination, onRequestMapPick }: {
   points: MapPoint[]; selectedPoint: MapPoint | null;
   userLocation: { lat: number; lng: number } | null;
   onRoutePreview: (route: LocalRoute) => void;
+  mapOrigin: {lat:number;lng:number} | null;
+  mapDestination: {lat:number;lng:number} | null;
+  onRequestMapPick: (mode: 'origin' | 'destination') => void;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [mode, setMode] = useState<Mode>('automatico');
@@ -35,10 +39,28 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
   const real = useMemo(() => findDestinations(points, '', false), [points]);
   const results = useMemo(() => findDestinations(real, query, susOnly), [real, query, susOnly]);
   const destination = real.find(point => point.id === destinationId);
-  const origin = originId === '__gps__' ? userLocation : real.find(p => p.id === originId);
-  const routeEnabled = Boolean(origin && destination && originId !== destinationId);
+  const origin = originId === '__gps__' ? userLocation :
+    originId === '__map__' ? mapOrigin : real.find(p => p.id === originId);
+  const routeDestination = destinationId === '__map__' ? mapDestination : destination;
+  const routeEnabled = Boolean(origin && routeDestination &&
+    distanceMeters(origin!, routeDestination!) >= 8);
   const destinationSus = destination ? susStatus(destination) : 'unknown';
   const cost = estimateFuelCost(Number(km), Number(consumption), Number(price));
+  useEffect(() => {
+    if (!mapOrigin) return;
+    setOriginId('__map__');
+    if (dialog.current && !dialog.current.open) dialog.current.showModal();
+  }, [mapOrigin]);
+  useEffect(() => {
+    if (!mapDestination) return;
+    setDestinationId('__map__');
+    if (dialog.current && !dialog.current.open) dialog.current.showModal();
+  }, [mapDestination]);
+  const requestPick = (which: 'origin' | 'destination') => {
+    setNotice('');
+    dialog.current?.close();
+    onRequestMapPick(which);
+  };
   useEffect(() => {
     const sync = (event: StorageEvent) => {
       if (event.key === favoritesKey || event.key === null) {
@@ -69,7 +91,7 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
     if (value === 'automatico') { if (!online) { setMode('offline'); restore(); } else setMode('proxima'); }
   }
   async function calculateOnDevice() {
-    if (!origin || !destination || originId === destinationId || calculating) return;
+    if (!origin || !routeDestination || !routeEnabled || calculating) return;
     setCalculating(true); setNotice('Calculando percurso sobre a malha pública de ruas…');
     try {
       let graph = graphCache.current;
@@ -81,7 +103,7 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
         graph = payload;
         graphCache.current = graph;
       }
-      const result = planLocalRoute(graph, origin, destination, travel);
+      const result = planLocalRoute(graph, origin, routeDestination, travel);
       if (!result) {
         setNotice('Não foi encontrada ligação viária confiável neste modo, ou a origem/destino está longe da rede. Use um aplicativo de navegação externa.');
         return;
@@ -118,7 +140,12 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
       <label className="my-3 block">Buscar destino por nome ou endereço<input type="search" className={inputStyle} value={query} onChange={event => { setQuery(event.target.value); setDestinationId(''); }} /></label>
       <label className="my-2 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={susOnly} onChange={event => { setSusOnly(event.target.checked); setDestinationId(''); }} />Somente vínculo SUS informado no CNES</label>
       <p aria-live="polite" className="text-xs">{results.length} destinos disponíveis{susOnly ? ' com vínculo SUS informado' : ''}</p>
-      <label className="my-3 block">Destino real<select className={inputStyle} value={destinationId} onChange={event => setDestinationId(event.target.value)}><option value="">Escolha um local</option>{results.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}</select></label>
+      <label className="my-3 block">Destino real<select className={inputStyle} value={destinationId} onChange={event => setDestinationId(event.target.value)}><option value="">Escolha um local</option>
+        {mapDestination && <option value="__map__">Ponto marcado no mapa ({mapDestination.lat.toFixed(5)}, {mapDestination.lng.toFixed(5)})</option>}
+        {results.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}</select></label>
+      <button type="button" className="touch-target my-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('destination')}>
+        Marcar destino no mapa
+      </button>
       <label className="block">Deslocamento<select className={inputStyle} value={travel} onChange={event => {
         const next = event.target.value as TravelMode;
         setTravel(next);
@@ -131,9 +158,13 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
             onChange={event => setOriginId(event.target.value)}>
             <option value="">Escolha onde começa</option>
             {userLocation && <option value="__gps__">Minha posição (GPS autorizado)</option>}
+            {mapOrigin && <option value="__map__">Ponto marcado no mapa ({mapOrigin.lat.toFixed(5)}, {mapOrigin.lng.toFixed(5)})</option>}
             {real.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}
           </select>
         </label>
+        <button type="button" className="touch-target my-2 mr-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('origin')}>
+          Marcar origem no mapa
+        </button>
         <button type="button" className="touch-target rounded-xl bg-[#355E3B] px-3 py-2 text-white font-bold disabled:opacity-50"
           disabled={!routeEnabled || calculating} onClick={calculateOnDevice}>
           {calculating ? 'Calculando…' : 'Traçar rota no mapa'}
@@ -151,6 +182,13 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
           <option value="organic">Organic Maps (abrir ponto)</option>
         </select>
       </label>
+      {destinationId === '__map__' && mapDestination && <div className="my-3 rounded-xl border border-neutral-400 p-3">
+        <strong>Destino selecionado diretamente no mapa</strong>
+        <p className="text-xs">Latitude {mapDestination.lat.toFixed(6)} · Longitude {mapDestination.lng.toFixed(6)}. Endereço não verificado.</p>
+        {online && mode !== 'offline' && <a href={routeUrl(mapDestination, travel, externalMap)} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block rounded-lg bg-[#355E3B] p-3 font-bold text-white">
+          {externalMap === 'organic' ? 'Abrir ponto no Organic Maps' : 'Abrir destino no aplicativo externo'}
+        </a>}
+      </div>}
       {destination && <div className="my-3 rounded-xl border border-neutral-400 p-3"><strong>{destination.name}</strong><p>{destination.addressHint}</p><p className="text-sm">{destination.provenanceMeta.sourceName} • {destination.lat}, {destination.lng}</p>
         <p className="mt-2 text-sm">Vínculo SUS: {destinationSus === 'yes' ? 'Sim' : destinationSus === 'no' ? 'Não' : 'Não informado'}. Coleta: {new Date(destination.provenanceMeta.retrievedAt).toLocaleDateString('pt-BR')}. {destination.provenanceMeta.verificationStatus !== 'verified' ? ' Cadastro comunitário sem verificação oficial; confirme o local.' : ' Confirme o atendimento antes de sair.'}</p>
         {online && mode !== 'offline' ? <a className="mt-3 inline-block rounded-lg bg-[#355E3B] p-3 font-bold text-white" href={routeUrl(destination, travel, externalMap)} target="_blank" rel="noopener noreferrer">{externalMap === 'organic' ? 'Abrir ponto no Organic Maps' : 'Abrir navegação externa'}</a> : <p className="mt-2 font-semibold">Consulta offline: endereço e coordenadas disponíveis. Navegação externa exige conexão.</p>}
