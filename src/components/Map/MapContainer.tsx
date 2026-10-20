@@ -28,7 +28,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
 }) => {
   const [provider, setProvider] = useState<'geographic' | 'demo' | 'google'>('geographic');
   const allowSchematic = import.meta.env.DEV;
-  const googleMapsAvailable = hasGoogleMapsApiKey(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
+  const googleMapsAvailable = import.meta.env.DEV && hasGoogleMapsApiKey(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
 
   return (
     <div className="relative w-full h-full">
@@ -36,7 +36,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <label className="absolute top-3 right-3 z-30 lg:hidden rounded-xl bg-white p-1 shadow">
         <span className="sr-only">Tipo de mapa</span>
         <select className="min-h-11 max-w-36 text-xs font-bold" value={provider} onChange={event => setProvider(event.target.value as typeof provider)}>
-          <option value="geographic">Geográfico</option>{allowSchematic && <option value="demo">Esquemático de teste</option>}<option value="google" disabled={!googleMapsAvailable}>Google Maps</option>
+          <option value="geographic">Geográfico</option>{allowSchematic && <option value="demo">Esquemático de teste</option>}{import.meta.env.DEV && <option value="google" disabled={!googleMapsAvailable}>Google Maps</option>}
         </select>
       </label>
       <div className="absolute lg:top-3 lg:right-32 z-30 hidden lg:flex items-center bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-neutral-200">
@@ -55,7 +55,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           <span>Esquemático de teste</span>
         </button>}
 
-        <button
+        {import.meta.env.DEV && (        <button
           type="button"
           onClick={() => {
             if (googleMapsAvailable) setProvider('google');
@@ -84,7 +84,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           <Globe size={14} />
           <span>Google Maps</span>
         </button>
-      </div>
+)}      </div>
 
       {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} /></Suspense> : provider === 'demo' ? (
         <DemoMapProvider
