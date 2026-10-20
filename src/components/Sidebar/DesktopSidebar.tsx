@@ -1,6 +1,8 @@
 import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
+const DirectoryResults = React.lazy(() => import('../Sources/DirectoryResults.tsx')
+  .then(module => ({ default: module.DirectoryResults })));
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
@@ -253,6 +255,9 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+        {searchQuery.trim() && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros documentais…</p>}>
+          <DirectoryResults search={searchQuery} categories={selectedCategories} />
+        </React.Suspense>}
         {activeLoading && (
           <div className="flex flex-col gap-3" aria-busy="true">
             {[1, 2, 3].map((idx) => (

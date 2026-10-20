@@ -429,3 +429,21 @@ test('roteamento de qualquer rua: selecionar origem e destino por toque sem GPS'
   await expect(planner.getByLabel('Destino real')).toHaveValue('__map__');
   await expect(planner.getByRole('button', { name: 'Traçar rota no mapa' })).toBeEnabled();
 });
+
+test('diretório: encontra cadastros SEDUC, ANP e comércio sem inventar pontos no mapa', async ({ page }, testInfo) => {
+  await page.goto('./');
+  const mobile = testInfo.project.name.includes('mobile');
+  const search = page.getByLabel(mobile ? 'Buscar pontos em Planaltina, Goiás' :
+    'Buscar locais, órgãos e serviços em Planaltina, Goiás');
+  await search.fill('MACHADO DE ASSIS');
+  const docs = page.getByRole('region', { name: 'Cadastros sem geolocalização' });
+  await expect(docs).toBeVisible();
+  await expect(docs).toContainText('ESCOLA MUNICIPAL MACHADO DE ASSIS');
+  await expect(docs).toContainText('Cadastro SEDUC GO 2024');
+  await expect(docs).toContainText('Não geramos pinos nem rotas');
+  await search.fill('F1 COMBUSTIVEIS');
+  await expect(docs).toContainText('Cadastro ANP');
+  await search.fill('Atacadao Dia a Dia');
+  await expect(docs).toContainText('Atacadão Dia a Dia');
+  await expect(docs.getByRole('link', { name: 'Consultar fonte' })).toHaveCount(1);
+});
