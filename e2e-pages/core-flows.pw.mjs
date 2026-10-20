@@ -338,3 +338,49 @@ test('cartografia local e cadastro SEDUC distinguem geometria de registro cadast
   await expect(page.getByText('ESCOLA CRESCER E SABER', { exact: true })).toBeVisible();
   await expect(page.getByText('1 registro encontrado', { exact: true })).toBeVisible();
 });
+
+
+test('aparência: modo escuro é nativo, persiste e segue o sistema quando escolhido', async ({ page }) => {
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('./');
+  await page.getByLabel('Aparência').selectOption('dark');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+  await page.getByLabel('Aparência').selectOption('system');
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+});
+
+test('catálogo: filtros de confiança e ordenação funcionam em desktop', async ({ page, request }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Controles desktop');
+  await page.goto('./');
+  const payload = await (await request.get(`${new URL(BASE_PATH, page.url())}data/points.json`)).json();
+  const points = payload.data;
+  const verified = points.filter(point => point.provenanceMeta.verificationStatus === 'verified').length;
+  const sidebar = page.getByRole('complementary', { name: 'Painel de busca e catálogo territorial' });
+  await sidebar.getByLabel('Situação da verificação').selectOption('verified');
+  await expect(sidebar).toContainText(`${verified} pontos no catálogo`);
+  await sidebar.getByLabel('Ordenar resultados').selectOption('name');
+  await sidebar.getByLabel('Situação da verificação').selectOption('unverified');
+  const unverified = points.filter(point => ['unverified','pending'].includes(point.provenanceMeta.verificationStatus)).length;
+  await expect(sidebar).toContainText(`${unverified} pontos no catálogo`);
+  await expect(sidebar.getByLabel('Raio de proximidade')).toBeDisabled();
+});
+
+test('rotas: publicação oferece malha rodoviária verdadeira e rejeita origem vazia', async ({ page, request }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Contrato desktop do planejador');
+  await page.goto('./');
+  const response = await request.get(`${new URL(BASE_PATH, page.url())}data/road-graph.json`);
+  expect(response.ok()).toBeTruthy();
+  const graph = await response.json();
+  expect(graph.source).toBe('OpenStreetMap/Geofabrik');
+  expect(graph.nodes.length).toBeGreaterThan(100);
+  expect(graph.edges.length).toBeGreaterThan(100);
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  await expect(dialog.getByLabel('Ponto de partida')).toBeVisible();
+  await expect(dialog.getByRole('button', { name: 'Traçar rota no mapa' })).toBeDisabled();
+  await expect(dialog).toContainText('Não possui tráfego ao vivo');
+});
