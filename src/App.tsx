@@ -378,6 +378,7 @@ export default function App() {
                 onClearRoute={() => setRoutePreview(null)}
                 routePickMode={routePickMode}
                 onMapCoordinatePicked={onMapCoordinatePicked}
+                onCancelMapPick={() => setRoutePickMode(null)}
               />
             </div>
 
