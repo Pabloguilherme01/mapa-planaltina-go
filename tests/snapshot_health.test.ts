@@ -5,6 +5,8 @@ const NOW = new Date('2026-10-19T15:00:00.000Z');
 const real = (retrievedAt: string) => ({
   id: 'cnes-0112666',
   isDemo: false,
+  lat: -15.4542,
+  lng: -47.6029,
   provenanceMeta: {
     provenance: 'verified_open_data',
     verificationStatus: 'verified',
@@ -55,6 +57,18 @@ describe('vigia do catálogo público', () => {
     expect(
       assessPublishedSnapshot(payload('2026-10-10T15:00:00.000Z'), NOW, 7).status
     ).toBe('stale');
+  });
+
+
+  it.each([
+    ['sem latitude', { lat: undefined }],
+    ['coordenadas nulas', { lat: 0, lng: 0 }],
+    ['fora da malha municipal', { lat: -23.5505, lng: -46.6333 }],
+    ['longitude não finita', { lng: Number.NaN }],
+  ])('rejeita ponto real %s no catálogo publicado', (_label, coordinates) => {
+    const value = payload('2026-10-18T15:00:00.000Z');
+    Object.assign(value.data[0], coordinates);
+    expect(() => assessPublishedSnapshot(value, NOW)).toThrow(/coordenadas|malha municipal/);
   });
 
   it.each([
