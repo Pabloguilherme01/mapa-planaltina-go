@@ -1,4 +1,5 @@
 import { inPlanaltina } from '../src/utils/territory.ts';
+import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { mapOverpassElements, overpassQuery, validateOsmSnapshot } from '../src/utils/osmCatalog.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
@@ -48,7 +49,7 @@ console.log(
 // Falhas de terceiros degradam para o último snapshot real CNES sem impedir o deploy.
 let communityPoints: Awaited<ReturnType<typeof mapOverpassElements>> = [];
 let osmIssue: string | null = null;
-let osmMode: 'live' | 'snapshot_fallback' | 'unavailable' = 'unavailable';
+let osmMode: 'live' | 'regional_extract' | 'snapshot_fallback' | 'unavailable' = 'unavailable';
 const osmSnapshotPath = process.env.OSM_SNAPSHOT_PATH ?? '.cache/osm/snapshot.json';
 try {
   // Consulta enxuta primeiro: o endpoint comunitário não oferece SLA.
@@ -73,8 +74,15 @@ try {
 } catch (error) {
   osmIssue = error instanceof Error ? error.message : String(error);
   try {
-    communityPoints = validateOsmSnapshot(JSON.parse(await readFile(osmSnapshotPath, 'utf8')));
-    if (communityPoints.length > 0) osmMode = 'snapshot_fallback';
+    const cached: unknown = JSON.parse(await readFile(osmSnapshotPath, 'utf8'));
+    communityPoints = validateOsmSnapshot(cached);
+    if (communityPoints.length > 0) {
+      const snapshot = cached as { origin?: unknown; createdAt?: unknown };
+      osmMode = snapshot.origin === 'geofabrik' &&
+        isSnapshotDate(snapshot.createdAt) &&
+        Date.now() - Date.parse(snapshot.createdAt) < 2 * 60 * 60_000
+        ? 'regional_extract' : 'snapshot_fallback';
+    }
   } catch {
     communityPoints = [];
   }
@@ -92,11 +100,14 @@ const cnesStatus = sources.find(source => source.id === 'cnes');
 if (cnesStatus) cnesStatus.notes += ` Triagem pela malha IBGE: ${realHealthPoints.length} pins aceitos; ${territorialReview.length} registros separados para revisão.`;
 const osmStatus = sources.find(source => source.id === 'osm');
 if (osmStatus) {
-  osmStatus.status = osmMode === 'live' ? 'connected' : osmMode === 'snapshot_fallback' ? 'snapshot_fallback' : 'error';
+  osmStatus.status = osmMode === 'live' || osmMode === 'regional_extract' ? 'connected'
+    : osmMode === 'snapshot_fallback' ? 'snapshot_fallback' : 'error';
   osmStatus.statusMessage = osmMode === 'live'
     ? `${communityPoints.length} locais comunitários coletados na região urbana, filtrados pela malha IBGE. Não são verificados pelo município.`
+    : osmMode === 'regional_extract'
+    ? `${communityPoints.length} locais extraídos do OpenStreetMap/Geofabrik nesta publicação; somente a geometria e procedência foram filtradas, não a existência do serviço.`
     : osmMode === 'snapshot_fallback'
-    ? `${communityPoints.length} locais comunitários preservados de uma coleta anterior; Overpass não respondeu nesta publicação.`
+    ? `${communityPoints.length} locais comunitários preservados de uma coleta anterior; fonte online indisponível nesta publicação.`
     : 'Coleta colaborativa indisponível nesta publicação; não serão apresentados pontos OSM fictícios.';
   osmStatus.retrievedAt = communityPoints[0]?.provenanceMeta.retrievedAt ?? null;
   osmStatus.checkedAt = new Date().toISOString();
