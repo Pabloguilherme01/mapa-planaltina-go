@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildRoadGraph, planLocalRoute, validateRoadGraph } from '../src/utils/roadGraph.ts';
+import { buildRoadGraph, planLocalRoute, prepareRoadGraph, validateRoadGraph } from '../src/utils/roadGraph.ts';
 
 const coords = [[-47.603, -15.4542], [-47.6025, -15.4542], [-47.602, -15.4542]];
 const road = (id: string, properties: Record<string, unknown> = {}, path = coords) => ({
@@ -18,6 +18,21 @@ describe('roteamento local por ruas OSM', () => {
     expect(result?.coordinates).toHaveLength(3);
     expect(result?.distanceMeters).toBeGreaterThan(100);
     expect(result?.distanceMeters).toBeLessThan(120);
+  });
+  it('reutiliza índice de roteamento validado para consultas repetidas no celular', () => {
+    const graph = network([road('way/1')]);
+    const first = prepareRoadGraph(graph, 'walking');
+    expect(first).not.toBeNull();
+    expect(prepareRoadGraph(graph, 'walking')).toBe(first);
+    expect(prepareRoadGraph(graph, 'driving')).not.toBe(first);
+    expect(planLocalRoute(graph, a, b, 'walking')?.coordinates).toHaveLength(3);
+    expect(prepareRoadGraph(graph, 'walking')).toBe(first);
+    expect(prepareRoadGraph({ ...graph, edges: [[0, 999999, 2]] }, 'walking')).toBeNull();
+  });
+  it('não perde a rua mais próxima em bordas de células do índice espacial', () => {
+    const graph = network([road('way/1')]);
+    const start = { lat: -15.4542 + 0.0012, lng: -47.603 };
+    expect(planLocalRoute(graph, start, b, 'walking')?.startAccessMeters).toBeGreaterThan(100);
   });
   it('respeita mão única para carros mas permite caminhada no sentido contrário', () => {
     const graph = network([road('way/1', { oneway: 'yes' })]);

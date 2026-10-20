@@ -447,3 +447,20 @@ test('diretório: encontra cadastros SEDUC, ANP e comércio sem inventar pontos 
   await expect(docs).toContainText('Atacadão Dia a Dia');
   await expect(docs.getByRole('link', { name: 'Consultar fonte' })).toHaveCount(1);
 });
+
+test('serviços digitais oficiais: navegação cidadã, comércio e transparência no celular e desktop', async ({ page }) => {
+  await page.goto('fontes/');
+  const services = page.getByRole('region', { name: 'Serviços digitais de Planaltina' });
+  await expect(services).toBeVisible();
+  await expect(services.getByRole('link', {name:/Emitir ou consultar IPTU/})).toHaveAttribute('href', /planaltina.bsit-br.com.br/);
+  const search=services.getByRole('searchbox', {name:'Buscar serviços digitais municipais'});
+  await search.fill('certidao');
+  await expect(services.getByRole('link',{name:/Certidão de imóvel e cadastro/})).toBeVisible();
+  await search.fill('');
+  await services.getByRole('button',{name:'Empresas e comércio'}).click();
+  await expect(services.getByRole('link',{name:/Emitir NFS-e nacional/})).toBeVisible();
+  await expect(services.getByRole('link',{name:/Licitações/})).toHaveCount(0);
+  await services.getByRole('button',{name:'Transparência'}).click();
+  await expect(services.getByRole('link',{name:/Licitações/})).toBeVisible();
+  await expect(services.getByRole('link',{name:/Emitir NFS-e nacional/})).toHaveCount(0);
+});

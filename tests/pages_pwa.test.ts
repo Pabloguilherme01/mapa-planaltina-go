@@ -54,9 +54,17 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain("const REFRESHABLE_DATA");
     expect(source).toContain(`${BASE}data/points.json`);
     expect(source).toContain(`${BASE}data/sources.json`);
-    expect(source).toContain("await fetch(request)");
+    expect(source).toContain("await fetch(request, { signal: AbortSignal.timeout(6000) })");
     expect(source).toContain("catch (error)");
     expect(source).toContain("caches.match(request, { ignoreVary: true })");
+  });
+  it('usa timeout em redes intermitentes para não prender o mapa offline', () => {
+    const sw = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-v2',
+      assets: ['data/points.json', 'assets/app.js'] });
+    expect(sw).toContain('AbortSignal.timeout(4500)');
+    expect(sw).toContain('AbortSignal.timeout(6000)');
+    expect(sw).toContain('navigationFallback(request)');
+    expect(sw).toContain('Response.error()');
   });
   it('faz match do precache por URL mesmo quando a resposta varia por Origin', () => {
     const source = buildServiceWorkerSource({

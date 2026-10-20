@@ -1,6 +1,7 @@
 import { SchoolRegistrySection } from '../components/Sources/SchoolRegistrySection.tsx';
 import { MunicipalContextSection } from '../components/Sources/MunicipalContextSection.tsx';
 import { FuelRegistrySection } from '../components/Sources/FuelRegistrySection.tsx';
+import { OfficialServicesSection } from '../components/Sources/OfficialServicesSection.tsx';
 import { snapshotAgeLabel } from '../utils/snapshotDate.ts';
 import React, { useEffect, useState } from 'react';
 import { SourceInfo } from '../types/index.ts';
@@ -181,6 +182,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         </div>
       </details>
 
+      <OfficialServicesSection />
       <MunicipalContextSection />
       <FuelRegistrySection />
       <SchoolRegistrySection />

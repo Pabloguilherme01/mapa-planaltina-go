@@ -118,7 +118,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               }`}
             >
               <FileText size={14} />
-              <span>Fontes e Transparência</span>
+              <span>Serviços e Fontes</span>
             </button>
           </nav>
         </div>
