@@ -48,10 +48,14 @@ console.log(
 let communityPoints: Awaited<ReturnType<typeof mapOverpassElements>> = [];
 let osmIssue: string | null = null;
 try {
-  const overpass = await fetch('https://overpass-api.de/api/interpreter', {
+  const overpass = await fetch('https://overpass.private.coffee/api/interpreter', {
     method: 'POST',
     body: new URLSearchParams({ data: overpassQuery() }),
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+      'User-Agent': 'MapaPlanaltinaGO/1.0 (+https://github.com/Pabloguilherme01/mapa-planaltina-go)',
+    },
     signal: AbortSignal.timeout(35_000),
   });
   if (!overpass.ok) throw new Error(`HTTP ${overpass.status}`);
