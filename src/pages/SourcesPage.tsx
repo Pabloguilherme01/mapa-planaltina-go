@@ -187,10 +187,11 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
       <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="cartography-title">
         <h2 id="cartography-title" className="text-lg font-bold">Cartografia e integrações verificáveis</h2>
         <p className="my-2 text-sm">Limite municipal: malha simplificada do IBGE, código 5217609, obtida em 15/10/2026 UTC. Não substitui levantamento cadastral. Registros CNES fora da malha ficam separados para revisão, sem alterar a coordenada original.</p>
+        <a className="inline-flex min-h-11 items-center underline" href="https://download.geofabrik.de/south-america/brazil/centro-oeste.html" target="_blank" rel="noopener noreferrer">Fonte da rede viária: Geofabrik / OpenStreetMap (ODbL)</a>
         <a className="inline-flex min-h-11 items-center underline" href="https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html" target="_blank" rel="noreferrer">Cartografia no IBGE</a>
         <p className="my-2 text-sm">Ônibus: integração de linhas e horários ainda não validada. Consulte o canal oficial; não são calculados itinerários nem chegadas em tempo real neste mapa.</p>
         <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/pt-br/servicos/consultar-linhas-do-servico-rodoviario-interestadual-semiurbano-de-passageiros" target="_blank" rel="noreferrer">Consultar linhas na ANTT</a>
-        <p className="my-2 text-sm">Ruas OpenStreetMap são carregadas online sob demanda do mapa visível, sem pré-download de tiles. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>
+        <p className="my-2 text-sm">Ruas OpenStreetMap são carregadas online sob demanda do mapa visível, sem pré-download de tiles. O roteamento local utiliza um grafo de vias do extrato OpenStreetMap/Geofabrik criado no CI e guardado apenas quando o cidadão solicita um percurso. Distâncias são aproximadas; não há trânsito ao vivo, linhas de ônibus, restrições de conversão ou garantia de passabilidade. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>
       </section>
       <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="antt-official-title">
         <h2 id="antt-official-title" className="text-lg font-bold">Transporte semiurbano — fontes oficiais ANTT</h2>
