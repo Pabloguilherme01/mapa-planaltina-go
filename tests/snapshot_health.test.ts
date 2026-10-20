@@ -60,6 +60,25 @@ describe('vigia do catálogo público', () => {
   });
 
 
+  it('aceita ponto OSM comunitário sem promover a verificado e mantém idade da coleta oficial', () => {
+    const value = payload('2026-10-18T15:00:00.000Z');
+    value.data.push({
+      ...real('2026-10-17T15:00:00.000Z'),
+      id: 'osm-node-42',
+      provenanceMeta: {
+        provenance: 'community',
+        verificationStatus: 'unverified',
+        retrievedAt: '2026-10-17T15:00:00.000Z',
+        sourceUrl: 'https://www.openstreetmap.org/node/42',
+      },
+    } as (typeof value.data)[number]);
+    value.meta.realCount = 2;
+    const result = assessPublishedSnapshot(value, NOW);
+    expect(result.status).toBe('healthy');
+    expect(result.realCount).toBe(2);
+    expect(result.oldestAgeDays).toBe(1);
+  });
+
   it.each([
     ['sem latitude', { lat: undefined }],
     ['coordenadas nulas', { lat: 0, lng: 0 }],
