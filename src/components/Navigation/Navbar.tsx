@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             Catálogo
           </span>
           <p className="text-xs text-[#78350F] font-semibold">
-            {realCount} locais reais mapeados • {demoCount} DEMO. Pontos comunitários podem não estar verificados; confira a fonte.
+            {realCount} locais mapeados {demoCount > 0 ? `• ${demoCount} DEMO` : '• catálogo real'}. Pontos comunitários podem não estar verificados; confira a fonte.
           </p>
         </div>
       </div>
