@@ -1,5 +1,5 @@
 import { CATEGORIES_LIST, type PointCategory, type ProvenanceType } from '../types/index.ts';
-import type { CatalogFilters, CatalogSort, VerificationFilter } from './catalogFilters.ts';
+import type { CatalogFilters } from './catalogFilters.ts';
 
 export type SharedMapFilters = Pick<CatalogFilters, 'search' | 'categories' | 'origin' | 'verification' | 'kind' | 'zone' | 'sort'>;
 const PARAMS = ['q','cat','origin','verified','type','zone','order'] as const;
