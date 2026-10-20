@@ -135,3 +135,32 @@ export function mapOverpassElements(payload: unknown, retrievedAt: string): MapP
   }
   return points.sort((a, b) => a.id.localeCompare(b.id));
 }
+
+/** Aceita somente snapshots construídos pelo conversor conservador desta aplicação. */
+export function validateOsmSnapshot(payload: unknown): MapPoint[] {
+  if (!payload || typeof payload !== 'object' || !('points' in payload) ||
+      !Array.isArray(payload.points) || payload.points.length < 10 || payload.points.length > 100_000) return [];
+  const valid: MapPoint[] = [];
+  const seen = new Set<string>();
+  for (const point of payload.points) {
+    if (!point || typeof point !== 'object' || Array.isArray(point)) return [];
+    const item = point as MapPoint;
+    const meta = item.provenanceMeta;
+    if (typeof item.id !== 'string' || !/^osm-(node|way|relation)-[1-9]\d*$/.test(item.id) ||
+        seen.has(item.id) || !clean(item.name) ||
+        typeof item.lat !== 'number' || typeof item.lng !== 'number' ||
+        !inPlanaltina(item.lat, item.lng) || item.isDemo !== false ||
+        item.zone !== 'Não classificada' ||
+        !['Saúde', 'Educação', 'Transporte', 'Segurança', 'Serviços Públicos', 'Comércio', 'Lazer', 'Meio Ambiente', 'Rural'].includes(item.category) ||
+        !Array.isArray(item.tags) || !item.tags.every(value => clean(value)) ||
+        typeof item.description !== 'string' || typeof item.addressHint !== 'string' ||
+        !meta || meta.provenance !== 'community' || meta.verificationStatus !== 'unverified' ||
+        meta.license !== 'ODbL 1.0' || !isSnapshotDate(meta.retrievedAt) ||
+        typeof meta.sourceUrl !== 'string' ||
+        meta.sourceUrl !== `https://www.openstreetmap.org/${item.id.slice(4).replace('-', '/')}`
+    ) return [];
+    seen.add(item.id);
+    valid.push(item);
+  }
+  return valid;
+}
