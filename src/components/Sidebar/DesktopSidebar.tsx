@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
@@ -63,6 +63,9 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   const activeError = isError || simulatedState === 'error';
   const effectivePoints = simulatedState === 'empty' ? [] : points;
   const realCount = effectivePoints.filter((point) => !point.isDemo).length;
+  const [visibleLimit, setVisibleLimit] = useState(80);
+  useEffect(() => setVisibleLimit(80), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone]);
+  const visiblePoints = effectivePoints.slice(0, visibleLimit);
 
   return (
     <aside
@@ -259,7 +262,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           </div>
         )}
 
-        {!activeLoading && !activeError && effectivePoints.map((point) => {
+        {!activeLoading && !activeError && visiblePoints.map((point) => {
           const isSelected = selectedPoint?.id === point.id;
           const catConfig = CATEGORY_CONFIG[point.category];
           const provConfig = PROVENANCE_CONFIG[point.provenanceMeta.provenance];
@@ -333,6 +336,12 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         <span className="inline-flex items-center gap-1 font-bold text-[#355E3B]">
           <span className="w-2 h-2 rounded-full bg-[#355E3B]" /> Base Carregada
         </span>
+        {!activeLoading && !activeError && visibleLimit < effectivePoints.length && (
+          <button type="button" onClick={() => setVisibleLimit(limit => limit + 80)}
+            className="touch-target rounded-xl border border-[#355E3B]/30 bg-white p-3 text-xs font-bold text-[#355E3B]">
+            Mostrar mais locais ({Math.min(visibleLimit, effectivePoints.length)} de {effectivePoints.length})
+          </button>
+        )}
       </div>
     </aside>
   );
