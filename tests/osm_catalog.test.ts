@@ -63,7 +63,7 @@ describe('catálogo OSM municipal', () => {
     const live = mapOverpassElements({ elements: [
       entry(21, { shop: 'bakery', name: 'Padaria Atualizada' }),
       entry(23, { amenity: 'townhall', name: 'Serviço Municipal' }),
-    ] }, '2026-10-20T12:00:00.000Z');
+    ] }, '2026-10-19T18:00:00.000Z');
     const merged = mergeOsmSnapshots(regional, live);
     expect(merged.map(p => p.id)).toEqual(['osm-node-21', 'osm-node-22', 'osm-node-23']);
     expect(merged[0].name).toBe('Padaria Atualizada');
