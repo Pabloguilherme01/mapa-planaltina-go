@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
@@ -51,6 +51,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const realCount = points.filter((point) => !point.isDemo).length;
+  const [visibleLimit, setVisibleLimit] = useState(60);
+  useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone]);
 
   return (
     <div
@@ -114,7 +116,9 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
         </select>
       </label>
-      <div className="mb-2 grid grid-cols-2 gap-2 shrink-0">
+      <details className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
+        <summary className="min-h-9 cursor-pointer text-[11px] font-bold text-[#355E3B]">Filtros avançados · tipo e zona</summary>
+        <div className="grid grid-cols-2 gap-2">
         <label className="text-[11px] font-bold">Tipo
           <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
             <option value="">Todos os tipos</option>
@@ -127,8 +131,9 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             {zoneOptions.map(value => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
-      </div>
-            <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
+        </div>
+      </details>
+      <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
             <Building size={14} />
@@ -165,7 +170,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             Nenhum ponto encontrado com os filtros atuais.
           </div>
         ) : (
-          points.map((point) => {
+          points.slice(0, visibleLimit).map((point) => {
             const catConfig = CATEGORY_CONFIG[point.category];
             const IconComponent = catConfig.icon;
             const isSelected = selectedPoint?.id === point.id;
@@ -228,6 +233,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               </div>
             );
           })
+        )}
+        {points.length > visibleLimit && (
+          <button type="button" onClick={() => setVisibleLimit(limit => limit + 60)}
+            className="touch-target rounded-lg border border-[#355E3B]/30 bg-white p-3 text-xs font-bold text-[#355E3B]">
+            Mostrar mais locais ({Math.min(visibleLimit, points.length)} de {points.length})
+          </button>
         )}
       </div>
     </div>
