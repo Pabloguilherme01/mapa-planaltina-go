@@ -17,6 +17,7 @@ import { parseThemeChoice, resolveTheme, themeStorageKey, type ThemeChoice } fro
 import { Loader2, Trees, X } from 'lucide-react';
 import { pageRoute, sitePath } from './utils/routing.ts';
 import { MobilityHub } from './components/MobilityHub.tsx';
+import type { LocalRoute } from './utils/roadGraph.ts';
 
 const SourcesPage = lazy(() =>
   import('./pages/SourcesPage.tsx').then((module) => ({ default: module.SourcesPage }))
@@ -52,6 +53,7 @@ function LoadingSurface({ label }: { label: string }) {
 export default function App() {
   const [allPoints, setAllPoints] = useState<MapPoint[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
+  const [routePreview, setRoutePreview] = useState<LocalRoute | null>(null);
 
   // Real URL routing: / and /fontes
   const [currentRoute, setCurrentRoute] = useState<string>(
@@ -316,6 +318,8 @@ export default function App() {
                 onOpenProvenanceLegend={() => navigateTo('/fontes')}
                 onRequestGeolocation={() => setIsGeoConsentOpen(true)}
                 userLocation={userLocation}
+                routePreview={routePreview}
+                onClearRoute={() => setRoutePreview(null)}
               />
             </div>
 
@@ -346,7 +350,8 @@ export default function App() {
               onSelectAllCategories={handleSelectAllCategories}
               categoryCounts={categoryCounts}
             />
-            <MobilityHub points={allPoints} selectedPoint={selectedPoint} />
+            <MobilityHub points={allPoints} selectedPoint={selectedPoint}
+              userLocation={userLocation} onRoutePreview={setRoutePreview} />
           </main>
         </div>
       )}
