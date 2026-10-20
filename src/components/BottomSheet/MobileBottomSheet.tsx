@@ -1,3 +1,4 @@
+import { DirectoryResults } from '../Sources/DirectoryResults.tsx';
 import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
@@ -212,6 +213,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         aria-labelledby="mobile-results-heading"
         className="overflow-y-auto flex flex-col gap-2 flex-1 pr-0.5"
       >
+        <DirectoryResults search={searchQuery} categories={selectedCategories} />
         {points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
             Nenhum ponto encontrado com os filtros atuais.
