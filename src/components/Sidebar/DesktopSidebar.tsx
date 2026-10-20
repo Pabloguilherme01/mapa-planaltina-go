@@ -254,6 +254,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 onSearchChange('');
                 onSelectAllCategories();
                 onSelectProvenance('all');
+                onSelectKind('');
+                onSelectZone('');
               }}
               className="touch-target px-4 py-2 rounded-xl bg-[#355E3B] text-white text-xs font-bold shadow hover:bg-[#27472c]"
             >
