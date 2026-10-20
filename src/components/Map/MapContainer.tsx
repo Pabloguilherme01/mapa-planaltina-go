@@ -55,7 +55,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           <span>Esquemático de teste</span>
         </button>}
 
-        {import.meta.env.DEV && (        <button
+        {import.meta.env.DEV && (
+        <button
           type="button"
           onClick={() => {
             if (googleMapsAvailable) setProvider('google');
@@ -84,7 +85,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           <Globe size={14} />
           <span>Google Maps</span>
         </button>
-)}      </div>
+        )}
+      </div>
 
       {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} /></Suspense> : provider === 'demo' ? (
         <DemoMapProvider
