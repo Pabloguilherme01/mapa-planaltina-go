@@ -66,9 +66,9 @@ export function assessPublishedSnapshot(
       meta.verificationStatus === 'verified';
     const community = meta.provenance === 'community' &&
       ['unverified', 'pending'].includes(String(meta.verificationStatus)) &&
-      /^osm-(node|way|relation)-[1-9]\\d*$/.test(value.id) &&
+      /^osm-(node|way|relation)-[1-9]\d*$/.test(value.id) &&
       typeof meta.sourceUrl === 'string' &&
-      /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\\d*$/.test(meta.sourceUrl);
+      /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\d*$/.test(meta.sourceUrl);
     if ((!verified && !community) || !isSnapshotDate(meta.retrievedAt, now.getTime())) {
       throw new Error('Ponto real sem classificação de procedência ou data válida.');
     }
