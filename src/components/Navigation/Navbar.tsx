@@ -41,7 +41,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             Catálogo
           </span>
           <p className="text-xs text-[#78350F] font-semibold">
-            {realCount} reais • {demoCount} DEMO. Confira fonte e data; DEMO não serve para deslocamento.
+            {realCount} locais reais mapeados • {demoCount} DEMO. Pontos comunitários podem não estar verificados; confira a fonte.
           </p>
         </div>
       </div>
