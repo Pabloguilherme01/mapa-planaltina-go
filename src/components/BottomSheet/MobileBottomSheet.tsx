@@ -129,7 +129,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       </div>
       <FilterActions count={activeFilterCount} resultCount={points.length}
           onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
-      {isExpanded && <div className="max-h-[36vh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
+      {isExpanded && !browseDirectory && <div className="max-h-[36vh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
       <label className="mb-2 flex shrink-0 items-center gap-2 text-xs font-bold">Origem dos pontos
         <select value={selectedProvenance} onChange={event => onSelectProvenance(event.target.value as ProvenanceType | 'all')} className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-400 bg-white px-2">
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
@@ -220,7 +220,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       <div
         id="mobile-points-list"
         aria-labelledby="mobile-results-heading"
-        className="overflow-y-auto flex flex-col gap-2 flex-1 pr-0.5"
+        className="min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-2 flex-1 pr-0.5 pb-4"
       >
         {(searchQuery.trim() || browseDirectory) && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros e serviços…</p>}>
           <DirectoryResults search={searchQuery} categories={selectedCategories} browse={browseDirectory} />
