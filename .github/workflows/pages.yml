@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 12 * * 1'
+    - cron: '27 9 * * *' # atualização diária de dados e malha viária
   workflow_dispatch:
 permissions:
   contents: read
