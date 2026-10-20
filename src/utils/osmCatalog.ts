@@ -170,3 +170,18 @@ export function validateOsmSnapshot(payload: unknown): MapPoint[] {
   }
   return valid;
 }
+
+/** Reúne duas coletas válidas sem perder identificadores únicos.
+ * Em caso de repetição, prefere a captura com data mais recente;
+ * os arrays originais não são alterados.
+ */
+export function mergeOsmSnapshots(regional: readonly MapPoint[], live: readonly MapPoint[]): MapPoint[] {
+  const byId = new Map<string, MapPoint>();
+  for (const point of [...regional, ...live]) {
+    const previous = byId.get(point.id);
+    if (!previous || Date.parse(point.provenanceMeta.retrievedAt) >= Date.parse(previous.provenanceMeta.retrievedAt)) {
+      byId.set(point.id, point);
+    }
+  }
+  return [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+}
