@@ -62,6 +62,14 @@ export default function App() {
   const [allPoints, setAllPoints] = useState<MapPoint[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
   const [routePreview, setRoutePreview] = useState<LocalRoute | null>(null);
+  const [routePickMode, setRoutePickMode] = useState<'origin' | 'destination' | null>(null);
+  const [mapOrigin, setMapOrigin] = useState<{lat:number;lng:number} | null>(null);
+  const [mapDestination, setMapDestination] = useState<{lat:number;lng:number} | null>(null);
+  const onMapCoordinatePicked = (position: {lat:number;lng:number}) => {
+    if (routePickMode === 'origin') setMapOrigin(position);
+    if (routePickMode === 'destination') setMapDestination(position);
+    setRoutePickMode(null);
+  };
 
   // Real URL routing: / and /fontes
   const [currentRoute, setCurrentRoute] = useState<string>(
@@ -368,6 +376,8 @@ export default function App() {
                 userLocation={userLocation}
                 routePreview={routePreview}
                 onClearRoute={() => setRoutePreview(null)}
+                routePickMode={routePickMode}
+                onMapCoordinatePicked={onMapCoordinatePicked}
               />
             </div>
 
@@ -403,7 +413,9 @@ export default function App() {
               categoryCounts={categoryCounts}
             />
             <MobilityHub points={allPoints} selectedPoint={selectedPoint}
-              userLocation={userLocation} onRoutePreview={setRoutePreview} />
+              userLocation={userLocation} onRoutePreview={setRoutePreview}
+              mapOrigin={mapOrigin} mapDestination={mapDestination}
+              onRequestMapPick={setRoutePickMode} />
           </main>
         </div>
       )}
