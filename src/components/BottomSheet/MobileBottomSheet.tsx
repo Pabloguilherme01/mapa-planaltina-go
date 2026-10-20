@@ -132,8 +132,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
         </select>
       </label>
-      <details className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
-        <summary className="min-h-9 cursor-pointer text-[11px] font-bold text-[#355E3B]">Filtros avançados · tipo, zona, confiança e raio</summary>
+      <section aria-label="Filtros avançados" className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
+        <h3 className="mb-2 text-xs font-bold text-[#355E3B]">Filtros avançados · tipo, zona, confiança e raio</h3>
         <div className="grid grid-cols-2 gap-2">
         <label className="text-[11px] font-bold">Tipo
           <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
@@ -178,7 +178,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           </label>
           {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
-      </details>
+      </section>
       </div>}
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
