@@ -12,7 +12,8 @@ import { MobileBottomSheet } from './components/BottomSheet/MobileBottomSheet.ts
 import { MobileBottomNav } from './components/Navigation/MobileBottomNav.tsx';
 import { MapContainer } from './components/Map/MapContainer.tsx';
 import { OfflineBanner } from './components/Common/OfflineBanner.tsx';
-import { normalizeText } from './utils/text.ts';
+import { filterCatalog, type CatalogSort, type VerificationFilter } from './utils/catalogFilters.ts';
+import { parseThemeChoice, resolveTheme, themeStorageKey, type ThemeChoice } from './utils/themeMode.ts';
 import { Loader2, Trees, X } from 'lucide-react';
 import { pageRoute, sitePath } from './utils/routing.ts';
 import { MobilityHub } from './components/MobilityHub.tsx';
@@ -66,6 +67,12 @@ export default function App() {
   const [selectedProvenance, setSelectedProvenance] = useState<ProvenanceType | 'all'>('all');
   const [selectedKind, setSelectedKind] = useState('');
   const [selectedZone, setSelectedZone] = useState('');
+  const [verification, setVerification] = useState<VerificationFilter>('all');
+  const [sort, setSort] = useState<CatalogSort>('default');
+  const [radiusKm, setRadiusKm] = useState(0);
+  const [themeChoice, setThemeChoice] = useState<ThemeChoice>(() => {
+    try { return parseThemeChoice(localStorage.getItem(themeStorageKey)); } catch { return 'system'; }
+  });
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Modals state
@@ -80,6 +87,18 @@ export default function App() {
   // Network and data states
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
+  useEffect(() => {
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const apply = () => {
+      const value = resolveTheme(themeChoice, media.matches);
+      document.documentElement.dataset.theme = value;
+      document.documentElement.style.colorScheme = value;
+    };
+    apply();
+    media.addEventListener('change', apply);
+    try { localStorage.setItem(themeStorageKey, themeChoice); } catch { /* navegação privada */ }
+    return () => media.removeEventListener('change', apply);
+  }, [themeChoice]);
 
   // Handle browser Back / Forward navigation (popstate)
   useEffect(() => {
@@ -145,41 +164,15 @@ export default function App() {
     setSelectedCategories([]);
   };
 
-  const filteredPoints = useMemo(() => {
-    let result = [...allPoints];
-
-    if (selectedCategories.length > 0) {
-      result = result.filter((p) => selectedCategories.includes(p.category));
-    }
-
-    if (selectedProvenance !== 'all') {
-      result = result.filter(
-        (p) => p.provenanceMeta.provenance === selectedProvenance
-      );
-    }
-
-    if (selectedKind) result = result.filter(point => point.tags.includes(`Tipo: ${selectedKind}`));
-    if (selectedZone) result = result.filter(point => point.zone === selectedZone);
-    if (searchQuery.trim().length > 0) {
-      const q = normalizeText(searchQuery);
-      result = result.filter((p) => {
-        const nameN = normalizeText(p.name);
-        const descN = normalizeText(p.description);
-        const catN = normalizeText(p.category);
-        const tagsN = p.tags.map(normalizeText).join(' ');
-        const addrN = normalizeText(p.addressHint || '');
-        return (
-          nameN.includes(q) ||
-          descN.includes(q) ||
-          catN.includes(q) ||
-          tagsN.includes(q) ||
-          addrN.includes(q)
-        );
-      });
-    }
-
-    return result;
-  }, [allPoints, selectedCategories, selectedProvenance, selectedKind, selectedZone, searchQuery]);
+  const filteredPoints = useMemo(
+    () => filterCatalog(allPoints, {
+      categories: selectedCategories, origin: selectedProvenance,
+      verification, kind: selectedKind, zone: selectedZone,
+      search: searchQuery, sort, radiusKm, userLocation,
+    }),
+    [allPoints, selectedCategories, selectedProvenance, verification, selectedKind,
+      selectedZone, searchQuery, sort, radiusKm, userLocation]
+  );
 
   const kindOptions = useMemo(() =>
     [...new Set(allPoints.flatMap(point => point.tags.filter(tag => tag.startsWith('Tipo: ')).map(tag => tag.slice(6))))]
@@ -239,6 +232,8 @@ export default function App() {
         activeTab={activeTab}
         onSelectTab={handleTabSelect}
         onRequestGeolocation={() => setIsGeoConsentOpen(true)}
+        themeChoice={themeChoice}
+        onThemeChange={setThemeChoice}
         highContrast={highContrast}
         onToggleHighContrast={() => setHighContrast(!highContrast)}
       />
@@ -269,6 +264,13 @@ export default function App() {
               zoneOptions={zoneOptions}
               selectedZone={selectedZone}
               onSelectZone={setSelectedZone}
+              verification={verification}
+              onVerificationChange={setVerification}
+              sort={sort}
+              onSortChange={setSort}
+              radiusKm={radiusKm}
+              onRadiusChange={setRadiusKm}
+              hasLocation={Boolean(userLocation)}
               isLoading={isLoading}
               isError={isError}
               onRetry={loadData}
@@ -326,6 +328,13 @@ export default function App() {
               zoneOptions={zoneOptions}
               selectedZone={selectedZone}
               onSelectZone={setSelectedZone}
+              verification={verification}
+              onVerificationChange={setVerification}
+              sort={sort}
+              onSortChange={setSort}
+              radiusKm={radiusKm}
+              onRadiusChange={setRadiusKm}
+              hasLocation={Boolean(userLocation)}
               points={filteredPoints}
               selectedPoint={selectedPoint}
               onSelectPoint={handleSelectPoint}
