@@ -77,7 +77,7 @@ function statusBadge(source: SourceInfo) {
       </span>
     );
   }
-  if (source.status === 'connected') {
+  if (source.status === 'connected' && source.id === 'osm') {
     return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900 text-[10px] font-bold">
       Conectado · colaborativo
     </span>;
