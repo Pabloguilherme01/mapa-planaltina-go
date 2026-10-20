@@ -115,15 +115,68 @@ export function validateRoadGraph(data: unknown): data is RoadGraph {
       Number.isSafeInteger(e[1]) && e[1] >= 0 && e[1] < g.nodes!.length &&
       Number.isSafeInteger(e[2]) && e[2] >= 1 && e[2] <= 7);
 }
-function nearest(graph: RoadGraph, position: MapCoordinates, active: Set<number>): { id: number; distance: number } | null {
-  let best = -1, distance = Infinity;
-  for (const index of active) {
-    const node = graph.nodes[index];
-    const gap = distanceMeters(position, { lat: node[0], lng: node[1] });
-    if (gap < distance) { distance = gap; best = index; }
+/** Compila uma única vez a malha por modo de transporte, em vez de alocar
+ * ~60 mil arestas e procurar todos os nós a cada toque no planejador.
+ * WeakMap libera a compilação junto com o snapshot do navegador.
+ */
+export interface PreparedRoadGraph {
+  readonly adjacency: { to: number; weight: number }[][];
+  readonly cells: ReadonlyMap<string, readonly number[]>;
+}
+const cache = new WeakMap<RoadGraph, Map<TravelMode, PreparedRoadGraph>>();
+const CELL = 0.001; // ~110m em Planaltina-GO
+function spatialCell(lat: number, lng: number): string {
+  return `${Math.floor(lat / CELL)}:${Math.floor(lng / CELL)}`;
+}
+export function prepareRoadGraph(graph: RoadGraph, mode: TravelMode): PreparedRoadGraph | null {
+  const prior = cache.get(graph)?.get(mode);
+  if (prior) return prior;
+  if (!validateRoadGraph(graph)) return null;
+  const flag = mode === 'driving' ? CAR : mode === 'walking' ? WALK : BIKE;
+  const adjacency: PreparedRoadGraph['adjacency'] =
+    Array.from({ length: graph.nodes.length }, () => []);
+  const grid = new Map<string, number[]>();
+  const active = new Uint8Array(graph.nodes.length);
+  for (const [from, to, allowed] of graph.edges) {
+    if (!(allowed & flag)) continue;
+    const a = graph.nodes[from], b = graph.nodes[to];
+    adjacency[from].push({ to, weight: distanceMeters({lat:a[0],lng:a[1]},{lat:b[0],lng:b[1]}) });
+    active[from] = 1;
+    active[to] = 1;
+  }
+  for (let i = 0; i < active.length; i++) {
+    if (!active[i]) continue;
+    const node = graph.nodes[i], key = spatialCell(node[0], node[1]);
+    const cell = grid.get(key);
+    if (cell) cell.push(i);
+    else grid.set(key, [i]);
+  }
+  const prepared: PreparedRoadGraph = { adjacency, cells: grid };
+  const perMode = cache.get(graph) ?? new Map<TravelMode, PreparedRoadGraph>();
+  perMode.set(mode, prepared);
+  cache.set(graph, perMode);
+  return prepared;
+}
+function nearest(graph: RoadGraph, position: MapCoordinates, prepared: PreparedRoadGraph): { id: number; distance: number } | null {
+  if (!Number.isFinite(position.lat) || !Number.isFinite(position.lng)) return null;
+  const y = Math.floor(position.lat / CELL), x = Math.floor(position.lng / CELL);
+  let best = -1, distance = 151;
+  // A distância máxima de conexão é 150m. Com quadrículas de ~110m,
+  // examinar duas quadrículas vizinhas em cada sentido cobre o raio todo.
+  for (let cy = y - 2; cy <= y + 2; cy++) {
+    for (let cx = x - 2; cx <= x + 2; cx++) {
+      const bucket = prepared.cells.get(`${cy}:${cx}`);
+      if (!bucket) continue;
+      for (const index of bucket) {
+        const node = graph.nodes[index];
+        const gap = distanceMeters(position, { lat: node[0], lng: node[1] });
+        if (gap < distance) { distance = gap; best = index; }
+      }
+    }
   }
   return best >= 0 && distance <= 150 ? { id: best, distance } : null;
 }
+
 class MinHeap {
   private data: [number, number][] = [];
   push(pair: [number, number]): void {
@@ -156,17 +209,10 @@ class MinHeap {
   get length(): number { return this.data.length; }
 }
 export function planLocalRoute(graph: RoadGraph, start: MapCoordinates, end: MapCoordinates, mode: TravelMode): LocalRoute | null {
-  if (!validateRoadGraph(graph) || ![start.lat,start.lng,end.lat,end.lng].every(Number.isFinite)) return null;
-  const flag = mode === 'driving' ? CAR : mode === 'walking' ? WALK : BIKE;
-  const adj: { to: number; weight: number }[][] = Array.from({ length: graph.nodes.length }, () => []);
-  const endpoints = new Set<number>();
-  for (const [u,v,allowed] of graph.edges) {
-    if (!(allowed & flag)) continue;
-    const a = graph.nodes[u], b = graph.nodes[v];
-    adj[u].push({ to: v, weight: distanceMeters({lat:a[0],lng:a[1]},{lat:b[0],lng:b[1]}) });
-    endpoints.add(u); endpoints.add(v);
-  }
-  const source = nearest(graph, start, endpoints), target = nearest(graph, end, endpoints);
+  if (![start.lat,start.lng,end.lat,end.lng].every(Number.isFinite)) return null;
+  const prepared = prepareRoadGraph(graph, mode);
+  if (!prepared) return null;
+  const source = nearest(graph, start, prepared), target = nearest(graph, end, prepared);
   if (!source || !target || source.id === target.id) return null;
   const distances = new Float64Array(graph.nodes.length).fill(Infinity);
   const previous = new Int32Array(graph.nodes.length).fill(-1);
@@ -178,7 +224,7 @@ export function planLocalRoute(graph: RoadGraph, start: MapCoordinates, end: Map
     const [cost, from] = item;
     if (cost > distances[from]) continue;
     if (from === target.id) break;
-    for (const edge of adj[from]) {
+    for (const edge of prepared.adjacency[from]) {
       const d = cost + edge.weight;
       if (d < distances[edge.to]) {
         distances[edge.to] = d; previous[edge.to] = from;
