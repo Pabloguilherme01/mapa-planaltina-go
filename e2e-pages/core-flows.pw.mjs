@@ -95,6 +95,7 @@ test('consulta municipal: dados e filtros sem downloads ou exportações', async
 test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Filtro mobile específico');
   await page.goto('./');
+  await page.getByRole('button', { name: 'Expandir ou recolher lista de pontos e filtros' }).click();
   const response = await page.request.get(`${new URL(BASE_PATH, page.url())}data/points.json`);
   expect(response.ok()).toBeTruthy();
   const { data: points } = await response.json();
@@ -383,4 +384,29 @@ test('rotas: publicação oferece malha rodoviária verdadeira e rejeita origem 
   await expect(dialog.getByLabel('Ponto de partida')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Traçar rota no mapa' })).toBeDisabled();
   await expect(dialog).toContainText('Não possui tráfego ao vivo');
+});
+
+test('busca compartilhável: aplica filtros da URL, permite limpar e mantém GPS fora do endereço', async ({page}, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Painel desktop com ações de busca');
+  await page.goto('./?q=Centro&verified=verified&order=name');
+  const sidebar = page.getByRole('complementary',{name:'Painel de busca e catálogo territorial'});
+  await expect(sidebar.getByLabel('Situação da verificação')).toHaveValue('verified');
+  await expect(sidebar.getByLabel('Ordenar resultados')).toHaveValue('name');
+  await expect(page).toHaveURL(/q=Centro/);
+  await sidebar.getByRole('button',{name:'Limpar todos os filtros'}).click();
+  await expect(page).not.toHaveURL(/verified=verified/);
+  await expect(sidebar.getByLabel('Situação da verificação')).toHaveValue('all');
+});
+
+test('mobile: filtros recolhidos mantêm mapa acessível e controles avançados em painel', async ({page}, testInfo)=>{
+  test.skip(!testInfo.project.name.includes('mobile'), 'Somente smartphones');
+  await page.goto('./');
+  const sheet = page.getByRole('region',{name:'Busca e lista do catálogo territorial'});
+  await expect(sheet.getByLabel('Origem dos pontos')).not.toBeVisible();
+  await sheet.getByRole('button',{name:'Expandir ou recolher lista de pontos e filtros'}).click();
+  await expect(sheet.getByLabel('Origem dos pontos')).toBeVisible();
+  await sheet.getByLabel('Situação da verificação').selectOption('verified');
+  await expect(sheet.getByRole('button',{name:'Limpar todos os filtros'})).toBeVisible();
+  await sheet.getByRole('button',{name:'Limpar todos os filtros'}).click();
+  await expect(sheet.getByLabel('Situação da verificação')).toHaveValue('all');
 });
