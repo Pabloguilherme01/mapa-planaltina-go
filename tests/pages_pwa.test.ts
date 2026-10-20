@@ -66,6 +66,20 @@ describe('GitHub Pages PWA assets', () => {
     expect(sw).toContain('navigationFallback(request)');
     expect(sw).toContain('Response.error()');
   });
+  it('preserva malha viária baixada no aparelho após atualização PWA quando ainda válida', () => {
+    const sw=buildServiceWorkerSource({
+      basePath: BASE, cacheName:'mapa-planaltina-new',
+      assets:['index.html','data/points.json','assets/app.js'],
+    });
+    expect(sw).toContain('const GRAPH_URL');
+    expect(sw).toContain('async function migrateOfflineRoadGraph');
+    expect(sw).toContain("createdAt");
+    expect(sw).toContain("21 * 24 * 60 * 60 * 1000");
+    expect(sw).toContain("await migrateOfflineRoadGraph()");
+    expect(sw).toContain("caches.delete(key)");
+    expect(sw.indexOf('await migrateOfflineRoadGraph()')).toBeLessThan(sw.indexOf('caches.delete(key)'));
+  });
+
   it('faz match do precache por URL mesmo quando a resposta varia por Origin', () => {
     const source = buildServiceWorkerSource({
       basePath: BASE,

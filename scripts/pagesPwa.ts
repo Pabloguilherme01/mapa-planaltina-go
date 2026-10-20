@@ -88,6 +88,7 @@ export function buildServiceWorkerSource({
   return `const CACHE_NAME = ${quoteSingle(cacheName)};
 const CACHE_PREFIX = 'mapa-planaltina-';
 const BASE_PATH = ${quoteSingle(base)};
+const GRAPH_URL = ${quoteSingle(base+'data/road-graph.json')};
 const REFRESHABLE_DATA = new Set([
   ${quoteSingle(base+'data/points.json')},
   ${quoteSingle(base+'data/sources.json')},
@@ -104,16 +105,42 @@ self.addEventListener('install', (event) => {
   );
 });
 
+// O grafo não entra no download inicial do PWA. Se o cidadão já o consultou,
+// preservar um snapshot OSM recente ao trocar a versão evita perder rotas offline.
+async function migrateOfflineRoadGraph() {
+  try {
+    const current = await caches.open(CACHE_NAME);
+    if (await current.match(GRAPH_URL, { ignoreVary: true })) return;
+    const keys = await caches.keys();
+    for (const key of keys) {
+      if (!key.startsWith(CACHE_PREFIX) || key === CACHE_NAME) continue;
+      const previous = await caches.open(key);
+      const response = await previous.match(GRAPH_URL, { ignoreVary: true });
+      if (!response || !response.ok) continue;
+      const graph = await response.clone().json();
+      const stamp = Date.parse(graph?.createdAt);
+      const age = Date.now() - stamp;
+      if (graph?.version !== 1 || graph?.source !== 'OpenStreetMap/Geofabrik' ||
+          !Array.isArray(graph.nodes) || graph.nodes.length < 100 ||
+          !Array.isArray(graph.edges) || graph.edges.length < 100 ||
+          !Number.isFinite(stamp) || age < -24 * 60 * 60 * 1000 ||
+          age > 21 * 24 * 60 * 60 * 1000) continue;
+      await current.put(GRAPH_URL, response.clone());
+      break;
+    }
+  } catch (error) {
+    // Mesmo com cota cheia ou JSON corrompido, manter a atualização e a nova UI.
+  }
+}
 self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(
-        keys
-          .filter((key) => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      ))
-      .then(() => self.clients.claim())
-  );
+  event.waitUntil((async () => {
+    await migrateOfflineRoadGraph();
+    const keys = await caches.keys();
+    await Promise.all(keys
+      .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+      .map(key => caches.delete(key)));
+    await self.clients.claim();
+  })());
 });
 
 async function cacheResponse(request, response) {

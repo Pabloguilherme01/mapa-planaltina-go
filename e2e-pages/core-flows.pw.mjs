@@ -464,3 +464,31 @@ test('serviços digitais oficiais: navegação cidadã, comércio e transparênc
   await expect(services.getByRole('link',{name:/Licitações/})).toBeVisible();
   await expect(services.getByRole('link',{name:/Emitir NFS-e nacional/})).toHaveCount(0);
 });
+
+test('catálogo completo: permite explorar registros sem conhecer nome e procurar serviços públicos', async ({ page }, testInfo) => {
+  await page.goto('./');
+  const mobile = testInfo.project.name.includes('mobile');
+  const panel = mobile
+    ? page.getByRole('region', { name: 'Busca e lista do catálogo territorial' })
+    : page.getByRole('complementary', { name: 'Painel de busca e catálogo territorial' });
+  await panel.getByRole('button', { name: 'Explorar cadastros e serviços sem localização' }).click();
+  const docs = panel.getByRole('region', { name: 'Cadastros sem geolocalização' });
+  await expect(docs).toBeVisible();
+  await expect(docs).toContainText('Catálogo complementar (101)');
+  await docs.getByRole('button', { name: 'Serviços digitais (16)' }).click();
+  await expect(docs).toContainText('Emitir ou consultar IPTU');
+  await expect(docs).toContainText('Mostrando 8 de 16');
+  await docs.getByRole('button', { name: 'Todos (101)' }).click();
+  await expect(docs.getByRole('button', { name: 'Mostrar mais registros' })).toBeVisible();
+  await docs.getByRole('button', { name: 'Mostrar mais registros' }).click();
+  await expect(docs).toContainText('Mostrando 16 de 101');
+  const search = panel.getByLabel(mobile
+    ? 'Buscar pontos em Planaltina, Goiás'
+    : 'Buscar locais, órgãos e serviços em Planaltina, Goiás');
+  await search.fill('iptu');
+  await expect(docs).toContainText('Emitir ou consultar IPTU');
+  await expect(docs.getByRole('link',{name:'Abrir serviço oficial'})).toHaveAttribute('href',/planaltina.bsit-br.com.br/);
+  await search.fill('MACHADO DE ASSIS');
+  await expect(docs).toContainText('ESCOLA MUNICIPAL MACHADO DE ASSIS');
+  await expect(docs).toContainText('Não geramos pinos nem rotas');
+});

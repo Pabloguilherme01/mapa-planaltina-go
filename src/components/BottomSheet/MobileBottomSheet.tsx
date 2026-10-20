@@ -66,6 +66,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation, activeFilterCount, onClearAllFilters, onShareFilters, shareFeedback,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [browseDirectory, setBrowseDirectory] = useState(false);
   const realCount = points.filter((point) => !point.isDemo).length;
   const [visibleLimit, setVisibleLimit] = useState(60);
   useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone, verification, sort, radiusKm]);
@@ -128,7 +129,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       </div>
       <FilterActions count={activeFilterCount} resultCount={points.length}
           onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
-      {isExpanded && <div className="max-h-[36vh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
+      {isExpanded && !browseDirectory && <div className="max-h-[36vh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
       <label className="mb-2 flex shrink-0 items-center gap-2 text-xs font-bold">Origem dos pontos
         <select value={selectedProvenance} onChange={event => onSelectProvenance(event.target.value as ProvenanceType | 'all')} className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-400 bg-white px-2">
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
@@ -182,6 +183,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </section>
       </div>}
+              <button type="button" aria-pressed={browseDirectory}
+          aria-label="Explorar cadastros e serviços sem localização"
+          onClick={() => { setBrowseDirectory(current => !current); setIsExpanded(true); }}
+          className="touch-target inline-flex items-center justify-center gap-2 rounded-xl border border-[#355E3B]/30 bg-white px-3 py-2 text-xs font-extrabold text-[#355E3B] shadow-sm">
+          {browseDirectory ? 'Fechar catálogo complementar' : 'Explorar 101 cadastros e serviços'}
+        </button>
+
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
@@ -212,10 +220,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       <div
         id="mobile-points-list"
         aria-labelledby="mobile-results-heading"
-        className="overflow-y-auto flex flex-col gap-2 flex-1 pr-0.5"
+        className="min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-2 flex-1 pr-0.5 pb-4"
       >
-        {searchQuery.trim() && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros documentais…</p>}>
-          <DirectoryResults search={searchQuery} categories={selectedCategories} />
+        {(searchQuery.trim() || browseDirectory) && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros e serviços…</p>}>
+          <DirectoryResults search={searchQuery} categories={selectedCategories} browse={browseDirectory} />
         </React.Suspense>}
         {points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
