@@ -478,9 +478,9 @@ test('catálogo completo: permite explorar registros sem conhecer nome e procura
   await expect(docs.getByRole('button', { name: 'Mostrar mais registros' })).toBeVisible();
   await docs.getByRole('button', { name: 'Mostrar mais registros' }).click();
   await expect(docs).toContainText('Mostrando 16 de 101');
-  const search = panel.getByRole('searchbox', { name: mobile
+  const search = panel.getByLabel(mobile
     ? 'Buscar pontos em Planaltina, Goiás'
-    : 'Buscar locais, órgãos e serviços em Planaltina, Goiás' });
+    : 'Buscar locais, órgãos e serviços em Planaltina, Goiás');
   await search.fill('iptu');
   await expect(docs).toContainText('Emitir ou consultar IPTU');
   await expect(docs.getByRole('link',{name:'Abrir serviço oficial'})).toHaveAttribute('href',/planaltina.bsit-br.com.br/);
