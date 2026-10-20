@@ -20,6 +20,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     map.current = instance;
     const zoom = L.control.zoom({ position: 'topright' }).addTo(instance);
     zoom.getContainer()!.style.marginTop = '76px';
+    L.control.scale({ metric: true, imperial: false, position: 'bottomright' }).addTo(instance);
     const attribution = L.control.attribution({ position: 'topleft' }).addTo(instance);
     attribution.getContainer()!.style.marginTop = '116px';
     L.geoJSON(MUNICIPAL_BOUNDARY as GeoJSON.GeoJsonObject, {
