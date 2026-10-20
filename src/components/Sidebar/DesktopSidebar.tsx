@@ -1,3 +1,4 @@
+import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
@@ -41,6 +42,10 @@ interface DesktopSidebarProps {
   radiusKm: number;
   onRadiusChange: (value: number) => void;
   hasLocation: boolean;
+  activeFilterCount: number;
+  onClearAllFilters: () => void;
+  onShareFilters: () => void;
+  shareFeedback: string;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -60,7 +65,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   selectedProvenance,
   onSelectProvenance,
   kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
-  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation,
+  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation, activeFilterCount, onClearAllFilters, onShareFilters, shareFeedback,
   isLoading,
   isError,
   onRetry,
@@ -157,13 +162,13 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           >
             Dado aberto verificado
           </button>
-          <button
+          {import.meta.env.DEV && <button
             type="button"
             onClick={() => onSelectProvenance('demo')}
             className={`touch-target px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${selectedProvenance === 'demo' ? 'bg-[#E5B744] text-[#121E14] shadow-sm font-extrabold' : 'bg-white/80 text-neutral-700 hover:bg-white'}`}
           >
             DEMO
-          </button>
+          </button>}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -210,6 +215,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           </label>
           {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
+        <FilterActions count={activeFilterCount} resultCount={points.length}
+          onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
         {showStateSimulator && (
           <div className="p-2 rounded-lg bg-white/60 border border-neutral-200/80 flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px]">
