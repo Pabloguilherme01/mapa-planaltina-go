@@ -146,7 +146,8 @@ self.addEventListener('fetch', (event) => {
   if (request.mode === 'navigate') {
     // Usar a página de rede; evitar gravar cada URL de pesquisa e seus filtros no cache.
     event.respondWith(
-      fetch(request).catch(() => navigationFallback(request))
+      fetch(request, { signal: AbortSignal.timeout(4500) })
+        .catch(() => navigationFallback(request))
     );
     return;
   }
@@ -156,7 +157,7 @@ self.addEventListener('fetch', (event) => {
     // offline: usar somente o último arquivo validado que o aparelho já possui.
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(request);
+        const fresh = await fetch(request, { signal: AbortSignal.timeout(6000) });
         if (fresh.ok) return cacheResponse(request, fresh);
         const cached = await caches.match(request, { ignoreVary: true });
         return cached || fresh;
