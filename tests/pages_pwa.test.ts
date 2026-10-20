@@ -54,7 +54,7 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain("const REFRESHABLE_DATA");
     expect(source).toContain(`${BASE}data/points.json`);
     expect(source).toContain(`${BASE}data/sources.json`);
-    expect(source).toContain("await fetch(request)");
+    expect(source).toContain("await fetch(request, { signal: AbortSignal.timeout(6000) })");
     expect(source).toContain("catch (error)");
     expect(source).toContain("caches.match(request, { ignoreVary: true })");
   });
