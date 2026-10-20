@@ -80,6 +80,10 @@ async function makeArtifact(options?: ArtifactOptions) {
   );
   await writeFile(join(root, 'data', 'sources.json'), JSON.stringify({ success: true, data: [] }));
   await writeFile(join(root, 'data', 'municipality.json'), JSON.stringify({ success: true, data: {} }));
+  await writeFile(join(root, 'data', 'road-graph.json'), JSON.stringify({
+    version: 1, source: 'OpenStreetMap/Geofabrik', createdAt: '2026-10-19T12:00:00.000Z',
+    nodes: [[-15.45293, -47.60913], [-15.45295, -47.60915]], edges: [[0, 1, 7], [1, 0, 7]],
+  }));
 
   if (!options?.missingPwa) {
     await writeFile(
@@ -138,6 +142,15 @@ describe('verificador do artefato GitHub Pages', () => {
     await expect(verifyPagesArtifact(await makeArtifact({ rootAsset: true }))).rejects.toThrow(
       /base path/i
     );
+  });
+
+  it('bloqueia grafo de ruas que aponta para nós inexistentes', async () => {
+    const root = await makeArtifact();
+    await writeFile(join(root, 'data', 'road-graph.json'), JSON.stringify({
+      version: 1, source: 'OpenStreetMap/Geofabrik', createdAt: '2026-10-19T12:00:00.000Z',
+      nodes: [[-15.45293, -47.60913]], edges: [[0, 9000, 1]],
+    }));
+    await expect(verifyPagesArtifact(root)).rejects.toThrow(/Malha viária/);
   });
 
   it('rejeita simulador do Stitch no bundle de produção', async () => {
