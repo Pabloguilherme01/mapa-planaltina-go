@@ -88,6 +88,6 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
       {userLocation && <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow" onClick={() => map.current?.setView([userLocation.lat, userLocation.lng], 15)}>Minha posição</button>}
       {tileError && <p role="status" className="rounded bg-white p-2 text-xs">Ruas indisponíveis. Limite e pontos continuam disponíveis.</p>}
     </div>
-    <p className="absolute bottom-8 left-2 z-10 max-w-[60%] rounded bg-white/95 p-2 text-[10px]">Limite IBGE simplificado • cores por categoria • <a href=\"https://www.openstreetmap.org/copyright\" target=\"_blank\" rel=\"noopener noreferrer\" className=\"underline\">© OpenStreetMap contributors (ODbL)</a>. Dados comunitários não verificados; ruas online sem download offline.</p>
+    <p className="absolute bottom-8 left-2 z-10 max-w-[60%] rounded bg-white/95 p-2 text-[10px]">Limite IBGE simplificado • cores por categoria • <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors (ODbL)</a>. Dados comunitários não verificados; ruas online sem download offline.</p>
   </div>;
 }
