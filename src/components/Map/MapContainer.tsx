@@ -38,13 +38,13 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   return (
     <div className="relative w-full h-full">
       {/* Provider Selector Switch */}
-      <label className="absolute top-3 right-3 z-30 lg:hidden rounded-xl bg-white p-1 shadow">
+      {import.meta.env.DEV && <label className="absolute top-3 right-3 z-30 lg:hidden rounded-xl bg-white p-1 shadow">
         <span className="sr-only">Tipo de mapa</span>
         <select className="min-h-11 max-w-36 text-xs font-bold" value={provider} onChange={event => setProvider(event.target.value as typeof provider)}>
           <option value="geographic">Geográfico</option>{allowSchematic && <option value="demo">Esquemático de teste</option>}{import.meta.env.DEV && <option value="google" disabled={!googleMapsAvailable}>Google Maps</option>}
         </select>
-      </label>
-      <div className="absolute lg:top-3 lg:right-32 z-30 hidden lg:flex items-center bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-neutral-200">
+      </label>}
+      {import.meta.env.DEV && <div className="absolute lg:top-3 lg:right-32 z-30 hidden lg:flex items-center bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-neutral-200">
         <button type="button" className="touch-target rounded-lg px-2 text-xs font-bold" aria-pressed={provider === 'geographic'} onClick={() => setProvider('geographic')}>Geográfico</button>
         {allowSchematic && <button
           type="button"
@@ -91,7 +91,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           <span>Google Maps</span>
         </button>
         )}
-      </div>
+      </div>}
 
       {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} /></Suspense> : provider === 'demo' ? (
         <DemoMapProvider
