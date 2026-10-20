@@ -1,3 +1,4 @@
+import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
@@ -32,6 +33,13 @@ interface MobileBottomSheetProps {
   zoneOptions: string[];
   selectedZone: string;
   onSelectZone: (value: string) => void;
+  verification: VerificationFilter;
+  onVerificationChange: (value: VerificationFilter) => void;
+  sort: CatalogSort;
+  onSortChange: (value: CatalogSort) => void;
+  radiusKm: number;
+  onRadiusChange: (value: number) => void;
+  hasLocation: boolean;
 }
 
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
@@ -48,11 +56,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   selectedProvenance,
   onSelectProvenance,
   kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
+  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const realCount = points.filter((point) => !point.isDemo).length;
   const [visibleLimit, setVisibleLimit] = useState(60);
-  useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone]);
+  useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone, verification, sort, radiusKm]);
 
   return (
     <div
@@ -117,7 +126,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </select>
       </label>
       <details className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
-        <summary className="min-h-9 cursor-pointer text-[11px] font-bold text-[#355E3B]">Filtros avançados · tipo e zona</summary>
+        <summary className="min-h-9 cursor-pointer text-[11px] font-bold text-[#355E3B]">Filtros avançados · tipo, zona, confiança e raio</summary>
         <div className="grid grid-cols-2 gap-2">
         <label className="text-[11px] font-bold">Tipo
           <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
@@ -131,6 +140,36 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             {zoneOptions.map(value => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
+        </div>
+              <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs font-bold">Confiabilidade
+            <select aria-label="Situação da verificação" value={verification}
+              onChange={event => onVerificationChange(event.target.value as VerificationFilter)}
+              className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
+              <option value="all">Todos</option>
+              <option value="verified">Oficialmente verificados</option>
+              <option value="unverified">Colaborativos não verificados</option>
+            </select>
+          </label>
+          <label className="text-xs font-bold">Ordenação
+            <select aria-label="Ordenar resultados" value={sort}
+              onChange={event => onSortChange(event.target.value as CatalogSort)}
+              className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
+              <option value="default">Padrão</option>
+              <option value="name">Nome (A–Z)</option>
+              <option value="nearest" disabled={!hasLocation}>Mais próximos de mim</option>
+            </select>
+          </label>
+          <label className="col-span-2 text-xs font-bold">Raio de proximidade
+            <select aria-label="Raio de proximidade" value={hasLocation ? radiusKm : 0}
+              disabled={!hasLocation} onChange={event => onRadiusChange(Number(event.target.value))}
+              className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
+              <option value={0}>Toda Planaltina</option>
+              <option value={1}>Até 1 km</option><option value={3}>Até 3 km</option>
+              <option value={5}>Até 5 km</option><option value={10}>Até 10 km</option>
+            </select>
+          </label>
+          {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
       </details>
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
