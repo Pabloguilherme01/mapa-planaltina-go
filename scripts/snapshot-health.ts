@@ -2,6 +2,7 @@ import { appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
+import { inPlanaltina } from '../src/utils/territory.ts';
 import { verifyPublishedCompanionResources } from './published-site-health.ts';
 
 export interface PublishedSnapshotHealth {
@@ -52,6 +53,13 @@ export function assessPublishedSnapshot(
     }
     if (value.isDemo !== false || !record(value.provenanceMeta)) {
       throw new Error('Ponto real sem classificação ou proveniência.');
+    }
+    if (
+      typeof value.lat !== 'number' || !Number.isFinite(value.lat) || value.lat === 0 ||
+      typeof value.lng !== 'number' || !Number.isFinite(value.lng) || value.lng === 0 ||
+      !inPlanaltina(value.lat, value.lng)
+    ) {
+      throw new Error('Ponto real sem coordenadas válidas dentro da malha municipal de Planaltina-GO.');
     }
     const meta = value.provenanceMeta;
     if (
