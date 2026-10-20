@@ -1,3 +1,4 @@
+import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
@@ -41,6 +42,10 @@ interface DesktopSidebarProps {
   radiusKm: number;
   onRadiusChange: (value: number) => void;
   hasLocation: boolean;
+  activeFilterCount: number;
+  onClearAllFilters: () => void;
+  onShareFilters: () => void;
+  shareFeedback: string;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -60,7 +65,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   selectedProvenance,
   onSelectProvenance,
   kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
-  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation,
+  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation, activeFilterCount, onClearAllFilters, onShareFilters, shareFeedback,
   isLoading,
   isError,
   onRetry,
@@ -157,13 +162,13 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           >
             Dado aberto verificado
           </button>
-          <button
+          {import.meta.env.DEV && <button
             type="button"
             onClick={() => onSelectProvenance('demo')}
             className={`touch-target px-2.5 py-1 rounded-lg text-[10px] font-bold whitespace-nowrap transition-all ${selectedProvenance === 'demo' ? 'bg-[#E5B744] text-[#121E14] shadow-sm font-extrabold' : 'bg-white/80 text-neutral-700 hover:bg-white'}`}
           >
             DEMO
-          </button>
+          </button>}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
@@ -210,6 +215,8 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           </label>
           {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
+        <FilterActions count={activeFilterCount} resultCount={points.length}
+          onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
         {showStateSimulator && (
           <div className="p-2 rounded-lg bg-white/60 border border-neutral-200/80 flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px]">
@@ -312,6 +319,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           const provConfig = PROVENANCE_CONFIG[point.provenanceMeta.provenance];
           const IconComp = catConfig.icon;
           const isReal = !point.isDemo;
+          const isVerified = point.provenanceMeta.verificationStatus === 'verified';
 
           return (
             <article
@@ -330,20 +338,19 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                     <h3 className="text-sm font-bold text-[#121E14] leading-tight mt-0.5">{point.name}</h3>
                   </div>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border shrink-0 ${isReal ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-[#FFF9E6] text-[#78350F] border-[#E5B744]/40'}`}>
-                  {isReal && <BadgeCheck size={11} />}
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border shrink-0 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
+                  {isVerified ? <BadgeCheck size={11} /> : <AlertTriangle size={11} />}
                   {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Verificado' : 'Colaborativo') : 'DEMO'}
                 </span>
               </div>
 
-              <div className={`mt-2.5 p-2 rounded-xl border flex items-start gap-1.5 text-xs ${isReal ? 'bg-emerald-50/80 border-emerald-200/70 text-emerald-950' : 'bg-amber-50/80 border-amber-200/60 text-[#78350F]'}`}>
-                {isReal ? <BadgeCheck size={14} className="shrink-0 mt-0.5 text-emerald-700" /> : <AlertTriangle size={14} className="shrink-0 mt-0.5 text-amber-700" />}
-                <p className="leading-tight text-[11px]">
-                  {isReal
-                    ? 'Endereço e coordenadas vêm da fonte indicada. Confirme situação de atendimento antes do deslocamento.'
-                    : 'Registro fictício para ilustração; não use endereço, horário ou coordenadas para deslocamento.'}
+              {!isVerified && <div className="mt-2.5 flex items-start gap-1.5 rounded-xl border border-orange-200 bg-orange-50 p-2 text-xs text-orange-900">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
+                <p className="text-[11px] leading-tight">
+                  {isReal ? 'Local comunitário não verificado oficialmente. Confirme o cadastro e atendimento na fonte.' :
+                    'Registro ilustrativo: não utilize para deslocamento.'}
                 </p>
-              </div>
+              </div>}
 
               <div className="flex items-center justify-between text-xs pt-2 text-neutral-600 gap-2">
                 <span className="text-[11px] font-semibold text-neutral-500">Proveniência: {provConfig.label}</span>

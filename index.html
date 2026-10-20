@@ -3,11 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      /* Aplica o tema antes da renderização e evita piscar a versão clara. */
+      (function () {
+        try {
+          var saved = localStorage.getItem('planaltina-appearance-v1');
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var dark = saved === 'dark' || (saved !== 'light' && prefersDark);
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+          document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+        } catch (error) {
+          document.documentElement.dataset.theme = 'light';
+        }
+      })();
+    </script>
     <link rel="icon" href="%BASE_URL%icons/mapa-planaltina.svg" />
     <title>Mapa Planaltina GO</title>
-    <meta name="description" content="Mapa interativo e explorador de serviços de Planaltina, Goiás (IBGE 5217609) com transparência de fontes, proveniência e modo demonstrativo." />
+    <meta name="description" content="Mapa interativo e explorador de serviços de Planaltina, Goiás (IBGE 5217609) com modo escuro, rotas locais, filtros avançados e fontes auditáveis." />
     <meta property="og:title" content="Mapa Planaltina GO" />
-    <meta property="og:description" content="Mapa interativo e explorador de serviços de Planaltina, Goiás (IBGE 5217609) com transparência de fontes, proveniência e modo demonstrativo." />
+    <meta property="og:description" content="Mapa interativo e explorador de serviços de Planaltina, Goiás (IBGE 5217609) com modo escuro, rotas locais, filtros avançados e fontes auditáveis." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />

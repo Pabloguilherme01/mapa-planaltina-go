@@ -95,6 +95,7 @@ test('consulta municipal: dados e filtros sem downloads ou exportações', async
 test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Filtro mobile específico');
   await page.goto('./');
+  await page.getByRole('button', { name: 'Expandir ou recolher lista de pontos e filtros' }).click();
   const response = await page.request.get(`${new URL(BASE_PATH, page.url())}data/points.json`);
   expect(response.ok()).toBeTruthy();
   const { data: points } = await response.json();
@@ -383,4 +384,48 @@ test('rotas: publicação oferece malha rodoviária verdadeira e rejeita origem 
   await expect(dialog.getByLabel('Ponto de partida')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Traçar rota no mapa' })).toBeDisabled();
   await expect(dialog).toContainText('Não possui tráfego ao vivo');
+});
+
+test('busca compartilhável: aplica filtros da URL, permite limpar e mantém GPS fora do endereço', async ({page}, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Painel desktop com ações de busca');
+  await page.goto('./?q=Centro&verified=verified&order=name');
+  const sidebar = page.getByRole('complementary',{name:'Painel de busca e catálogo territorial'});
+  await expect(sidebar.getByLabel('Situação da verificação')).toHaveValue('verified');
+  await expect(sidebar.getByLabel('Ordenar resultados')).toHaveValue('name');
+  await expect(page).toHaveURL(/q=Centro/);
+  await sidebar.getByRole('button',{name:'Limpar todos os filtros'}).click();
+  await expect(page).not.toHaveURL(/verified=verified/);
+  await expect(sidebar.getByLabel('Situação da verificação')).toHaveValue('all');
+});
+
+test('mobile: filtros recolhidos mantêm mapa acessível e controles avançados em painel', async ({page}, testInfo)=>{
+  test.skip(!testInfo.project.name.includes('mobile'), 'Somente smartphones');
+  await page.goto('./');
+  const sheet = page.getByRole('region',{name:'Busca e lista do catálogo territorial'});
+  await expect(sheet.getByLabel('Origem dos pontos')).not.toBeVisible();
+  await sheet.getByRole('button',{name:'Expandir ou recolher lista de pontos e filtros'}).click();
+  await expect(sheet.getByLabel('Origem dos pontos')).toBeVisible();
+  await sheet.getByLabel('Situação da verificação').selectOption('verified');
+  await expect(sheet.getByRole('button',{name:'Limpar todos os filtros'})).toBeVisible();
+  await sheet.getByRole('button',{name:'Limpar todos os filtros'}).click();
+  await expect(sheet.getByLabel('Situação da verificação')).toHaveValue('all');
+});
+
+test('roteamento de qualquer rua: selecionar origem e destino por toque sem GPS', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Fluxo de mapa com espaço para seleção');
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  await planner.getByRole('button', { name: 'Marcar origem no mapa' }).click();
+  await expect(planner).not.toBeVisible();
+  await expect(page.getByText('Toque em uma rua do mapa para marcar a origem do percurso.')).toBeVisible();
+  await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 300, y: 220 }, force: true });
+  await expect(planner).toBeVisible();
+  await expect(planner.getByLabel('Ponto de partida')).toHaveValue('__map__');
+  await planner.getByRole('button', { name: 'Marcar destino no mapa' }).click();
+  await expect(page.getByText('Toque em uma rua do mapa para marcar o destino do percurso.')).toBeVisible();
+  await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 460, y: 320 }, force: true });
+  await expect(planner).toBeVisible();
+  await expect(planner.getByLabel('Destino real')).toHaveValue('__map__');
+  await expect(planner.getByRole('button', { name: 'Traçar rota no mapa' })).toBeEnabled();
 });

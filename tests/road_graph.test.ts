@@ -42,6 +42,12 @@ describe('roteamento local por ruas OSM', () => {
     expect(graph.edges).toHaveLength(0);
     expect(planLocalRoute(graph, a, b, 'walking')).toBeNull();
   });
+  it('não anuncia rota quando início e fim são conectados ao mesmo nó sem trecho percorrido', () => {
+    const graph=network([road('way/1')]);
+    const from = { lat: -15.4542, lng: -47.60302 };
+    const to = { lat: -15.4542, lng: -47.60298 };
+    expect(planLocalRoute(graph, from, to, 'walking')).toBeNull();
+  });
   it('recusa GPS longe da rede e grafo corrompido', () => {
     const graph = network([road('way/1')]);
     expect(planLocalRoute(graph, { lat: -15.48, lng: -47.65 }, b, 'driving')).toBeNull();

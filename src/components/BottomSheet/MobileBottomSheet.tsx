@@ -1,3 +1,4 @@
+import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
@@ -40,6 +41,10 @@ interface MobileBottomSheetProps {
   radiusKm: number;
   onRadiusChange: (value: number) => void;
   hasLocation: boolean;
+  activeFilterCount: number;
+  onClearAllFilters: () => void;
+  onShareFilters: () => void;
+  shareFeedback: string;
 }
 
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
@@ -56,7 +61,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   selectedProvenance,
   onSelectProvenance,
   kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
-  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation,
+  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation, activeFilterCount, onClearAllFilters, onShareFilters, shareFeedback,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const realCount = points.filter((point) => !point.isDemo).length;
@@ -69,12 +74,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       role="region"
       aria-label="Busca e lista do catálogo territorial"
       className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
-        isExpanded ? 'h-[75vh]' : 'h-[280px]'
+        isExpanded ? 'h-[min(72dvh,720px)]' : 'h-[300px]'
       }`}
     >
       <button
         type="button"
-        aria-label="Expandir ou recolher lista de pontos"
+        aria-label="Expandir ou recolher lista de pontos e filtros"
         aria-expanded={isExpanded}
         aria-controls="mobile-points-list"
         onClick={() => setIsExpanded(!isExpanded)}
@@ -119,14 +124,16 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           categoryCounts={categoryCounts}
         />
       </div>
-
+      <FilterActions count={activeFilterCount} resultCount={points.length}
+          onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
+      {isExpanded && <div className="max-h-[36vh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
       <label className="mb-2 flex shrink-0 items-center gap-2 text-xs font-bold">Origem dos pontos
         <select value={selectedProvenance} onChange={event => onSelectProvenance(event.target.value as ProvenanceType | 'all')} className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-400 bg-white px-2">
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
         </select>
       </label>
-      <details className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
-        <summary className="min-h-9 cursor-pointer text-[11px] font-bold text-[#355E3B]">Filtros avançados · tipo, zona, confiança e raio</summary>
+      <section aria-label="Filtros avançados" className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
+        <h3 className="mb-2 text-xs font-bold text-[#355E3B]">Filtros avançados · tipo, zona, confiança e raio</h3>
         <div className="grid grid-cols-2 gap-2">
         <label className="text-[11px] font-bold">Tipo
           <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
@@ -171,7 +178,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           </label>
           {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
-      </details>
+      </section>
+      </div>}
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
@@ -214,6 +222,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             const IconComponent = catConfig.icon;
             const isSelected = selectedPoint?.id === point.id;
             const isReal = !point.isDemo;
+            const isVerified = point.provenanceMeta.verificationStatus === 'verified';
 
             return (
               <div
@@ -232,20 +241,19 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       <p className="text-[10px] text-neutral-600">{point.category} • {point.zone}</p>
                     </div>
                   </div>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isReal ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-[#FFF9E6] text-[#78350F] border-[#E5B744]/40'}`}>
-                    {isReal && <BadgeCheck size={9} />}
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
+                    {isVerified ? <BadgeCheck size={9} /> : <AlertTriangle size={9} />}
                     {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : 'COLABORATIVO') : 'DEMO'}
                   </span>
                 </div>
 
-                <div className={`rounded-lg p-1.5 flex items-start gap-1 ${isReal ? 'bg-emerald-50 text-emerald-950' : 'bg-[#FFF4DC] text-[#78350F]'}`}>
-                  {isReal ? <BadgeCheck size={12} className="shrink-0 mt-0.5 text-emerald-700" /> : <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-700" />}
+                {!isVerified && <div className="flex items-start gap-1 rounded-lg border border-orange-200 bg-orange-50 p-1.5 text-orange-900">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
                   <p className="text-[10px] leading-tight">
-                    {isReal
-                      ? 'Localização mapeada; confira o cadastro e a fonte antes do deslocamento.'
-                      : 'Ilustrativo. Não use para deslocamento em Planaltina, Goiás.'}
+                    {isReal ? 'Cadastro comunitário não verificado. Confirme o local na fonte.' :
+                      'Ilustrativo. Não use para deslocamento.'}
                   </p>
-                </div>
+                </div>}
 
                 <div className="flex items-center justify-between pt-0.5">
                   <span className="text-[10px] text-neutral-500 font-semibold truncate max-w-[150px]">

@@ -167,7 +167,7 @@ export function planLocalRoute(graph: RoadGraph, start: MapCoordinates, end: Map
     endpoints.add(u); endpoints.add(v);
   }
   const source = nearest(graph, start, endpoints), target = nearest(graph, end, endpoints);
-  if (!source || !target) return null;
+  if (!source || !target || source.id === target.id) return null;
   const distances = new Float64Array(graph.nodes.length).fill(Infinity);
   const previous = new Int32Array(graph.nodes.length).fill(-1);
   const heap = new MinHeap();
