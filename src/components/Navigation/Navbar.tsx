@@ -152,8 +152,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Aparência</span>
             <select aria-label="Aparência" value={themeChoice}
               onChange={event => onThemeChange(event.target.value as ThemeChoice)}
-              className="min-h-11 rounded-lg bg-[#27472c] px-2 text-xs font-bold text-white border border-white/30">
-              <option value="system">Sistema</option>
+              title="Aparência do mapa: seguir sistema, claro ou escuro"
+              className="min-h-11 w-[66px] sm:w-auto rounded-lg bg-[#27472c] px-1.5 sm:px-2 text-[11px] sm:text-xs font-bold text-white border border-white/30">
+              <option value="system">Auto</option>
               <option value="light">Claro</option>
               <option value="dark">Escuro</option>
             </select>
@@ -175,7 +176,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={() => onSelectTab('sources')}
             aria-label="Ver informações de fontes"
-            className="touch-target w-9 h-9 rounded-xl bg-white/15 text-white flex items-center justify-center hover:bg-white/25 transition-colors"
+            className="hidden lg:flex touch-target w-9 h-9 rounded-xl bg-white/15 text-white items-center justify-center hover:bg-white/25 transition-colors"
           >
             <HelpCircle size={18} />
           </button>
