@@ -22,7 +22,7 @@ export function buildWebManifest(basePath: string) {
     name: 'Mapa Planaltina GO',
     short_name: 'Mapa Planaltina',
     description:
-      'Mapa cívico demonstrativo de Planaltina, Goiás, com transparência de fontes e snapshots locais para consulta offline.',
+      'Mapa cívico de Planaltina, Goiás, com locais reais, fontes auditáveis e consulta offline do catálogo.',
     lang: 'pt-BR',
     start_url: base,
     scope: base,
