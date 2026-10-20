@@ -1,6 +1,7 @@
 import { inPlanaltina } from '../src/utils/territory.ts';
-import { mapOverpassElements, overpassQuery } from '../src/utils/osmCatalog.ts';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mapOverpassElements, overpassQuery, validateOsmSnapshot } from '../src/utils/osmCatalog.ts';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 import { pointsRepository } from '../server/repository/PointsRepository.ts';
 import { IbgeAdapter, PrefeituraAdapter, CnesAdapter, InepAdapter, OsmAdapter } from '../server/adapters/SourceAdapter.ts';
 
@@ -47,30 +48,43 @@ console.log(
 // Falhas de terceiros degradam para o último snapshot real CNES sem impedir o deploy.
 let communityPoints: Awaited<ReturnType<typeof mapOverpassElements>> = [];
 let osmIssue: string | null = null;
+let osmMode: 'live' | 'snapshot_fallback' | 'unavailable' = 'unavailable';
+const osmSnapshotPath = process.env.OSM_SNAPSHOT_PATH ?? '.cache/osm/snapshot.json';
 try {
+  // Consulta enxuta primeiro: o endpoint comunitário não oferece SLA.
+  // O perímetro IBGE permanece obrigatório na transformação de cada ponto.
   const overpass = await fetch('https://overpass.private.coffee/api/interpreter', {
     method: 'POST',
-    body: new URLSearchParams({ data: overpassQuery() }),
+    body: new URLSearchParams({ data: overpassQuery('urban') }),
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Accept: 'application/json',
       'User-Agent': 'MapaPlanaltinaGO/1.0 (+https://github.com/Pabloguilherme01/mapa-planaltina-go)',
     },
-    signal: AbortSignal.timeout(35_000),
+    signal: AbortSignal.timeout(30_000),
   });
   if (!overpass.ok) throw new Error(`HTTP ${overpass.status}`);
-  communityPoints = mapOverpassElements(await overpass.json(), new Date().toISOString());
-  if (communityPoints.length < 10) throw new Error('Amostra inferior a 10 pontos nomeados; evitar catálogo incompleto.');
+  const fresh = mapOverpassElements(await overpass.json(), new Date().toISOString());
+  communityPoints = validateOsmSnapshot({ points: fresh });
+  if (communityPoints.length === 0) throw new Error('Lote OSM insuficiente ou inválido; preservar snapshot.');
+  osmMode = 'live';
+  await mkdir(dirname(osmSnapshotPath), { recursive: true });
+  await writeFile(osmSnapshotPath, JSON.stringify({ points: communityPoints }));
 } catch (error) {
-  communityPoints = [];
   osmIssue = error instanceof Error ? error.message : String(error);
+  try {
+    communityPoints = validateOsmSnapshot(JSON.parse(await readFile(osmSnapshotPath, 'utf8')));
+    if (communityPoints.length > 0) osmMode = 'snapshot_fallback';
+  } catch {
+    communityPoints = [];
+  }
 }
 // Publicação real por padrão: pontos DEMO permanecem no repositório para testes
 // e só são exportados se houver opt-in explícito em homologação.
 const publishDemo = process.env.INCLUDE_DEMO_POINTS === 'true';
 const publicDemoPoints = publishDemo ? demoPoints : [];
 const data = [...realHealthPoints, ...communityPoints, ...publicDemoPoints];
-console.log(JSON.stringify({ event: 'osm-planaltina', count: communityPoints.length, error: osmIssue, demoIncluded: publishDemo }));
+console.log(JSON.stringify({ event: 'osm-planaltina', count: communityPoints.length, error: osmIssue, sourceMode: osmMode, demoIncluded: publishDemo }));
 const sources = await Promise.all(
   [ibge, prefeitura, cnes, inep, osm].map((adapter) => adapter.checkStatus())
 );
@@ -78,9 +92,11 @@ const cnesStatus = sources.find(source => source.id === 'cnes');
 if (cnesStatus) cnesStatus.notes += ` Triagem pela malha IBGE: ${realHealthPoints.length} pins aceitos; ${territorialReview.length} registros separados para revisão.`;
 const osmStatus = sources.find(source => source.id === 'osm');
 if (osmStatus) {
-  osmStatus.status = communityPoints.length > 0 ? 'connected' : 'error';
-  osmStatus.statusMessage = communityPoints.length > 0
-    ? `${communityPoints.length} pontos colaborativos nomeados, dentro da malha IBGE. Não são verificados pelo município.`
+  osmStatus.status = osmMode === 'live' ? 'connected' : osmMode === 'snapshot_fallback' ? 'snapshot_fallback' : 'error';
+  osmStatus.statusMessage = osmMode === 'live'
+    ? `${communityPoints.length} locais comunitários coletados na região urbana, filtrados pela malha IBGE. Não são verificados pelo município.`
+    : osmMode === 'snapshot_fallback'
+    ? `${communityPoints.length} locais comunitários preservados de uma coleta anterior; Overpass não respondeu nesta publicação.`
     : 'Coleta colaborativa indisponível nesta publicação; não serão apresentados pontos OSM fictícios.';
   osmStatus.retrievedAt = communityPoints[0]?.provenanceMeta.retrievedAt ?? null;
   osmStatus.checkedAt = new Date().toISOString();
@@ -112,6 +128,7 @@ await writeFile(
       realCount: realHealthPoints.length + communityPoints.length,
       verifiedCount: realHealthPoints.length,
       communityCount: communityPoints.length,
+      osmSourceMode: osmMode,
       territorialReviewCount: territorialReview.length,
       demoCount: publicDemoPoints.length,
       municipality: 'Planaltina, Goiás',
