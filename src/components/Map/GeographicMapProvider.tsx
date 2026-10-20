@@ -8,11 +8,13 @@ import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
-export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation, routePreview, onClearRoute }: {
+export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation, routePreview, onClearRoute, routePickMode, onMapCoordinatePicked }: {
   points: MapPoint[]; selectedPoint: MapPoint | null; onSelectPoint: (point: MapPoint | null) => void;
   userLocation: { lat: number; lng: number } | null;
   routePreview: LocalRoute | null;
   onClearRoute: () => void;
+  routePickMode: 'origin' | 'destination' | null;
+  onMapCoordinatePicked: (position: {lat:number;lng:number}) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -69,6 +71,15 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
   }, [points, onSelectPoint]);
   useEffect(() => { if (selectedPoint) map.current?.panTo([selectedPoint.lat, selectedPoint.lng]); }, [selectedPoint]);
   useEffect(() => {
+    if (!map.current || !routePickMode) return;
+    const instance = map.current;
+    const picked = (event: L.LeafletMouseEvent) => {
+      onMapCoordinatePicked({lat: Number(event.latlng.lat.toFixed(7)), lng: Number(event.latlng.lng.toFixed(7))});
+    };
+    instance.on('click', picked);
+    return () => { instance.off('click', picked); };
+  }, [routePickMode, onMapCoordinatePicked]);
+  useEffect(() => {
     if (!userLocation || !map.current) return;
     const marker = L.circleMarker([userLocation.lat, userLocation.lng], { radius: 8, color: '#fff', fillColor: '#1d4ed8', fillOpacity: 1 }).addTo(map.current);
     marker.bindTooltip('Sua posição — fornecida pelo dispositivo');
@@ -91,7 +102,12 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     return () => { layer.remove(); };
   }, [streets]);
   return <div className="relative h-full w-full">
-    <div ref={host} className="h-full w-full bg-[#e9eee5]" style={{ zIndex: 0 }} aria-label="Mapa geográfico de Planaltina com limite IBGE" />
+    <div ref={host} className="h-full w-full bg-[#e9eee5]"
+      style={{ zIndex: 0, cursor: routePickMode ? 'crosshair' : undefined }}
+      aria-label="Mapa geográfico de Planaltina com limite IBGE" />
+    {routePickMode && <div role="status" className="pointer-events-none absolute inset-x-4 top-16 z-20 mx-auto w-fit max-w-[85vw] rounded-2xl border border-[#355E3B]/30 bg-white/95 px-4 py-3 text-center text-sm font-extrabold text-[#355E3B] shadow-xl backdrop-blur">
+      Toque em uma rua do mapa para marcar {routePickMode === 'origin' ? 'a origem' : 'o destino'} do percurso.
+    </div>}
     <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-6rem)] flex-wrap gap-2" aria-label="Controles do mapa">
       <button type="button" className="touch-target inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-3 py-2 text-xs font-bold text-[#355E3B] shadow-lg backdrop-blur"
         aria-pressed={streets} aria-label={streets ? 'Ruas online ativadas' : 'Ruas online desativadas'}
