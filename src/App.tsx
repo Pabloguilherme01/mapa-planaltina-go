@@ -13,6 +13,7 @@ import { MobileBottomNav } from './components/Navigation/MobileBottomNav.tsx';
 import { MapContainer } from './components/Map/MapContainer.tsx';
 import { OfflineBanner } from './components/Common/OfflineBanner.tsx';
 import { filterCatalog, type CatalogSort, type VerificationFilter } from './utils/catalogFilters.ts';
+import { decodeMapFilters, encodeMapFilters, countActiveFilters } from './utils/filterPermalink.ts';
 import { parseThemeChoice, resolveTheme, themeStorageKey, type ThemeChoice } from './utils/themeMode.ts';
 import { Loader2, Trees, X } from 'lucide-react';
 import { pageRoute, sitePath } from './utils/routing.ts';
@@ -50,7 +51,14 @@ function LoadingSurface({ label }: { label: string }) {
   );
 }
 
+function readInitialFilters() {
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  return decodeMapFilters(params);
+}
+
 export default function App() {
+  const [initialFilters] = useState(readInitialFilters);
+  const [shareNotice, setShareNotice] = useState('');
   const [allPoints, setAllPoints] = useState<MapPoint[]>([]);
   const [selectedPoint, setSelectedPoint] = useState<MapPoint | null>(null);
   const [routePreview, setRoutePreview] = useState<LocalRoute | null>(null);
@@ -64,13 +72,13 @@ export default function App() {
     currentRoute === '/fontes' ? 'sources' : 'map'
   );
 
-  const [searchQuery, setSearchQuery] = useState<string>('');
-  const [selectedCategories, setSelectedCategories] = useState<PointCategory[]>([]);
-  const [selectedProvenance, setSelectedProvenance] = useState<ProvenanceType | 'all'>('all');
-  const [selectedKind, setSelectedKind] = useState('');
-  const [selectedZone, setSelectedZone] = useState('');
-  const [verification, setVerification] = useState<VerificationFilter>('all');
-  const [sort, setSort] = useState<CatalogSort>('default');
+  const [searchQuery, setSearchQuery] = useState<string>(initialFilters.search);
+  const [selectedCategories, setSelectedCategories] = useState<PointCategory[]>(initialFilters.categories);
+  const [selectedProvenance, setSelectedProvenance] = useState<ProvenanceType | 'all'>(initialFilters.origin);
+  const [selectedKind, setSelectedKind] = useState(initialFilters.kind);
+  const [selectedZone, setSelectedZone] = useState(initialFilters.zone);
+  const [verification, setVerification] = useState<VerificationFilter>(initialFilters.verification);
+  const [sort, setSort] = useState<CatalogSort>(initialFilters.sort);
   const [radiusKm, setRadiusKm] = useState(0);
   const [themeChoice, setThemeChoice] = useState<ThemeChoice>(() => {
     try { return parseThemeChoice(localStorage.getItem(themeStorageKey)); } catch { return 'system'; }
@@ -137,6 +145,42 @@ export default function App() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  // Compartilhar buscas sem nunca incluir coordenadas do usuário ou raio GPS na URL.
+  useEffect(() => {
+    if (currentRoute !== '/' || typeof window === 'undefined') return;
+    const params = encodeMapFilters({
+      search: searchQuery, categories: selectedCategories, origin: selectedProvenance,
+      verification, kind: selectedKind, zone: selectedZone, sort,
+    }, new URLSearchParams(window.location.search));
+    const query = params.toString();
+    window.history.replaceState(window.history.state, '', window.location.pathname +
+      (query ? '?' + query : '') + window.location.hash);
+  }, [currentRoute, searchQuery, selectedCategories, selectedProvenance, verification, selectedKind, selectedZone, sort]);
+
+  const filterCount = countActiveFilters({
+    search: searchQuery, categories: selectedCategories, origin: selectedProvenance,
+    verification, kind: selectedKind, zone: selectedZone, sort,
+  }) + Number(radiusKm > 0 && Boolean(userLocation));
+
+  const clearAllFilters = () => {
+    setSearchQuery(''); setSelectedCategories([]); setSelectedProvenance('all');
+    setSelectedKind(''); setSelectedZone(''); setVerification('all');
+    setSort('default'); setRadiusKm(0); setShareNotice('');
+  };
+  const shareMapFilters = async () => {
+    const url = new URL(sitePath('/', import.meta.env.BASE_URL), window.location.origin);
+    url.search = encodeMapFilters({
+      search: searchQuery, categories: selectedCategories, origin: selectedProvenance,
+      verification, kind: selectedKind, zone: selectedZone, sort,
+    }).toString();
+    try {
+      await navigator.clipboard.writeText(url.href);
+      setShareNotice('Link de filtros copiado. Sua posição não foi incluída.');
+    } catch {
+      setShareNotice('Cópia indisponível neste navegador. Utilize o endereço da página.');
+    }
+  };
 
   // Keyboard shortcut Ctrl+K or Cmd+K to focus the visible search field.
   useEffect(() => {
@@ -273,6 +317,10 @@ export default function App() {
               radiusKm={radiusKm}
               onRadiusChange={setRadiusKm}
               hasLocation={Boolean(userLocation)}
+              activeFilterCount={filterCount}
+              onClearAllFilters={clearAllFilters}
+              onShareFilters={shareMapFilters}
+              shareFeedback={shareNotice}
               isLoading={isLoading}
               isError={isError}
               onRetry={loadData}
@@ -339,6 +387,10 @@ export default function App() {
               radiusKm={radiusKm}
               onRadiusChange={setRadiusKm}
               hasLocation={Boolean(userLocation)}
+              activeFilterCount={filterCount}
+              onClearAllFilters={clearAllFilters}
+              onShareFilters={shareMapFilters}
+              shareFeedback={shareNotice}
               points={filteredPoints}
               selectedPoint={selectedPoint}
               onSelectPoint={handleSelectPoint}
