@@ -330,7 +330,7 @@ test('páginas principais não têm violações críticas ou sérias de acessibi
 test('cartografia local e cadastro SEDUC distinguem geometria de registro cadastral', async ({ page }) => {
   await page.goto('./');
   await expect(page.getByLabel('Mapa geográfico de Planaltina com limite IBGE')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Ruas online desativadas' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ruas online ativadas' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Ver município' })).toBeVisible();
   await page.goto('./fontes/');
   await expect(page.getByRole('heading', { name: 'Educação — cadastro oficial SEDUC' })).toBeVisible();
