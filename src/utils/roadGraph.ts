@@ -122,7 +122,7 @@ function nearest(graph: RoadGraph, position: MapCoordinates, active: Set<number>
     const gap = distanceMeters(position, { lat: node[0], lng: node[1] });
     if (gap < distance) { distance = gap; best = index; }
   }
-  return best >= 0 && distance <= 350 ? { id: best, distance } : null;
+  return best >= 0 && distance <= 150 ? { id: best, distance } : null;
 }
 class MinHeap {
   private data: [number, number][] = [];
