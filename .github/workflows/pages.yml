@@ -45,7 +45,7 @@ jobs:
           key: osm-planaltina-v1-restore-${{ github.run_id }}
           restore-keys: osm-planaltina-v1-
       - name: Preparar catálogo regional OSM sem API paga
-        if: github.event_name == 'schedule' || hashFiles('.cache/osm/snapshot.json') == ''
+        if: github.event_name != 'pull_request' || hashFiles('.cache/osm/snapshot.json') == ''
         continue-on-error: true
         run: |
           set -euo pipefail

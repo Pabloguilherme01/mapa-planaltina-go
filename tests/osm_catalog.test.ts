@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapOverpassElements, overpassQuery, validateOsmSnapshot } from '../src/utils/osmCatalog.ts';
+import { mapOverpassElements, overpassQuery, validateOsmSnapshot, mergeOsmSnapshots } from '../src/utils/osmCatalog.ts';
 
 const snapshot = '2026-10-19T12:00:00.000Z';
 const entry = (id: number, tags: Record<string, string>, lat = -15.4542, lon = -47.6029) =>
@@ -53,6 +53,23 @@ describe('catálogo OSM municipal', () => {
     expect(validateOsmSnapshot({ points: points.map((p, i) => i === 0 ? { ...p, lat: 0 } : p) })).toEqual([]);
     expect(validateOsmSnapshot({ points: points.map((p, i) => i === 0 ? { ...p, id: 'osm-node-102' } : p) })).toEqual([]);
     expect(validateOsmSnapshot({ points: points.map((p, i) => i === 0 ? { ...p, provenanceMeta: { ...p.provenanceMeta, verificationStatus: 'verified' } } : p) })).toEqual([]);
+  });
+
+  it('une extrato regional e coleta Overpass preservando IDs únicos e versões novas', () => {
+    const regional = mapOverpassElements({ elements: [
+      entry(21, { shop: 'bakery', name: 'Padaria Regional' }),
+      entry(22, { amenity: 'school', name: 'Escola Regional' }),
+    ] }, '2026-10-15T12:00:00.000Z');
+    const live = mapOverpassElements({ elements: [
+      entry(21, { shop: 'bakery', name: 'Padaria Atualizada' }),
+      entry(23, { amenity: 'townhall', name: 'Serviço Municipal' }),
+    ] }, '2026-10-19T18:00:00.000Z');
+    const merged = mergeOsmSnapshots(regional, live);
+    expect(merged.map(p => p.id)).toEqual(['osm-node-21', 'osm-node-22', 'osm-node-23']);
+    expect(merged[0].name).toBe('Padaria Atualizada');
+    expect(merged[1].name).toBe('Escola Regional');
+    expect(regional[0].name).toBe('Padaria Regional');
+    expect(mergeOsmSnapshots(regional, [])).toEqual(regional);
   });
 
   it('resiste a JSON inválido e restringe a área consultada', () => {
