@@ -74,7 +74,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       role="region"
       aria-label="Busca e lista do catálogo territorial"
       className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
-        isExpanded ? 'h-[min(84dvh,820px)]' : 'h-[320px]'
+        isExpanded ? 'h-[min(84dvh,820px)]' : 'h-[300px]'
       }`}
     >
       <button
