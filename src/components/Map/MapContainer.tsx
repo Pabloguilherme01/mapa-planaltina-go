@@ -27,6 +27,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   userLocation,
 }) => {
   const [provider, setProvider] = useState<'geographic' | 'demo' | 'google'>('geographic');
+  const allowSchematic = import.meta.env.DEV;
   const googleMapsAvailable = hasGoogleMapsApiKey(import.meta.env.VITE_GOOGLE_MAPS_API_KEY);
 
   return (
@@ -35,12 +36,12 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       <label className="absolute top-3 right-3 z-30 lg:hidden rounded-xl bg-white p-1 shadow">
         <span className="sr-only">Tipo de mapa</span>
         <select className="min-h-11 max-w-36 text-xs font-bold" value={provider} onChange={event => setProvider(event.target.value as typeof provider)}>
-          <option value="geographic">Geográfico</option><option value="demo">Esquemático</option><option value="google" disabled={!googleMapsAvailable}>Google Maps</option>
+          <option value="geographic">Geográfico</option>{allowSchematic && <option value="demo">Esquemático de teste</option>}<option value="google" disabled={!googleMapsAvailable}>Google Maps</option>
         </select>
       </label>
       <div className="absolute lg:top-3 lg:right-32 z-30 hidden lg:flex items-center bg-white/95 backdrop-blur-md rounded-xl p-1 shadow-md border border-neutral-200">
         <button type="button" className="touch-target rounded-lg px-2 text-xs font-bold" aria-pressed={provider === 'geographic'} onClick={() => setProvider('geographic')}>Geográfico</button>
-        <button
+        {allowSchematic && <button
           type="button"
           onClick={() => setProvider('demo')}
           className={`px-2.5 py-1 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
@@ -51,8 +52,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
           aria-pressed={provider === 'demo'}
         >
           <MapIcon size={14} />
-          <span>Esquemático</span>
-        </button>
+          <span>Esquemático de teste</span>
+        </button>}
 
         <button
           type="button"
