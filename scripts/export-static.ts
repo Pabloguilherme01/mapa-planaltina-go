@@ -1,6 +1,6 @@
 import { inPlanaltina } from '../src/utils/territory.ts';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
-import { mapOverpassElements, overpassQuery, validateOsmSnapshot } from '../src/utils/osmCatalog.ts';
+import { mapOverpassElements, overpassQuery, validateOsmSnapshot, mergeOsmSnapshots } from '../src/utils/osmCatalog.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { pointsRepository } from '../server/repository/PointsRepository.ts';
@@ -49,8 +49,14 @@ console.log(
 // Falhas de terceiros degradam para o último snapshot real CNES sem impedir o deploy.
 let communityPoints: Awaited<ReturnType<typeof mapOverpassElements>> = [];
 let osmIssue: string | null = null;
-let osmMode: 'live' | 'regional_extract' | 'snapshot_fallback' | 'unavailable' = 'unavailable';
+let osmMode: 'live' | 'combined' | 'regional_extract' | 'snapshot_fallback' | 'unavailable' = 'unavailable';
 const osmSnapshotPath = process.env.OSM_SNAPSHOT_PATH ?? '.cache/osm/snapshot.json';
+let preservedPoints: typeof communityPoints = [];
+try {
+  preservedPoints = validateOsmSnapshot(JSON.parse(await readFile(osmSnapshotPath, 'utf8')));
+} catch {
+  // Primeira publicação: não existe snapshot comunitário anterior.
+}
 try {
   // Consulta enxuta primeiro: o endpoint comunitário não oferece SLA.
   // O perímetro IBGE permanece obrigatório na transformação de cada ponto.
@@ -66,11 +72,12 @@ try {
   });
   if (!overpass.ok) throw new Error(`HTTP ${overpass.status}`);
   const fresh = mapOverpassElements(await overpass.json(), new Date().toISOString());
-  communityPoints = validateOsmSnapshot({ points: fresh });
-  if (communityPoints.length === 0) throw new Error('Lote OSM insuficiente ou inválido; preservar snapshot.');
-  osmMode = 'live';
+  const livePoints = validateOsmSnapshot({ points: fresh });
+  if (livePoints.length === 0) throw new Error('Lote OSM insuficiente ou inválido; preservar snapshot.');
+  communityPoints = mergeOsmSnapshots(preservedPoints, livePoints);
+  osmMode = preservedPoints.length > 0 ? 'combined' : 'live';
   await mkdir(dirname(osmSnapshotPath), { recursive: true });
-  await writeFile(osmSnapshotPath, JSON.stringify({ points: communityPoints }));
+  await writeFile(osmSnapshotPath, JSON.stringify({ origin: osmMode, createdAt: new Date().toISOString(), points: communityPoints }));
 } catch (error) {
   osmIssue = error instanceof Error ? error.message : String(error);
   try {
@@ -100,10 +107,12 @@ const cnesStatus = sources.find(source => source.id === 'cnes');
 if (cnesStatus) cnesStatus.notes += ` Triagem pela malha IBGE: ${realHealthPoints.length} pins aceitos; ${territorialReview.length} registros separados para revisão.`;
 const osmStatus = sources.find(source => source.id === 'osm');
 if (osmStatus) {
-  osmStatus.status = osmMode === 'live' || osmMode === 'regional_extract' ? 'connected'
+  osmStatus.status = ['live', 'combined', 'regional_extract'].includes(osmMode) ? 'connected'
     : osmMode === 'snapshot_fallback' ? 'snapshot_fallback' : 'error';
   osmStatus.statusMessage = osmMode === 'live'
     ? `${communityPoints.length} locais comunitários coletados na região urbana, filtrados pela malha IBGE. Não são verificados pelo município.`
+    : osmMode === 'combined'
+    ? `${communityPoints.length} locais únicos consolidados entre o extrato regional/snapshot e Overpass, com procedência comunitária e sem verificação oficial.`
     : osmMode === 'regional_extract'
     ? `${communityPoints.length} locais extraídos do OpenStreetMap/Geofabrik nesta publicação; somente a geometria e procedência foram filtradas, não a existência do serviço.`
     : osmMode === 'snapshot_fallback'
