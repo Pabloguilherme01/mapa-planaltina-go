@@ -107,6 +107,14 @@
 :root[data-theme="dark"] .text-neutral-400 {
   color: #bdd1c7 !important;
 }
+:root[data-theme="dark"] [class*="text-[#984E2E]"],
+:root[data-theme="dark"] [class*="text-[#B05835]"],
+:root[data-theme="dark"] [class*="text-[#BA623D]"],
+:root[data-theme="dark"] .text-emerald-950,
+:root[data-theme="dark"] .text-orange-800,
+:root[data-theme="dark"] .text-rose-700 {
+  color: #f8c08f !important;
+}
 :root[data-theme="dark"] .text-emerald-800,
 :root[data-theme="dark"] .text-emerald-900,
 :root[data-theme="dark"] .text-blue-900,
