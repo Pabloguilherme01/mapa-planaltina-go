@@ -78,7 +78,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           </div>
           <p className="text-xs text-[#424941] leading-relaxed">
             {isReal
-              ? 'Telefone e e-mail não são copiados para evitar informação operacional desatualizada. Consulte a fonte vinculada para confirmar atendimento.'
+              ? 'Contatos não são replicados. Para cadastros colaborativos, confirme estabelecimento, localização e atendimento na fonte antes de sair.'
               : 'Telefones, e-mails e números prediais foram intencionalmente omitidos por se tratarem de dados não verificados em Planaltina, Goiás.'}
           </p>
         </div>
@@ -94,8 +94,8 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           </div>
           <div className="flex justify-between items-center py-0.5 border-b border-neutral-200/60 gap-3">
             <span className="text-neutral-600 font-medium">Status Cadastral:</span>
-            <span className={`font-bold flex items-center gap-1 text-right ${isReal ? 'text-emerald-800' : 'text-rose-700'}`}>
-              <span className={`w-2 h-2 rounded-full ${isReal ? 'bg-emerald-600' : 'bg-rose-600'}`} />
+            <span className={`font-bold flex items-center gap-1 text-right ${isVerified ? 'text-emerald-800' : isReal ? 'text-orange-800' : 'text-rose-700'}`}>
+              <span className={`w-2 h-2 rounded-full ${isVerified ? 'bg-emerald-600' : isReal ? 'bg-orange-600' : 'bg-rose-600'}`} />
               {isVerified ? 'Verificado na fonte' : isReal ? 'Cadastro colaborativo não verificado' : 'Não Verificado (DEMO)'}
             </span>
           </div>
