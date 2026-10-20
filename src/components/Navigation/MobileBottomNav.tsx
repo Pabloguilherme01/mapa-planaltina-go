@@ -14,7 +14,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const tabs = [
     { id: 'map' as ActiveTab, label: 'Mapa', icon: MapIcon },
     { id: 'assistant' as ActiveTab, label: 'Assistente', icon: Bot },
-    { id: 'sources' as ActiveTab, label: 'Fontes', icon: FileText },
+    { id: 'sources' as ActiveTab, label: 'Serviços', icon: FileText },
   ];
 
   return (
@@ -38,6 +38,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                   : 'text-neutral-500 hover:text-neutral-800 font-medium'
               }`}
               aria-current={isActive ? 'page' : undefined}
+              aria-label={tab.id === 'sources' ? 'Fontes e serviços digitais' : undefined}
             >
               <IconComp size={22} className={isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'} />
               <span className="text-[11px] mt-0.5">{tab.label}</span>
