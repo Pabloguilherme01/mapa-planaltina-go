@@ -7,11 +7,12 @@ Fontes: https://pabloguilherme01.github.io/mapa-planaltina-go/fontes/
 
 ## Estado dos dados
 
-O projeto deixou de ser exclusivamente demonstrativo. O catálogo publicado é **misto e explicitamente tipado por procedência**:
+O catálogo público agora prioriza **pontos reais, sem DEMO por padrão**. Os registros são classificados por procedência, e presença na base colaborativa **não** equivale a confirmação municipal de endereço ou funcionamento:
 
 - **Saúde real:** o adapter tenta consultar o **CNES/SES-GO** filtrado para o código municipal `521760`. Quando a fonte ao vivo responde, os registros válidos entram como `official`. Quando o órgão bloqueia ou fica indisponível, o projeto preserva somente um **último snapshot previamente validado**, classificado como `verified_open_data`, sem fingir que houve atualização ao vivo.
-- **DEMO:** os 20 pontos sintéticos anteriores continuam disponíveis para homologação da interface, sempre com `isDemo: true`, procedência `demo` e aviso de que não servem para deslocamento.
-- **Pesquisa comercial:** permanece na página `/fontes` como pesquisa comunitária/checagem pública, sem virar pin enquanto não houver geometria auditável.
+- **OpenStreetMap colaborativo:** escolas geolocalizadas, lojas, bancos, serviços, órgãos e paradas de transporte nomeados na base OSM são selecionados pela malha IBGE e apresentados como `community` / `unverified`. **Não são verificados oficialmente**; consultar nome, fonte e localização antes de sair. O build consulta Overpass uma vez (não a cada visita) e, se falhar, mantém a camada CNES sem inventar pontos.
+- **DEMO:** os 20 pontos sintéticos permanecem apenas no repositório para teste da interface, sem publicação normal; podem ser exportados exclusivamente em homologação com `INCLUDE_DEMO_POINTS=true`.
+- **Pesquisa comercial e escolas:** a página `/fontes` conserva as listas institucionais de referência; somente entradas com geometria OSM e procedência registrada viram pins, sem geocodificação presumida. A lista escolar institucional não deve ser confundida com a cobertura dos pins mapeados.
 
 A identificação oficial do município usa **IBGE 5217609**. A procedência dos pontos usa `official`, `verified_open_data`, `community` e `demo`, e o status de verificação é armazenado por registro.
 
@@ -54,6 +55,15 @@ O portal estadual apresentou bloqueios intermitentes nos runners da GitHub Actio
 
 O snapshot inicial de contingência contém a **UPA de Planaltina-GO, CNES 0112666**. Identidade e endereço foram conferidos no CNES/DataSUS oficial; a geometria pública foi conferida separadamente e, por isso, o ponto é publicado como `verified_open_data`, não como geometria oficial.
 
+## Mapas, filtros e custo zero
+
+- Leaflet com limite territorial IBGE e ruas OpenStreetMap sob demanda online: sem provedor comercial obrigatório e sem baixar tiles para uso offline. Exibir crédito **© OpenStreetMap contributors (ODbL)** e respeitar a [política de tiles](https://operations.osmfoundation.org/policies/tiles/), que proíbe pré-download/offline no servidor comunitário.
+- Fontes OSM são consultadas em **lote durante o build**, com limite de tempo, escopo territorial, tipo, IDs estáveis, filtro de dados privados e status explicitado em `/fontes`. Não há busca remota ou geolocalização automática enquanto o cidadão pesquisa o catálogo.
+- Filtros locais: texto, categorias, procedência, tipo de estabelecimento e zona (não classificada quando a fonte não informa). Listas longas exibem lotes de 60/80 resultados, reduzindo custo de renderização em celulares.
+- **Google Maps, Waze, Apple Maps, Organic Maps:** links oficiais de destino sem chave nem cobrança por chamada da nossa aplicação. Google, Waze e Apple calculam rotas externamente; Organic abre o ponto para a pessoa decidir a rota no app. O navegador não envia origem GPS nos links.
+- Renderização Google Maps JavaScript é **opcional** e depende de chave com faturamento/quotas próprios; não é ativada para atender ao requisito de zero custo.
+- O catálogo cartográfico **não cobre necessariamente todos** os serviços, escolas ou CNPJs da cidade. Ausência de pin não prova ausência de serviço, e registro OSM não prova funcionamento. Os 63 registros da base escolar do painel `/fontes` não são automaticamente convertidos em pins sem geometria confiável.
+
 ## Publicação no GitHub Pages
 
 Cada alteração em `main` executa TypeScript, Vitest, construção estática, verificação do artefato e Browser QA antes/depois da integração. Pull requests executam as mesmas verificações sem publicar o site.
@@ -67,7 +77,7 @@ npm run verify:pages
 npm run preview
 ```
 
-O `build:pages` gera um **snapshot auditável**. Ele exige pelo menos um ponto real verificável, vindo da fonte live ou do last-known-good. O JSON final informa `realCount`, `demoCount`, município, código IBGE, modo `misto_oficial_demo` e `realSourceMode` (`live` ou `snapshot_fallback`).
+O `build:pages` gera um **snapshot auditável**. Ele exige pelo menos um ponto real verificável, vindo da fonte live ou do last-known-good. O JSON final informa `realCount`, `verifiedCount`, `communityCount`, `demoCount` (zero normalmente), município, código IBGE, modo de catálogo real e `realSourceMode` (`live` ou `snapshot_fallback`) para CNES.
 
 **Proteção de configuração:** a publicação GitHub Pages sempre utiliza o snapshot
 estático verificado, inclusive se `VITE_API_BASE_URL` estiver definido no ambiente
