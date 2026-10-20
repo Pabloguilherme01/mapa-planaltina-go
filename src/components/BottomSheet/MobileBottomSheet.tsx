@@ -74,7 +74,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       role="region"
       aria-label="Busca e lista do catálogo territorial"
       className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
-        isExpanded ? 'h-[min(84dvh,820px)]' : 'h-[300px]'
+        isExpanded ? 'h-[min(72dvh,720px)]' : 'h-[300px]'
       }`}
     >
       <button
@@ -222,6 +222,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             const IconComponent = catConfig.icon;
             const isSelected = selectedPoint?.id === point.id;
             const isReal = !point.isDemo;
+            const isVerified = point.provenanceMeta.verificationStatus === 'verified';
 
             return (
               <div
@@ -240,20 +241,19 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       <p className="text-[10px] text-neutral-600">{point.category} • {point.zone}</p>
                     </div>
                   </div>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isReal ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-[#FFF9E6] text-[#78350F] border-[#E5B744]/40'}`}>
-                    {isReal && <BadgeCheck size={9} />}
+                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
+                    {isVerified ? <BadgeCheck size={9} /> : <AlertTriangle size={9} />}
                     {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : 'COLABORATIVO') : 'DEMO'}
                   </span>
                 </div>
 
-                <div className={`rounded-lg p-1.5 flex items-start gap-1 ${isReal ? 'bg-emerald-50 text-emerald-950' : 'bg-[#FFF4DC] text-[#78350F]'}`}>
-                  {isReal ? <BadgeCheck size={12} className="shrink-0 mt-0.5 text-emerald-700" /> : <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-700" />}
+                {!isVerified && <div className="flex items-start gap-1 rounded-lg border border-orange-200 bg-orange-50 p-1.5 text-orange-900">
+                  <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
                   <p className="text-[10px] leading-tight">
-                    {isReal
-                      ? 'Localização mapeada; confira o cadastro e a fonte antes do deslocamento.'
-                      : 'Ilustrativo. Não use para deslocamento em Planaltina, Goiás.'}
+                    {isReal ? 'Cadastro comunitário não verificado. Confirme o local na fonte.' :
+                      'Ilustrativo. Não use para deslocamento.'}
                   </p>
-                </div>
+                </div>}
 
                 <div className="flex items-center justify-between pt-0.5">
                   <span className="text-[10px] text-neutral-500 font-semibold truncate max-w-[150px]">
