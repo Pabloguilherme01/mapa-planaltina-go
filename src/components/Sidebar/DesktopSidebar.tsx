@@ -74,6 +74,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
 }) => {
   const [simulatedState, setSimulatedState] = useState<'normal' | 'skeleton' | 'empty' | 'error'>('normal');
   const showStateSimulator = import.meta.env.DEV;
+  const [browseDirectory, setBrowseDirectory] = useState(false);
 
   const activeLoading = isLoading || simulatedState === 'skeleton';
   const activeError = isError || simulatedState === 'error';
@@ -255,8 +256,15 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-        {searchQuery.trim() && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros documentais…</p>}>
-          <DirectoryResults search={searchQuery} categories={selectedCategories} />
+        <button type="button" aria-pressed={browseDirectory}
+          aria-label="Explorar cadastros e serviços sem localização"
+          onClick={() => { setBrowseDirectory(current => !current);  }}
+          className="touch-target inline-flex items-center justify-center gap-2 rounded-xl border border-[#355E3B]/30 bg-white px-3 py-2 text-xs font-extrabold text-[#355E3B] shadow-sm">
+          {browseDirectory ? 'Fechar catálogo complementar' : 'Explorar 101 cadastros e serviços'}
+        </button>
+
+        {(searchQuery.trim() || browseDirectory) && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros e serviços…</p>}>
+          <DirectoryResults search={searchQuery} categories={selectedCategories} browse={browseDirectory} />
         </React.Suspense>}
         {activeLoading && (
           <div className="flex flex-col gap-3" aria-busy="true">
