@@ -289,7 +289,7 @@ export default function App() {
           <SourcesPage onBackToMap={() => navigateTo('/')} />
         </Suspense>
       ) : (
-        <div className="flex-1 w-full pt-28 lg:pt-24 pb-16 lg:pb-0 flex overflow-hidden relative">
+        <div className="flex-1 w-full pt-16 lg:pt-24 pb-16 lg:pb-0 flex overflow-hidden relative">
           <div className="hidden lg:flex h-[calc(100vh-6rem)]">
             <DesktopSidebar
               points={filteredPoints}
@@ -343,7 +343,7 @@ export default function App() {
                       Território do Cerrado Goiano
                     </p>
                     <p className="text-[11px] text-[#424941] leading-tight">
-                      Visualizador cadastral de Planaltina, Goiás. Registros ilustrativos com rigor cartográfico conceitual.
+                      Visualizador cadastral de Planaltina, Goiás. Locais reais geolocalizados em Planaltina-GO, com origem e qualidade de cada cadastro identificadas.
                     </p>
                   </div>
                   <button
