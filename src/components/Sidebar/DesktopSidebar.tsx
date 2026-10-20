@@ -1,3 +1,4 @@
+import { DirectoryResults } from '../Sources/DirectoryResults.tsx';
 import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
@@ -253,6 +254,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+        <DirectoryResults search={searchQuery} categories={selectedCategories} />
         {activeLoading && (
           <div className="flex flex-col gap-3" aria-busy="true">
             {[1, 2, 3].map((idx) => (
