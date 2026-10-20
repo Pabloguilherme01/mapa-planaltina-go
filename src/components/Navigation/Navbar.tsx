@@ -1,7 +1,7 @@
 import type { ThemeChoice } from '../../utils/themeMode.ts';
 import React from 'react';
 import {
-  Wrench,
+  ShieldCheck,
   Tag,
   LocateFixed,
   Contrast,
@@ -39,11 +39,11 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-[#F5F0E6] shadow-sm">
       {/* Top Banner Alert (Mandatory DEMO warning) */}
-      <div className="w-full bg-[#FFF9E6] border-b border-[#E5B744]/40 px-3 py-1.5 flex items-center justify-between">
+      <div className="hidden lg:flex w-full bg-[#FFF9E6] border-b border-[#E5B744]/40 px-3 py-1.5 items-center justify-between">
         <div className="flex items-center gap-2 mx-auto text-center">
           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#E5B744] text-[#121E14] text-[11px] uppercase font-extrabold tracking-wider">
-            <Wrench size={12} />
-            Catálogo
+            <ShieldCheck size={12} />
+            Fontes auditáveis
           </span>
           <p className="text-xs text-[#78350F] font-semibold">
             {realCount} locais mapeados {demoCount > 0 ? `• ${demoCount} DEMO` : '• catálogo real'}. Pontos comunitários podem não estar verificados; confira a fonte.
@@ -52,7 +52,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       {/* Main Bar in Cerrado Green (#355E3B) */}
-      <div className="h-16 w-full px-3 lg:px-6 flex items-center justify-between gap-2 bg-[#355E3B] text-white">
+      <div className="premium-header h-16 w-full px-3 lg:px-6 flex items-center justify-between gap-2 bg-[#355E3B] text-white">
         {/* Brand & Identity */}
         <div className="flex items-center gap-4 lg:gap-6">
           <button
