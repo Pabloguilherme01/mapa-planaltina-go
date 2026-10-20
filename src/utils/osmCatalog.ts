@@ -86,8 +86,14 @@ const minLng = Math.min(...ringCoords.map(([lng]) => lng));
 const maxLng = Math.max(...ringCoords.map(([lng]) => lng));
 
 /** Uma consulta por build e filtro posterior pela malha IBGE; não consulta usuários nem faz geocodificação. */
-export function overpassQuery(): string {
-  const bbox = [minLat, minLng, maxLat, maxLng].map(value => value.toFixed(5)).join(',');
+export function overpassQuery(scope: 'municipality' | 'urban' = 'municipality'): string {
+  // Escopo urbano reduz a pressão sobre o Overpass público; a malha IBGE
+  // continua sendo o filtro definitivo, não este retângulo de consulta.
+  const urbanBounds = [-15.515, -47.705, -15.375, -47.525];
+  const bounds = scope === 'urban'
+    ? [Math.max(minLat, urbanBounds[0]), Math.max(minLng, urbanBounds[1]), Math.min(maxLat, urbanBounds[2]), Math.min(maxLng, urbanBounds[3])]
+    : [minLat, minLng, maxLat, maxLng];
+  const bbox = bounds.map(value => value.toFixed(5)).join(',');
   return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox}););out center tags;`;
 }
 
