@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapOverpassElements, overpassQuery } from '../src/utils/osmCatalog.ts';
+import { mapOverpassElements, overpassQuery, validateOsmSnapshot } from '../src/utils/osmCatalog.ts';
 
 const snapshot = '2026-10-19T12:00:00.000Z';
 const entry = (id: number, tags: Record<string, string>, lat = -15.4542, lon = -47.6029) =>
@@ -42,6 +42,17 @@ describe('catálogo OSM municipal', () => {
     expect(JSON.stringify(point)).not.toContain('61999999999');
     expect(JSON.stringify(point)).not.toContain('secreto@exemplo.org');
     expect(point.tags).toContain('Tipo: Padaria');
+  });
+
+  it('reutiliza somente snapshot de dez ou mais pontos sanitizados e geolocalizados', () => {
+    const batch = Array.from({ length: 10 }, (_, i) =>
+      entry(100 + i, { shop: 'bakery', name: `Padaria ${i}` }));
+    const points = mapOverpassElements({ elements: batch }, snapshot);
+    expect(validateOsmSnapshot({ points })).toEqual(points);
+    expect(validateOsmSnapshot({ points: points.slice(0, 9) })).toEqual([]);
+    expect(validateOsmSnapshot({ points: points.map((p, i) => i === 0 ? { ...p, lat: 0 } : p) })).toEqual([]);
+    expect(validateOsmSnapshot({ points: points.map((p, i) => i === 0 ? { ...p, id: 'osm-node-102' } : p) })).toEqual([]);
+    expect(validateOsmSnapshot({ points: points.map((p, i) => i === 0 ? { ...p, provenanceMeta: { ...p.provenanceMeta, verificationStatus: 'verified' } } : p) })).toEqual([]);
   });
 
   it('resiste a JSON inválido e restringe a área consultada', () => {
