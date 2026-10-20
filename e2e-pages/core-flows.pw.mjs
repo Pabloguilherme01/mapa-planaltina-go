@@ -410,3 +410,22 @@ test('mobile: filtros recolhidos mantêm mapa acessível e controles avançados 
   await sheet.getByRole('button',{name:'Limpar todos os filtros'}).click();
   await expect(sheet.getByLabel('Situação da verificação')).toHaveValue('all');
 });
+
+test('roteamento de qualquer rua: selecionar origem e destino por toque sem GPS', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Fluxo de mapa com espaço para seleção');
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  await planner.getByRole('button', { name: 'Marcar origem no mapa' }).click();
+  await expect(planner).not.toBeVisible();
+  await expect(page.getByText('Toque em uma rua do mapa para marcar a origem do percurso.')).toBeVisible();
+  await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 300, y: 220 }, force: true });
+  await expect(planner).toBeVisible();
+  await expect(planner.getByLabel('Ponto de partida')).toHaveValue('__map__');
+  await planner.getByRole('button', { name: 'Marcar destino no mapa' }).click();
+  await expect(page.getByText('Toque em uma rua do mapa para marcar o destino do percurso.')).toBeVisible();
+  await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 460, y: 320 }, force: true });
+  await expect(planner).toBeVisible();
+  await expect(planner.getByLabel('Destino real')).toHaveValue('__map__');
+  await expect(planner.getByRole('button', { name: 'Traçar rota no mapa' })).toBeEnabled();
+});
