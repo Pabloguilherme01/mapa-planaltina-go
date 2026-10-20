@@ -54,15 +54,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
           const icon = L.divIcon({ className: 'municipal-cluster', iconSize: [40, 40], html: `<span style="display:grid;place-items:center;width:40px;height:40px;border:3px solid white;border-radius:50%;background:#27472c;color:white;font-weight:bold">${bucket.length}</span>` });
           const marker = L.marker(bounds.getCenter(), { icon, title, keyboard: true }).addTo(group);
           marker.getElement()?.setAttribute('aria-label', title);
-          marker.on('click', () => {
-            if (routePickMode) {
-              // Ao marcar rotas, um agrupamento não representa uma coordenada precisa.
-              // Ampliar para permitir selecionar a rua ou um dos locais individualmente.
-              instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] });
-            } else {
-              instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] });
-            }
-          });
+          marker.on('click', () => instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] }));
           continue;
         }
         const point = bucket[0];
@@ -92,13 +84,29 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     return () => window.removeEventListener('keydown', onKey);
   }, [routePickMode, onCancelMapPick]);
   useEffect(() => {
-    if (!map.current || !routePickMode) return;
+    if (!map.current || !host.current || !routePickMode) return;
     const instance = map.current;
-    const picked = (event: L.LeafletMouseEvent) => {
-      onMapCoordinatePicked({lat: Number(event.latlng.lat.toFixed(7)), lng: Number(event.latlng.lng.toFixed(7))});
+    const element = host.current;
+    // Escutar na fase de captura: marcadores Leaflet e agrupamentos interceptam
+    // eventos no mapa e impediam marcar o destino em algumas ruas.
+    const picked = (event: MouseEvent) => {
+      if (event.detail === 0) return; // teclado em um marcador: usar o handler do próprio marcador
+      const target = event.target;
+      if (target instanceof Element && target.closest('.leaflet-control')) return;
+      const bounds = element.getBoundingClientRect();
+      const x = event.clientX - bounds.left;
+      const y = event.clientY - bounds.top;
+      if (x < 0 || y < 0 || x > bounds.width || y > bounds.height) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const location = instance.containerPointToLatLng(L.point(x, y));
+      onMapCoordinatePicked({
+        lat: Number(location.lat.toFixed(7)),
+        lng: Number(location.lng.toFixed(7)),
+      });
     };
-    instance.on('click', picked);
-    return () => { instance.off('click', picked); };
+    element.addEventListener('click', picked, true);
+    return () => { element.removeEventListener('click', picked, true); };
   }, [routePickMode, onMapCoordinatePicked]);
   useEffect(() => {
     if (!userLocation || !map.current) return;
