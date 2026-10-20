@@ -124,7 +124,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
       </button>}
       {tileError && <p role="status" className="rounded-xl bg-white/95 p-2 text-xs">Ruas online indisponíveis; os pontos e o limite municipal continuam visíveis.</p>}
     </div>
-    {routePreview && <div className="absolute bottom-14 right-3 z-20 max-w-[min(310px,75vw)] rounded-2xl border border-neutral-300 bg-white/95 p-3 shadow-xl backdrop-blur"
+    {routePreview && <div className="absolute right-3 top-32 lg:top-auto lg:bottom-14 z-20 max-w-[min(310px,75vw)] rounded-2xl border border-neutral-300 bg-white/95 p-3 shadow-xl backdrop-blur"
        role="status" aria-label="Rota local calculada">
       <p className="flex items-center gap-2 text-sm font-extrabold text-[#355E3B]"><Route size={17}/> Percurso cartográfico</p>
       <p className="mt-1 text-xl font-black">{(routePreview.distanceMeters/1000).toFixed(1)} km <span className="text-xs font-medium">aproximadamente</span></p>
