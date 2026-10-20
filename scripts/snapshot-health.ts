@@ -62,15 +62,18 @@ export function assessPublishedSnapshot(
       throw new Error('Ponto real sem coordenadas válidas dentro da malha municipal de Planaltina-GO.');
     }
     const meta = value.provenanceMeta;
-    if (
-      !['official', 'verified_open_data'].includes(String(meta.provenance)) ||
-      meta.verificationStatus !== 'verified' ||
-      !isSnapshotDate(meta.retrievedAt, now.getTime())
-    ) {
-      throw new Error('Ponto real sem proveniência verificada ou data válida.');
+    const verified = ['official', 'verified_open_data'].includes(String(meta.provenance)) &&
+      meta.verificationStatus === 'verified';
+    const community = meta.provenance === 'community' &&
+      ['unverified', 'pending'].includes(String(meta.verificationStatus)) &&
+      /^osm-(node|way|relation)-[1-9]\\d*$/.test(value.id) &&
+      typeof meta.sourceUrl === 'string' &&
+      /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\\d*$/.test(meta.sourceUrl);
+    if ((!verified && !community) || !isSnapshotDate(meta.retrievedAt, now.getTime())) {
+      throw new Error('Ponto real sem classificação de procedência ou data válida.');
     }
     realCount++;
-    oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt));
+    if (verified) oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt));
   }
   if (
     realCount === 0 ||
