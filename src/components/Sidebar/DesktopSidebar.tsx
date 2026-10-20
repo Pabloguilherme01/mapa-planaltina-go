@@ -27,6 +27,12 @@ interface DesktopSidebarProps {
   categoryCounts: Record<string, number>;
   selectedProvenance: ProvenanceType | 'all';
   onSelectProvenance: (prov: ProvenanceType | 'all') => void;
+  kindOptions: string[];
+  selectedKind: string;
+  onSelectKind: (value: string) => void;
+  zoneOptions: string[];
+  selectedZone: string;
+  onSelectZone: (value: string) => void;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -45,6 +51,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   categoryCounts,
   selectedProvenance,
   onSelectProvenance,
+  kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
   isLoading,
   isError,
   onRetry,
@@ -147,7 +154,21 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           </button>
         </div>
 
-        {showStateSimulator && (
+        <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs font-bold text-[#355E3B]">Tipo de local
+            <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="mt-1 w-full min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-xs">
+              <option value="">Todos os tipos</option>
+              {kindOptions.map(value => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
+          <label className="text-xs font-bold text-[#355E3B]">Zona
+            <select aria-label="Zona do local" value={selectedZone} onChange={event => onSelectZone(event.target.value)} className="mt-1 w-full min-h-11 rounded-lg border border-neutral-300 bg-white px-2 text-xs">
+              <option value="">Todas as zonas</option>
+              {zoneOptions.map(value => <option key={value} value={value}>{value}</option>)}
+            </select>
+          </label>
+        </div>
+                {showStateSimulator && (
           <div className="p-2 rounded-lg bg-white/60 border border-neutral-200/80 flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-neutral-700 font-bold flex items-center gap-1">
@@ -177,7 +198,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
         </span>
         {!activeLoading && (
           <span className="text-[11px] font-semibold text-emerald-800 whitespace-nowrap">
-            {realCount} reais verificados
+            {realCount} locais reais mapeados
           </span>
         )}
       </div>
@@ -264,7 +285,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 </div>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border shrink-0 ${isReal ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-[#FFF9E6] text-[#78350F] border-[#E5B744]/40'}`}>
                   {isReal && <BadgeCheck size={11} />}
-                  {isReal ? 'Verificado' : 'DEMO'}
+                  {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Verificado' : 'Colaborativo') : 'DEMO'}
                 </span>
               </div>
 
@@ -281,7 +302,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 <span className="text-[11px] font-semibold text-neutral-500">Proveniência: {provConfig.label}</span>
                 <span className={`flex items-center gap-1 font-bold text-[11px] ${isReal ? 'text-emerald-800' : 'text-[#355E3B]'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${isReal ? 'bg-emerald-600' : 'bg-[#355E3B]'}`} />
-                  {isReal ? 'Dado real' : 'Ponto DEMO'}
+                  {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Dado real' : 'Ponto comunitário não verificado') : 'Ponto DEMO'}
                 </span>
               </div>
 
