@@ -92,7 +92,7 @@ O Pages hospeda HTML, CSS e JavaScript e não executa o servidor Express. O resu
 
 O projeto segue princípios usados no **Trajeto Águas Lindas**: fontes externas têm contrato explícito, dados vazios ou não verificáveis não são promovidos silenciosamente, funcionalidades secundárias não devem quebrar a navegação central e regressões críticas são cobertas por testes unitários e de navegador.
 
-O mapa esquemático continua disponível como provedor sem chave externa; Google Maps só fica disponível quando `VITE_GOOGLE_MAPS_API_KEY` está configurada. O fundo é claramente rotulado como esquemático, enquanto cada pin mostra se é **REAL** ou **DEMO**. Busca, filtros e leitura do snapshot permanecem locais no Pages.
+O **mapa geográfico Leaflet** é o provedor público padrão. O mapa esquemático e a visualização via Google Maps JavaScript ficam reservados à execução local em desenvolvimento. O build do GitHub Pages **não injeta a chave Google Maps**, mesmo que exista uma variável configurada no repositório, evitando a ativação acidental de APIs faturáveis. Os links de Google Maps, Waze, Apple Maps e Organic Maps continuam disponíveis nas fichas dos locais. Busca, filtros e leitura do snapshot permanecem locais no Pages.
 
 A publicação gera manifesto instalável e service worker. Depois de uma visita online, shell, `/fontes/`, bundles e snapshots JSON ficam em cache para consulta sem conexão. O Browser QA executa recarga offline real após o service worker assumir o controle.
 
