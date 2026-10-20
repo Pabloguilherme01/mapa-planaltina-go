@@ -26,7 +26,7 @@ describe('importação do extrato Geofabrik sem geocodificação', () => {
   });
 
   it('não utiliza metadados de contribuidores e rejeita identidades e geometrias suspeitas', () => {
-    const point = { ...validPoint(51, 'Panificadora'), properties: { ...validPoint(51, '').properties, amenity: 'bank', '@user': 'private_user', phone: '61999999999' } };
+    const point = { ...validPoint(51, 'Panificadora'), properties: { ...validPoint(51, 'Panificadora').properties, amenity: 'bank', '@user': 'private_user', phone: '61999999999' } };
     const result = geojsonToOsmElements({ features: [
       point,
       { ...validPoint(0, 'zero'), properties: { '@id': 0, '@type': 'node', shop: 'bakery', name: 'zero' } },
