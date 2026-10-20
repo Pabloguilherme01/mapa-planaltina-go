@@ -66,6 +66,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation, activeFilterCount, onClearAllFilters, onShareFilters, shareFeedback,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
+  const [browseDirectory, setBrowseDirectory] = useState(false);
   const realCount = points.filter((point) => !point.isDemo).length;
   const [visibleLimit, setVisibleLimit] = useState(60);
   useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone, verification, sort, radiusKm]);
@@ -182,6 +183,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </section>
       </div>}
+              <button type="button" aria-pressed={browseDirectory}
+          aria-label="Explorar cadastros e serviços sem localização"
+          onClick={() => { setBrowseDirectory(current => !current); setIsExpanded(true); }}
+          className="touch-target inline-flex items-center justify-center gap-2 rounded-xl border border-[#355E3B]/30 bg-white px-3 py-2 text-xs font-extrabold text-[#355E3B] shadow-sm">
+          {browseDirectory ? 'Fechar catálogo complementar' : 'Explorar 101 cadastros e serviços'}
+        </button>
+
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
@@ -214,8 +222,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         aria-labelledby="mobile-results-heading"
         className="overflow-y-auto flex flex-col gap-2 flex-1 pr-0.5"
       >
-        {searchQuery.trim() && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros documentais…</p>}>
-          <DirectoryResults search={searchQuery} categories={selectedCategories} />
+        {(searchQuery.trim() || browseDirectory) && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros e serviços…</p>}>
+          <DirectoryResults search={searchQuery} categories={selectedCategories} browse={browseDirectory} />
         </React.Suspense>}
         {points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
