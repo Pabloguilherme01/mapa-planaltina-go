@@ -32,7 +32,7 @@ export const CATEGORY_CONFIG: Record<PointCategory, CategoryVisualConfig> = {
     badgeText: 'text-rose-800',
     borderColor: 'border-rose-300',
     icon: HeartPulse,
-    shortDescription: 'Postos de saúde, UBS e atenção básica simulada.',
+    shortDescription: 'Hospitais, UBS, farmácias e serviços de saúde mapeados.',
   },
   'Educação': {
     label: 'Educação',
@@ -42,7 +42,7 @@ export const CATEGORY_CONFIG: Record<PointCategory, CategoryVisualConfig> = {
     badgeText: 'text-indigo-800',
     borderColor: 'border-indigo-300',
     icon: GraduationCap,
-    shortDescription: 'Escolas municipais, estaduais e creches modelo.',
+    shortDescription: 'Escolas, creches, faculdades e bibliotecas geolocalizadas.',
   },
   'Transporte': {
     label: 'Transporte',
