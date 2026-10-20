@@ -54,7 +54,15 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
           const icon = L.divIcon({ className: 'municipal-cluster', iconSize: [40, 40], html: `<span style="display:grid;place-items:center;width:40px;height:40px;border:3px solid white;border-radius:50%;background:#27472c;color:white;font-weight:bold">${bucket.length}</span>` });
           const marker = L.marker(bounds.getCenter(), { icon, title, keyboard: true }).addTo(group);
           marker.getElement()?.setAttribute('aria-label', title);
-          marker.on('click', () => instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] }));
+          marker.on('click', () => {
+            if (routePickMode) {
+              // Ao marcar rotas, um agrupamento não representa uma coordenada precisa.
+              // Ampliar para permitir selecionar a rua ou um dos locais individualmente.
+              instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] });
+            } else {
+              instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] });
+            }
+          });
           continue;
         }
         const point = bucket[0];
@@ -62,14 +70,20 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
       const icon = L.divIcon({ className: 'municipal-marker', iconSize: [32, 32], iconAnchor: [16, 16],
         html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:0 1px 5px #555"></span>` });
       const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`, keyboard: true }).addTo(group);
-      marker.on('click', () => onSelectPoint(point));
+      marker.on('click', () => {
+        if (routePickMode) {
+          onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
+        } else {
+          onSelectPoint(point);
+        }
+      });
       marker.getElement()?.setAttribute('aria-label', `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`);
       }
     };
     render();
     instance.on('zoomend', render);
     return () => { instance.off('zoomend', render); group.remove(); };
-  }, [points, onSelectPoint]);
+  }, [points, onSelectPoint, routePickMode, onMapCoordinatePicked]);
   useEffect(() => { if (selectedPoint) map.current?.panTo([selectedPoint.lat, selectedPoint.lng]); }, [selectedPoint]);
   useEffect(() => {
     if (!routePickMode) return;
