@@ -230,9 +230,9 @@ test('desktop: catálogo publicado contém saúde real verificável, inclusive e
   const snapshot = await pointsResponse.json();
   const sourcesSnapshot = await sourcesResponse.json();
 
-  expect(snapshot.meta.mode).toBe('misto_oficial_demo');
+  expect(snapshot.meta.mode).toMatch(/^catalogo_real_/);
   expect(snapshot.meta.realCount).toBeGreaterThan(0);
-  expect(snapshot.meta.demoCount).toBeGreaterThan(0);
+  expect(snapshot.meta.demoCount).toBe(0);
 
   const realHealthPoint = snapshot.data.find(
     (point) => point.isDemo === false && point.category === 'Saúde' && ['official', 'verified_open_data'].includes(point.provenanceMeta?.provenance)
@@ -256,6 +256,9 @@ test('desktop: catálogo publicado contém saúde real verificável, inclusive e
   await expect(dialog.getByText('Dado real verificado')).toBeVisible();
   await expect(dialog.getByText('Verificado na fonte')).toBeVisible();
   await expect(dialog.getByText('Coordenadas publicadas:')).toBeVisible();
+  for (const app of ['Google Maps · rotas', 'Waze · carro', 'Apple Maps · rotas', 'Organic Maps · ponto']) {
+    await expect(dialog.getByRole('link', { name: app })).toHaveAttribute('href', /^https:\/\//);
+  }
 
   await page.goto('./fontes/');
   if (cnesSource.status === 'snapshot_fallback') {
