@@ -53,7 +53,7 @@ const osmSnapshotPath = process.env.OSM_SNAPSHOT_PATH ?? '.cache/osm/snapshot.js
 try {
   // Consulta enxuta primeiro: o endpoint comunitário não oferece SLA.
   // O perímetro IBGE permanece obrigatório na transformação de cada ponto.
-  const overpass = await fetch('https://overpass.private.coffee/api/interpreter', {
+  const overpass = await fetch('https://maps.mail.ru/osm/tools/overpass/api/interpreter', {
     method: 'POST',
     body: new URLSearchParams({ data: overpassQuery('urban') }),
     headers: {
