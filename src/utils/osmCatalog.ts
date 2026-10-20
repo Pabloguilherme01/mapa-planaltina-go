@@ -99,7 +99,7 @@ export function mapOverpassElements(payload: unknown, retrievedAt: string): MapP
   const points: MapPoint[] = [];
   for (const raw of payload.elements as OsmElement[]) {
     if (!raw || !['node', 'way', 'relation'].includes(String(raw.type)) ||
-        !Number.isSafeInteger(raw.id) || Number(raw.id) <= 0 ||
+        (typeof raw.id !== 'number' || !Number.isSafeInteger(raw.id) || raw.id <= 0) ||
         !raw.tags || typeof raw.tags !== 'object' || Array.isArray(raw.tags)) continue;
     const tags = raw.tags as Tags;
     if (['private', 'no'].includes(tag(tags, 'access')) ||
