@@ -25,6 +25,15 @@ describe('destinos reais e vínculo SUS', () => {
     expect(findDestinations([upa, { ...clinic, isDemo: true }, { ...clinic, name: '12345678000199' },
       { ...clinic, lat: NaN }, { ...clinic, provenanceMeta: { ...clinic.provenanceMeta, verificationStatus: 'pending' } }], '', false)).toEqual([upa]);
   });
+  it('permite pontos OSM mapeados mas não lhes atribui verificação oficial ou vínculo SUS', () => {
+    const community = point('osm-node-123', 'Mercado comunitário', ['Tipo: Mercado'], {
+      category: 'Comércio',
+      provenanceMeta: { ...upa.provenanceMeta, provenance: 'community', verificationStatus: 'unverified' },
+    });
+    expect(findDestinations([community], 'mercado', false)).toEqual([community]);
+    expect(findDestinations([community], '', true)).toEqual([]);
+    expect(findDestinations([{ ...community, id: 'inventado-123' }], '', false)).toEqual([]);
+  });
   it('não muda a lista original nem mescla estabelecimentos com nomes iguais', () => {
     const points = [upa, { ...clinic, name: upa.name }];
     expect(findDestinations(points, '', false)).toHaveLength(2);
