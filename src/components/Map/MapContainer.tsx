@@ -19,6 +19,8 @@ interface MapContainerProps {
   userLocation: { lat: number; lng: number } | null;
   routePreview: LocalRoute | null;
   onClearRoute: () => void;
+  routePickMode: 'origin' | 'destination' | null;
+  onMapCoordinatePicked: (position: {lat:number;lng:number}) => void;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
@@ -30,6 +32,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   userLocation,
   routePreview,
   onClearRoute,
+  routePickMode,
+  onMapCoordinatePicked,
 }) => {
   const [provider, setProvider] = useState<'geographic' | 'demo' | 'google'>('geographic');
   const allowSchematic = import.meta.env.DEV;
@@ -93,7 +97,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         )}
       </div>}
 
-      {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} /></Suspense> : provider === 'demo' ? (
+      {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} routePickMode={routePickMode} onMapCoordinatePicked={onMapCoordinatePicked} /></Suspense> : provider === 'demo' ? (
         <DemoMapProvider
           points={points}
           selectedPoint={selectedPoint}
