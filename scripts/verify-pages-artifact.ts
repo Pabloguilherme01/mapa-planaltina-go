@@ -1,4 +1,5 @@
 import { inPlanaltina } from '../src/utils/territory.ts';
+import { validateRoadGraph } from '../src/utils/roadGraph.ts';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
@@ -13,6 +14,7 @@ const REQUIRED_FILES = [
   'data/points.json',
   'data/sources.json',
   'data/municipality.json',
+  'data/road-graph.json',
   'manifest.webmanifest',
   'sw.js',
   'icons/mapa-planaltina.svg',
@@ -164,6 +166,10 @@ export async function verifyPagesArtifact(root = 'dist'): Promise<void> {
     throw new Error('sources.json inválido no artefato do Pages.');
   }
   JSON.parse(contents.get('data/municipality.json') ?? '{}');
+  const roadGraph: unknown = JSON.parse(contents.get('data/road-graph.json') ?? '{}');
+  if (!validateRoadGraph(roadGraph) || roadGraph.nodes.length === 0 || roadGraph.edges.length === 0) {
+    throw new Error('Malha viária OSM inválida ou ausente no pacote de rotas do mapa.');
+  }
 
   const manifest = JSON.parse(contents.get('manifest.webmanifest') ?? '{}') as {
     name?: string;

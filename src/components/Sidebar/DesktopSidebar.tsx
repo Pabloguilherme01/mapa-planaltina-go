@@ -1,3 +1,4 @@
+import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
@@ -33,6 +34,13 @@ interface DesktopSidebarProps {
   zoneOptions: string[];
   selectedZone: string;
   onSelectZone: (value: string) => void;
+  verification: VerificationFilter;
+  onVerificationChange: (value: VerificationFilter) => void;
+  sort: CatalogSort;
+  onSortChange: (value: CatalogSort) => void;
+  radiusKm: number;
+  onRadiusChange: (value: number) => void;
+  hasLocation: boolean;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -52,6 +60,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   selectedProvenance,
   onSelectProvenance,
   kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
+  verification, onVerificationChange, sort, onSortChange, radiusKm, onRadiusChange, hasLocation,
   isLoading,
   isError,
   onRetry,
@@ -64,7 +73,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
   const effectivePoints = simulatedState === 'empty' ? [] : points;
   const realCount = effectivePoints.filter((point) => !point.isDemo).length;
   const [visibleLimit, setVisibleLimit] = useState(80);
-  useEffect(() => setVisibleLimit(80), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone]);
+  useEffect(() => setVisibleLimit(80), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone, verification, sort, radiusKm]);
   const visiblePoints = effectivePoints.slice(0, visibleLimit);
 
   return (
@@ -171,7 +180,37 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
             </select>
           </label>
         </div>
-                {showStateSimulator && (
+                <div className="grid grid-cols-2 gap-2">
+          <label className="text-xs font-bold">Confiabilidade
+            <select aria-label="Situação da verificação" value={verification}
+              onChange={event => onVerificationChange(event.target.value as VerificationFilter)}
+              className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
+              <option value="all">Todos</option>
+              <option value="verified">Oficialmente verificados</option>
+              <option value="unverified">Colaborativos não verificados</option>
+            </select>
+          </label>
+          <label className="text-xs font-bold">Ordenação
+            <select aria-label="Ordenar resultados" value={sort}
+              onChange={event => onSortChange(event.target.value as CatalogSort)}
+              className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
+              <option value="default">Padrão</option>
+              <option value="name">Nome (A–Z)</option>
+              <option value="nearest" disabled={!hasLocation}>Mais próximos de mim</option>
+            </select>
+          </label>
+          <label className="col-span-2 text-xs font-bold">Raio de proximidade
+            <select aria-label="Raio de proximidade" value={hasLocation ? radiusKm : 0}
+              disabled={!hasLocation} onChange={event => onRadiusChange(Number(event.target.value))}
+              className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
+              <option value={0}>Toda Planaltina</option>
+              <option value={1}>Até 1 km</option><option value={3}>Até 3 km</option>
+              <option value={5}>Até 5 km</option><option value={10}>Até 10 km</option>
+            </select>
+          </label>
+          {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
+        </div>
+        {showStateSimulator && (
           <div className="p-2 rounded-lg bg-white/60 border border-neutral-200/80 flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-[11px]">
               <span className="text-neutral-700 font-bold flex items-center gap-1">
@@ -256,6 +295,9 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 onSelectProvenance('all');
                 onSelectKind('');
                 onSelectZone('');
+                onVerificationChange('all');
+                onSortChange('default');
+                onRadiusChange(0);
               }}
               className="touch-target px-4 py-2 rounded-xl bg-[#355E3B] text-white text-xs font-bold shadow hover:bg-[#27472c]"
             >

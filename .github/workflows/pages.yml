@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
   schedule:
-    - cron: '0 12 * * 1'
+    - cron: '27 9 * * *' # atualização diária de dados e malha viária
   workflow_dispatch:
 permissions:
   contents: read
@@ -44,9 +44,8 @@ jobs:
           path: .cache/osm/snapshot.json
           key: osm-planaltina-v1-restore-${{ github.run_id }}
           restore-keys: osm-planaltina-v1-
-      - name: Preparar catálogo regional OSM sem API paga
-        if: github.event_name != 'pull_request' || hashFiles('.cache/osm/snapshot.json') == ''
-        continue-on-error: true
+      - name: Preparar catálogo regional OSM e rotas locais
+        # O grafo é requerido para evitar a publicação de rotas inexistentes.
         run: |
           set -euo pipefail
           sudo apt-get update -qq
@@ -68,6 +67,14 @@ jobs:
             -o /tmp/planaltina-osm/pois.geojson
           node --import tsx scripts/import-geofabrik-geojson.ts \
             /tmp/planaltina-osm/pois.geojson .cache/osm/snapshot.json
+          # Rede viária completa do recorte: não dependemos de servidores de rotas.
+          osmium tags-filter -t /tmp/planaltina-osm/municipio.osm.pbf \
+            w/highway -o /tmp/planaltina-osm/roads.osm.pbf
+          osmium export --config scripts/osmium-export-config.json \
+            -f geojson /tmp/planaltina-osm/roads.osm.pbf \
+            -o /tmp/planaltina-osm/roads.geojson
+          node --import tsx scripts/import-roads.ts \
+            /tmp/planaltina-osm/roads.geojson public/data/road-graph.json
       - name: Construir site do GitHub Pages
         id: static-build
         run: npm run build:pages

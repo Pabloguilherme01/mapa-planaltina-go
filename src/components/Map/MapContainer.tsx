@@ -1,3 +1,4 @@
+import type { LocalRoute } from '../../utils/roadGraph.ts';
 import React, { lazy, Suspense, useState } from 'react';
 import { MapPoint } from '../../types/index.ts';
 import { DemoMapProvider } from './DemoMapProvider.tsx';
@@ -16,6 +17,8 @@ interface MapContainerProps {
   onOpenProvenanceLegend: () => void;
   onRequestGeolocation: () => void;
   userLocation: { lat: number; lng: number } | null;
+  routePreview: LocalRoute | null;
+  onClearRoute: () => void;
 }
 
 export const MapContainer: React.FC<MapContainerProps> = ({
@@ -25,6 +28,8 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   onOpenProvenanceLegend,
   onRequestGeolocation,
   userLocation,
+  routePreview,
+  onClearRoute,
 }) => {
   const [provider, setProvider] = useState<'geographic' | 'demo' | 'google'>('geographic');
   const allowSchematic = import.meta.env.DEV;
@@ -88,7 +93,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         )}
       </div>
 
-      {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} /></Suspense> : provider === 'demo' ? (
+      {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} /></Suspense> : provider === 'demo' ? (
         <DemoMapProvider
           points={points}
           selectedPoint={selectedPoint}

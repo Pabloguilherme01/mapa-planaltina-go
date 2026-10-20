@@ -1,3 +1,4 @@
+import type { ThemeChoice } from '../../utils/themeMode.ts';
 import React from 'react';
 import {
   Wrench,
@@ -18,6 +19,8 @@ interface NavbarProps {
   activeTab: ActiveTab;
   onSelectTab: (tab: ActiveTab) => void;
   onRequestGeolocation: () => void;
+  themeChoice: ThemeChoice;
+  onThemeChange: (choice: ThemeChoice) => void;
   highContrast: boolean;
   onToggleHighContrast: () => void;
 }
@@ -28,6 +31,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab,
   onSelectTab,
   onRequestGeolocation,
+  themeChoice,
+  onThemeChange,
   highContrast,
   onToggleHighContrast,
 }) => {
@@ -143,7 +148,17 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span className="hidden sm:inline">Perto de mim</span>
           </button>
 
-          {/* High Contrast Toggle */}
+          <label className="flex flex-col gap-0.5 text-[10px] font-bold text-white">
+            <span className="hidden sm:inline">Aparência</span>
+            <select aria-label="Aparência" value={themeChoice}
+              onChange={event => onThemeChange(event.target.value as ThemeChoice)}
+              className="min-h-11 rounded-lg bg-[#27472c] px-2 text-xs font-bold text-white border border-white/30">
+              <option value="system">Sistema</option>
+              <option value="light">Claro</option>
+              <option value="dark">Escuro</option>
+            </select>
+          </label>
+                    {/* High Contrast Toggle */}
           <button
             type="button"
             onClick={onToggleHighContrast}

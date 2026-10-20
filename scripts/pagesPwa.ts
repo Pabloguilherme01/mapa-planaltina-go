@@ -191,7 +191,10 @@ export async function writePagesPwa(root = 'dist', basePath = '/mapa-planaltina-
 
   const assets = await collectFiles(root);
   const cacheName = await createCacheName(root, assets);
-  const serviceWorker = buildServiceWorkerSource({ basePath: base, cacheName, assets });
+  // Evita baixar uma malha municipal extensa no primeiro acesso.
+  // Ao usar o roteamento, o service worker armazena o arquivo para visitas posteriores.
+  const precacheAssets = assets.filter(asset => asset !== 'data/road-graph.json');
+  const serviceWorker = buildServiceWorkerSource({ basePath: base, cacheName, assets: precacheAssets });
   await writeFile(join(root, 'sw.js'), serviceWorker);
 
   return { cacheName, assets };

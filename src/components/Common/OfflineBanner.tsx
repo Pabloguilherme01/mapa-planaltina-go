@@ -38,7 +38,7 @@ export const OfflineBanner: React.FC = () => {
       <WifiOff size={16} className="mt-0.5 shrink-0" />
       <span>
         {hasOfflineCache
-          ? 'Sem conexão: o mapa esquemático, a página de fontes e os snapshots locais do último acesso continuam disponíveis. Recursos externos podem ficar indisponíveis.'
+          ? 'Sem conexão: o mapa, a página de fontes e os snapshots locais do último acesso continuam disponíveis. A malha de rotas fica offline somente após sua primeira consulta. Recursos externos podem ficar indisponíveis.'
           : 'Sem conexão: recursos online podem ficar indisponíveis. O conteúdo já carregado nesta sessão permanece disponível.'}
       </span>
     </div>

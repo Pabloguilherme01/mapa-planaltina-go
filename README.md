@@ -55,6 +55,14 @@ O portal estadual apresentou bloqueios intermitentes nos runners da GitHub Actio
 
 O snapshot inicial de contingência contém a **UPA de Planaltina-GO, CNES 0112666**. Identidade e endereço foram conferidos no CNES/DataSUS oficial; a geometria pública foi conferida separadamente e, por isso, o ponto é publicado como `verified_open_data`, não como geometria oficial.
 
+## Evolução: malha viária, acessibilidade e atualização automática
+
+- **Mapa noturno:** seletor Aparência (Sistema/Claro/Escuro), seguindo `prefers-color-scheme` e salvando somente essa preferência no navegador. Tiles de ruas recebem um tratamento visual noturno sem alterar as coordenadas, os marcadores ou a atribuição OpenStreetMap.
+- **Rotas locais sem API paga:** o GitHub Actions extrai uma malha viária real de Planaltina-GO de um arquivo regional OpenStreetMap/Geofabrik; o navegador calcula o menor percurso em comprimento pelas vias representadas no grafo para carro, caminhada ou bicicleta. O planejador permite duas localidades cadastradas ou GPS com consentimento como origem; não envia a origem ao serviço de rotas. Exibe o traçado e distância aproximada no mapa; recusa ruas sem ligação e pontos distantes da rede em vez de desenhar linhas inventadas. **Não contempla restrições temporárias, obras, velocidade, tráfego ao vivo, proibições complexas de manobra, segurança, nem itinerários e horários de ônibus.** Para instruções curva a curva, permanece a abertura em Google Maps, Waze, Apple Maps ou Organic Maps.
+- **Filtros refinados:** categoria, fonte/procedência, estado da verificação, tipo, zona, ordenação alfabética ou por distância e raio de até 10 km com GPS autorizado. Sem permissão de geolocalização, a busca e os filtros não dependentes da posição continuam disponíveis.
+- **Atualização sem custo de API:** o workflow Pages faz coleta diária (09h27 UTC) e a vigia já existente verifica diariamente idade/integridade do catálogo e, agora, da malha viária. O último site publicado permanece disponível se uma coleta falhar. GitHub Actions, Geofabrik e tiles comunitários têm políticas de uso e limites; não há garantia de serviço ilimitado ou tráfego ao vivo.
+- **PWA:** a malha de ruas não é baixada silenciosamente no primeiro acesso; é obtida sob demanda no planejamento e guardada pelo service worker após a primeira consulta bem-sucedida. Isso evita transferências desnecessárias em planos móveis.
+
 ## Mapas, filtros e custo zero
 
 - Leaflet com limite territorial IBGE e ruas OpenStreetMap sob demanda online: sem provedor comercial obrigatório e sem baixar tiles para uso offline. Exibir crédito **© OpenStreetMap contributors (ODbL)** e respeitar a [política de tiles](https://operations.osmfoundation.org/policies/tiles/), que proíbe pré-download/offline no servidor comunitário.

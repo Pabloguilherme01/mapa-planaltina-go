@@ -4,14 +4,22 @@ import { estimateFuelCost, readTrip, routeUrl, tripKey, type TravelMode, type Ex
 import { findDestinations, susStatus } from '../utils/destinationSearch';
 import { favoritesKey, readFavorites, saveFavorite } from '../utils/favoriteTrips';
 import { SavedDestinations } from './SavedDestinations';
+import { planLocalRoute, validateRoadGraph, type RoadGraph, type LocalRoute } from '../utils/roadGraph.ts';
 
 type Mode = 'automatico' | 'proxima' | 'repetir' | 'economia' | 'offline' | 'conducao';
 const modes: [Mode, string][] = [['automatico', 'Automático'], ['proxima', 'Próxima viagem'], ['repetir', 'Repetir'], ['economia', 'Economia'], ['offline', 'Sem internet'], ['conducao', 'Condução']];
 
-export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; selectedPoint: MapPoint | null }) {
+export function MobilityHub({ points, selectedPoint, userLocation, onRoutePreview }: {
+  points: MapPoint[]; selectedPoint: MapPoint | null;
+  userLocation: { lat: number; lng: number } | null;
+  onRoutePreview: (route: LocalRoute) => void;
+}) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [mode, setMode] = useState<Mode>('automatico');
   const [destinationId, setDestinationId] = useState('');
+  const [originId, setOriginId] = useState('');
+  const [calculating, setCalculating] = useState(false);
+  const graphCache = useRef<RoadGraph | null>(null);
   const [travel, setTravel] = useState<TravelMode>('driving');
   const [externalMap, setExternalMap] = useState<ExternalMapsApp>('google');
   const [online, setOnline] = useState(navigator.onLine);
@@ -27,6 +35,8 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
   const real = useMemo(() => findDestinations(points, '', false), [points]);
   const results = useMemo(() => findDestinations(real, query, susOnly), [real, query, susOnly]);
   const destination = real.find(point => point.id === destinationId);
+  const origin = originId === '__gps__' ? userLocation : real.find(p => p.id === originId);
+  const routeEnabled = Boolean(origin && destination && originId !== destinationId);
   const destinationSus = destination ? susStatus(destination) : 'unknown';
   const cost = estimateFuelCost(Number(km), Number(consumption), Number(price));
   useEffect(() => {
@@ -58,6 +68,33 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
     if (value === 'repetir' || value === 'offline') restore();
     if (value === 'automatico') { if (!online) { setMode('offline'); restore(); } else setMode('proxima'); }
   }
+  async function calculateOnDevice() {
+    if (!origin || !destination || originId === destinationId || calculating) return;
+    setCalculating(true); setNotice('Calculando percurso sobre a malha pública de ruas…');
+    try {
+      let graph = graphCache.current;
+      if (!graph) {
+        const response = await fetch(`${import.meta.env.BASE_URL}data/road-graph.json`);
+        if (!response.ok) throw new Error('Malha viária indisponível nesta instalação.');
+        const payload: unknown = await response.json();
+        if (!validateRoadGraph(payload)) throw new Error('Malha viária inválida. Confira a próxima atualização.');
+        graph = payload;
+        graphCache.current = graph;
+      }
+      const result = planLocalRoute(graph, origin, destination, travel);
+      if (!result) {
+        setNotice('Não foi encontrada ligação viária confiável neste modo, ou a origem/destino está longe da rede. Use um aplicativo de navegação externa.');
+        return;
+      }
+      onRoutePreview(result);
+      setNotice(`Percurso aproximado de ${(result.distanceMeters / 1000).toFixed(1)} km no mapa.`);
+      dialog.current?.close();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : 'Não foi possível calcular o caminho local.');
+    } finally {
+      setCalculating(false);
+    }
+  }
   const inputStyle = 'w-full rounded-lg border border-neutral-400 bg-white p-3 text-neutral-900';
   return <>
     <button type="button" onClick={() => {
@@ -87,6 +124,25 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
         setTravel(next);
         if (next !== 'driving' && externalMap === 'waze') setExternalMap('google');
       }}><option value="driving">Carro</option><option value="walking">A pé</option><option value="bicycling">Bicicleta</option></select></label>
+      <fieldset className="my-3 rounded-xl border border-neutral-400 p-3">
+        <legend className="font-bold">Rota pelas ruas de Planaltina · gratuita</legend>
+        <label className="my-2 block text-sm">Ponto de partida
+          <select className={inputStyle} aria-label="Ponto de partida" value={originId}
+            onChange={event => setOriginId(event.target.value)}>
+            <option value="">Escolha onde começa</option>
+            {userLocation && <option value="__gps__">Minha posição (GPS autorizado)</option>}
+            {real.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}
+          </select>
+        </label>
+        <button type="button" className="touch-target rounded-xl bg-[#355E3B] px-3 py-2 text-white font-bold disabled:opacity-50"
+          disabled={!routeEnabled || calculating} onClick={calculateOnDevice}>
+          {calculating ? 'Calculando…' : 'Traçar rota no mapa'}
+        </button>
+        <p className="mt-2 text-xs text-neutral-600">
+          Rota aproximada calculada no navegador a partir da malha OpenStreetMap. Não possui tráfego ao vivo, alertas de segurança, bloqueios atualizados ou linhas e horários de ônibus. O GPS não é enviado ao serviço de rotas.
+          Pontos sem ligação na malha não recebem trajeto inventado.
+        </p>
+      </fieldset>
       <label className="my-3 block">Aplicativo de mapas
         <select className={inputStyle} value={externalMap} onChange={event => setExternalMap(event.target.value as ExternalMapsApp)}>
           <option value="google">Google Maps (rotas)</option>
@@ -112,7 +168,7 @@ export function MobilityHub({ points, selectedPoint }: { points: MapPoint[]; sel
         } catch { setNotice('Última viagem salva. Não foi possível atualizar os favoritos neste navegador.'); }
       }}>Salvar viagem neste aparelho</button><button type="button" className="rounded-lg border border-neutral-500 p-3" onClick={() => { try { localStorage.removeItem(tripKey); setNotice('Viagem salva apagada deste aparelho.'); } catch { setNotice('Armazenamento indisponível.'); } }}>Apagar viagem salva</button></div>
       <p role="status" className="text-sm">{notice}</p>
-      <p className="mt-3 text-xs">Salvar é opcional. Sem internet, a consulta depende de uma visita anterior com o aplicativo carregado. Nenhuma rota viária é inventada ou salva como calculada.</p>
+      <p className="mt-3 text-xs">Salvar é opcional. Sem internet, a consulta depende de uma visita anterior com o aplicativo carregado. Percursos locais são estimativas sobre a malha cartográfica; confirme as condições de circulação.</p>
     </dialog>
   </>;
 }
