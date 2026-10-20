@@ -25,7 +25,7 @@ export function decodeMapFilters(input: URLSearchParams): Required<SharedMapFilt
     radiusKm: 0,
   };
 }
-export function encodeMapFilters(value: SharedMapFilters = {}, existing = new URLSearchParams()): URLSearchParams {
+export function encodeMapFilters(value: Partial<CatalogFilters> = {}, existing = new URLSearchParams()): URLSearchParams {
   const url = new URLSearchParams(existing);
   PARAMS.forEach(key => url.delete(key));
   if (value.search?.trim()) url.set('q',value.search.trim().slice(0,120));
