@@ -82,7 +82,7 @@ async function main() {
   const valid = validateOsmSnapshot({ points });
   if (!valid.length) throw new Error('Extrato Geofabrik sem pelo menos dez pontos válidos; snapshot anterior preservado.');
   await mkdir(dirname(output), { recursive: true });
-  await writeFile(output, JSON.stringify({ points: valid }));
+  await writeFile(output, JSON.stringify({ origin: 'geofabrik', createdAt: new Date().toISOString(), points: valid }));
   console.log(JSON.stringify({ event: 'geofabrik-planaltina', accepted: valid.length, source: 'Geofabrik/OSM', output }));
 }
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
