@@ -27,26 +27,22 @@ jobs:
         run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1 @axe-core/playwright@4.13.0
       - name: Preparar Chromium e WebKit
         run: npx playwright install --with-deps chromium webkit
-      - name: Preparar rede viária real para Browser QA
+      - name: Restaurar rede viária validada
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: public/data/road-graph.json
+          key: road-planaltina-v1-restore-${{ github.run_id }}
+          restore-keys: road-planaltina-v1-
+      - name: Garantir rede viária real para Browser QA
         run: |
           set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq osmium-tool
-          mkdir -p /tmp/planaltina-osm
-          curl --fail --location --retry 2 --max-time 240 \
-            --output /tmp/planaltina-osm/centro-oeste.osm.pbf \
-            https://download.geofabrik.de/south-america/brazil/centro-oeste-latest.osm.pbf
-          osmium extract --bbox=-48.1073,-15.5022,-47.4625,-15.0166 \
-            --strategy=complete_ways \
-            /tmp/planaltina-osm/centro-oeste.osm.pbf \
-            -o /tmp/planaltina-osm/municipio.osm.pbf
-          osmium tags-filter -t /tmp/planaltina-osm/municipio.osm.pbf \
-            w/highway -o /tmp/planaltina-osm/roads.osm.pbf
-          osmium export --config scripts/osmium-export-config.json \
-            -f geojson /tmp/planaltina-osm/roads.osm.pbf \
-            -o /tmp/planaltina-osm/roads.geojson
-          node --import tsx scripts/import-roads.ts \
-            /tmp/planaltina-osm/roads.geojson public/data/road-graph.json
+          mkdir -p public/data
+          if [ ! -s public/data/road-graph.json ]; then
+            curl --fail --location --retry 2 --max-time 60 \
+              --output public/data/road-graph.json \
+              https://pabloguilherme01.github.io/mapa-planaltina-go/data/road-graph.json
+          fi
+          node --import tsx scripts/check-road-snapshot.ts public/data/road-graph.json
       - name: Executar fluxos mobile, desktop, PWA e acessibilidade
         run: npx playwright test --config=playwright.pages.config.mjs
       - name: Preservar traces e screenshots em falhas
