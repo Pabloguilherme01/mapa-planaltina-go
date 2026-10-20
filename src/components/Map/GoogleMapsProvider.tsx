@@ -75,7 +75,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
   onSwitchToDemoMap,
 }) => {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-  const googleMapsAvailable = hasGoogleMapsApiKey(apiKey);
+  const googleMapsAvailable = import.meta.env.DEV && hasGoogleMapsApiKey(apiKey);
 
   useEffect(() => {
     if (!googleMapsAvailable) return;
@@ -104,7 +104,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
         </h3>
         <p className="max-w-md text-sm text-[#424941] mb-6 leading-relaxed font-sans">
           A chave de API <code>VITE_GOOGLE_MAPS_API_KEY</code> não foi fornecida nas variáveis de ambiente.
-          O sistema opera por padrão com o <strong>DemoMapProvider nativo esquemático</strong> de Planaltina, Goiás.
+          No site público, o mapa utiliza cartografia geográfica gratuita e abre o Google Maps por links externos, sem API JavaScript faturável.
         </p>
         <button
           type="button"
@@ -112,7 +112,7 @@ export const GoogleMapsProvider: React.FC<GoogleMapsProviderProps> = ({
           className="touch-target px-6 py-3 rounded-xl bg-[#355E3B] text-white font-sans font-bold text-sm flex items-center gap-2 shadow-md hover:bg-[#27472c] active:scale-95 transition-all"
         >
           <ArrowLeft size={18} />
-          <span>Voltar para o Mapa Esquemático DEMO</span>
+          <span>Voltar para o mapa geográfico</span>
         </button>
       </div>
     );

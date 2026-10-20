@@ -38,12 +38,42 @@ jobs:
           path: .cache/cnes/snapshot.json
           key: cnes-snapshot-v1-restore-${{ github.run_id }}
           restore-keys: cnes-snapshot-v1-
+      - name: Restaurar último catálogo OSM validado
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: .cache/osm/snapshot.json
+          key: osm-planaltina-v1-restore-${{ github.run_id }}
+          restore-keys: osm-planaltina-v1-
+      - name: Preparar catálogo regional OSM sem API paga
+        if: github.event_name == 'schedule' || hashFiles('.cache/osm/snapshot.json') == ''
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq osmium-tool
+          mkdir -p /tmp/planaltina-osm
+          curl --fail --location --retry 2 --max-time 240 \
+            --output /tmp/planaltina-osm/centro-oeste.osm.pbf \
+            https://download.geofabrik.de/south-america/brazil/centro-oeste-latest.osm.pbf
+          osmium extract --bbox=-48.1073,-15.5022,-47.4625,-15.0166 \
+            --strategy=complete_ways \
+            /tmp/planaltina-osm/centro-oeste.osm.pbf \
+            -o /tmp/planaltina-osm/municipio.osm.pbf
+          osmium tags-filter -t /tmp/planaltina-osm/municipio.osm.pbf \
+            nwr/amenity nwr/shop nwr/office nwr/leisure nwr/tourism \
+            nwr/public_transport nwr/healthcare nwr/highway=bus_stop \
+            -o /tmp/planaltina-osm/pois.osm.pbf
+          osmium export --config scripts/osmium-export-config.json \
+            -f geojson /tmp/planaltina-osm/pois.osm.pbf \
+            -o /tmp/planaltina-osm/pois.geojson
+          node --import tsx scripts/import-geofabrik-geojson.ts \
+            /tmp/planaltina-osm/pois.geojson .cache/osm/snapshot.json
       - name: Construir site do GitHub Pages
         id: static-build
         run: npm run build:pages
         env:
-          VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
           CNES_SNAPSHOT_PATH: .cache/cnes/snapshot.json
+          OSM_SNAPSHOT_PATH: .cache/osm/snapshot.json
       - name: Verificar artefato estático
         run: npm run verify:pages
       - name: Preservar snapshot CNES após validação do artefato
@@ -52,6 +82,12 @@ jobs:
         with:
           path: .cache/cnes/snapshot.json
           key: cnes-snapshot-v1-${{ hashFiles('.cache/cnes/snapshot.json') }}
+      - name: Preservar catálogo colaborativo após validação
+        if: github.event_name != 'pull_request' && hashFiles('.cache/osm/snapshot.json') != ''
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: .cache/osm/snapshot.json
+          key: osm-planaltina-v1-${{ hashFiles('.cache/osm/snapshot.json') }}
       - name: Arquivar snapshots auditáveis
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

@@ -64,6 +64,8 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedCategories, setSelectedCategories] = useState<PointCategory[]>([]);
   const [selectedProvenance, setSelectedProvenance] = useState<ProvenanceType | 'all'>('all');
+  const [selectedKind, setSelectedKind] = useState('');
+  const [selectedZone, setSelectedZone] = useState('');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
 
   // Modals state
@@ -156,6 +158,8 @@ export default function App() {
       );
     }
 
+    if (selectedKind) result = result.filter(point => point.tags.includes(`Tipo: ${selectedKind}`));
+    if (selectedZone) result = result.filter(point => point.zone === selectedZone);
     if (searchQuery.trim().length > 0) {
       const q = normalizeText(searchQuery);
       result = result.filter((p) => {
@@ -175,7 +179,13 @@ export default function App() {
     }
 
     return result;
-  }, [allPoints, selectedCategories, selectedProvenance, searchQuery]);
+  }, [allPoints, selectedCategories, selectedProvenance, selectedKind, selectedZone, searchQuery]);
+
+  const kindOptions = useMemo(() =>
+    [...new Set(allPoints.flatMap(point => point.tags.filter(tag => tag.startsWith('Tipo: ')).map(tag => tag.slice(6))))]
+      .sort((a, b) => a.localeCompare(b, 'pt-BR')), [allPoints]);
+  const zoneOptions = useMemo(() =>
+    [...new Set(allPoints.map(point => point.zone))].sort((a, b) => a.localeCompare(b, 'pt-BR')), [allPoints]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -253,6 +263,12 @@ export default function App() {
               categoryCounts={categoryCounts}
               selectedProvenance={selectedProvenance}
               onSelectProvenance={setSelectedProvenance}
+              kindOptions={kindOptions}
+              selectedKind={selectedKind}
+              onSelectKind={setSelectedKind}
+              zoneOptions={zoneOptions}
+              selectedZone={selectedZone}
+              onSelectZone={setSelectedZone}
               isLoading={isLoading}
               isError={isError}
               onRetry={loadData}
@@ -304,6 +320,12 @@ export default function App() {
             <MobileBottomSheet
               selectedProvenance={selectedProvenance}
               onSelectProvenance={setSelectedProvenance}
+              kindOptions={kindOptions}
+              selectedKind={selectedKind}
+              onSelectKind={setSelectedKind}
+              zoneOptions={zoneOptions}
+              selectedZone={selectedZone}
+              onSelectZone={setSelectedZone}
               points={filteredPoints}
               selectedPoint={selectedPoint}
               onSelectPoint={handleSelectPoint}

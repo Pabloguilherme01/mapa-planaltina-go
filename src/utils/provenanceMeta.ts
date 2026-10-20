@@ -51,7 +51,7 @@ export const PROVENANCE_CONFIG: Record<ProvenanceType, ProvenanceDisplayConfig> 
 
 export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, { label: string; color: string }> = {
   verified: { label: 'Verificado', color: 'text-emerald-700' },
-  unverified: { label: 'Não Verificado (DEMO)', color: 'text-amber-800' },
+  unverified: { label: 'Colaborativo não verificado', color: 'text-amber-800' },
   pending: { label: 'Verificação Pendente', color: 'text-slate-600' },
   synthetic_demo: { label: 'Sintético DEMO', color: 'text-rose-700' },
 };

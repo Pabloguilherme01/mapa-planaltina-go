@@ -77,6 +77,11 @@ function statusBadge(source: SourceInfo) {
       </span>
     );
   }
+  if (source.status === 'connected' && source.id === 'osm') {
+    return <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-900 text-[10px] font-bold">
+      Conectado · colaborativo
+    </span>;
+  }
   if (source.status === 'error') {
     return (
       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-800 text-[10px] font-bold">
@@ -145,10 +150,10 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         <div className="text-xs leading-relaxed">
           <p className="font-extrabold text-sm mb-1">Política de Origem & Verificação</p>
           <p className="mb-1">
-            O mapa combina <strong>dados reais com procedência por registro</strong> e pontos <strong>DEMO</strong> claramente identificados. Um registro só é publicado como real quando possui fonte auditável, data de coleta, classificação de procedência e coordenadas válidas.
+            O mapa publica <strong>pontos reais com procedência por registro</strong>. As fichas OSM são <strong>colaborativas e não verificadas oficialmente</strong>; pontos DEMO ficam restritos à homologação. Um registro só é publicado como real quando possui fonte auditável, data de coleta, classificação de procedência e coordenadas válidas.
           </p>
           <p>
-            A camada real inicial é Saúde. O sistema tenta atualizar o CNES/SES-GO e, se o órgão bloquear ou ficar indisponível, preserva somente o último snapshot validado e mostra esse modo explicitamente. Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento.
+            A camada institucional inicial é Saúde; comércio, escolas e serviços geolocalizados podem vir do OpenStreetMap. O sistema tenta atualizar o CNES/SES-GO e, se o órgão bloquear ou ficar indisponível, preserva somente o último snapshot validado e mostra esse modo explicitamente. Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento.
           </p>
         </div>
       </div>
@@ -185,7 +190,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
         <a className="inline-flex min-h-11 items-center underline" href="https://www.ibge.gov.br/geociencias/organizacao-do-territorio/malhas-territoriais/15774-malhas.html" target="_blank" rel="noreferrer">Cartografia no IBGE</a>
         <p className="my-2 text-sm">Ônibus: integração de linhas e horários ainda não validada. Consulte o canal oficial; não são calculados itinerários nem chegadas em tempo real neste mapa.</p>
         <a className="inline-flex min-h-11 items-center underline" href="https://www.gov.br/pt-br/servicos/consultar-linhas-do-servico-rodoviario-interestadual-semiurbano-de-passageiros" target="_blank" rel="noreferrer">Consultar linhas na ANTT</a>
-        <p className="my-2 text-sm">Ruas OpenStreetMap são opcionais e online. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>
+        <p className="my-2 text-sm">Ruas OpenStreetMap são carregadas online sob demanda do mapa visível, sem pré-download de tiles. Sem rede, pontos e limite municipal continuam disponíveis. Dados e malha são snapshots da publicação, não consultas contínuas.</p>
       </section>
       <section className="my-6 rounded-2xl border border-neutral-200 bg-white p-5" aria-labelledby="antt-official-title">
         <h2 id="antt-official-title" className="text-lg font-bold">Transporte semiurbano — fontes oficiais ANTT</h2>

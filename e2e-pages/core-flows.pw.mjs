@@ -230,9 +230,9 @@ test('desktop: catálogo publicado contém saúde real verificável, inclusive e
   const snapshot = await pointsResponse.json();
   const sourcesSnapshot = await sourcesResponse.json();
 
-  expect(snapshot.meta.mode).toBe('misto_oficial_demo');
+  expect(snapshot.meta.mode).toMatch(/^catalogo_real_/);
   expect(snapshot.meta.realCount).toBeGreaterThan(0);
-  expect(snapshot.meta.demoCount).toBeGreaterThan(0);
+  expect(snapshot.meta.demoCount).toBe(0);
 
   const realHealthPoint = snapshot.data.find(
     (point) => point.isDemo === false && point.category === 'Saúde' && ['official', 'verified_open_data'].includes(point.provenanceMeta?.provenance)
@@ -256,6 +256,9 @@ test('desktop: catálogo publicado contém saúde real verificável, inclusive e
   await expect(dialog.getByText('Dado real verificado')).toBeVisible();
   await expect(dialog.getByText('Verificado na fonte')).toBeVisible();
   await expect(dialog.getByText('Coordenadas publicadas:')).toBeVisible();
+  for (const app of ['Google Maps · rotas', 'Waze · carro', 'Apple Maps · rotas', 'Organic Maps · ponto']) {
+    await expect(dialog.getByRole('link', { name: app })).toHaveAttribute('href', /^https:\/\//);
+  }
 
   await page.goto('./fontes/');
   if (cnesSource.status === 'snapshot_fallback') {
@@ -327,7 +330,7 @@ test('páginas principais não têm violações críticas ou sérias de acessibi
 test('cartografia local e cadastro SEDUC distinguem geometria de registro cadastral', async ({ page }) => {
   await page.goto('./');
   await expect(page.getByLabel('Mapa geográfico de Planaltina com limite IBGE')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Ruas online desativadas' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Ruas online ativadas' })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('button', { name: 'Ver município' })).toBeVisible();
   await page.goto('./fontes/');
   await expect(page.getByRole('heading', { name: 'Educação — cadastro oficial SEDUC' })).toBeVisible();

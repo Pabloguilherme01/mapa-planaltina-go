@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
@@ -26,6 +26,12 @@ interface MobileBottomSheetProps {
   categoryCounts: Record<string, number>;
   selectedProvenance: ProvenanceType | 'all';
   onSelectProvenance: (value: ProvenanceType | 'all') => void;
+  kindOptions: string[];
+  selectedKind: string;
+  onSelectKind: (value: string) => void;
+  zoneOptions: string[];
+  selectedZone: string;
+  onSelectZone: (value: string) => void;
 }
 
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
@@ -41,9 +47,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
   categoryCounts,
   selectedProvenance,
   onSelectProvenance,
+  kindOptions, selectedKind, onSelectKind, zoneOptions, selectedZone, onSelectZone,
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const realCount = points.filter((point) => !point.isDemo).length;
+  const [visibleLimit, setVisibleLimit] = useState(60);
+  useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone]);
 
   return (
     <div
@@ -107,6 +116,23 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
         </select>
       </label>
+      <details className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
+        <summary className="min-h-9 cursor-pointer text-[11px] font-bold text-[#355E3B]">Filtros avançados · tipo e zona</summary>
+        <div className="grid grid-cols-2 gap-2">
+        <label className="text-[11px] font-bold">Tipo
+          <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
+            <option value="">Todos os tipos</option>
+            {kindOptions.map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        <label className="text-[11px] font-bold">Zona
+          <select aria-label="Zona do local" value={selectedZone} onChange={event => onSelectZone(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
+            <option value="">Todas as zonas</option>
+            {zoneOptions.map(value => <option key={value} value={value}>{value}</option>)}
+          </select>
+        </label>
+        </div>
+      </details>
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
@@ -117,7 +143,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               {points.length} pontos no catálogo
             </h2>
             <p className="text-[10px] text-neutral-500">
-              Planaltina, Goiás • {realCount} reais verificados
+              Planaltina, Goiás • {realCount} locais reais mapeados
             </p>
           </div>
         </div>
@@ -144,7 +170,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             Nenhum ponto encontrado com os filtros atuais.
           </div>
         ) : (
-          points.map((point) => {
+          points.slice(0, visibleLimit).map((point) => {
             const catConfig = CATEGORY_CONFIG[point.category];
             const IconComponent = catConfig.icon;
             const isSelected = selectedPoint?.id === point.id;
@@ -169,7 +195,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   </div>
                   <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isReal ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-[#FFF9E6] text-[#78350F] border-[#E5B744]/40'}`}>
                     {isReal && <BadgeCheck size={9} />}
-                    {isReal ? 'REAL' : 'DEMO'}
+                    {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : 'COLABORATIVO') : 'DEMO'}
                   </span>
                 </div>
 
@@ -177,7 +203,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   {isReal ? <BadgeCheck size={12} className="shrink-0 mt-0.5 text-emerald-700" /> : <AlertTriangle size={12} className="shrink-0 mt-0.5 text-amber-700" />}
                   <p className="text-[10px] leading-tight">
                     {isReal
-                      ? 'Coordenadas da fonte. Confirme atendimento antes do deslocamento.'
+                      ? 'Localização mapeada; confira o cadastro e a fonte antes do deslocamento.'
                       : 'Ilustrativo. Não use para deslocamento em Planaltina, Goiás.'}
                   </p>
                 </div>
@@ -207,6 +233,12 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               </div>
             );
           })
+        )}
+        {points.length > visibleLimit && (
+          <button type="button" onClick={() => setVisibleLimit(limit => limit + 60)}
+            className="touch-target rounded-lg border border-[#355E3B]/30 bg-white p-3 text-xs font-bold text-[#355E3B]">
+            Mostrar mais locais ({Math.min(visibleLimit, points.length)} de {points.length})
+          </button>
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useRef } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus.ts';
 import { MapPoint } from '../../types/index.ts';
+import { routeUrl } from '../../utils/mobility.ts';
 import { PROVENANCE_CONFIG } from '../../utils/provenanceMeta.ts';
 import { X, Lock, AlertTriangle, ExternalLink, BadgeCheck } from 'lucide-react';
 
@@ -17,6 +18,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
 
   const provConfig = PROVENANCE_CONFIG[point.provenanceMeta.provenance];
   const isReal = !point.isDemo;
+  const isVerified = isReal && point.provenanceMeta.verificationStatus === 'verified';
   const retrievedDate = point.provenanceMeta.retrievedAt
     ? new Date(point.provenanceMeta.retrievedAt).toLocaleDateString('pt-BR')
     : null;
@@ -45,7 +47,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
             }`}
           >
             {isReal && <BadgeCheck size={13} />}
-            {isReal ? 'Dado real verificado' : 'Ficha Demonstrativa DEMO'}
+            {isVerified ? 'Dado real verificado' : isReal ? 'Mapeado pela comunidade · não verificado' : 'Ficha Demonstrativa DEMO'}
           </span>
           <button
             type="button"
@@ -76,7 +78,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           </div>
           <p className="text-xs text-[#424941] leading-relaxed">
             {isReal
-              ? 'Telefone e e-mail não são copiados para evitar informação operacional desatualizada. Consulte a fonte vinculada para confirmar atendimento.'
+              ? 'Contatos não são replicados. Para cadastros colaborativos, confirme estabelecimento, localização e atendimento na fonte antes de sair.'
               : 'Telefones, e-mails e números prediais foram intencionalmente omitidos por se tratarem de dados não verificados em Planaltina, Goiás.'}
           </p>
         </div>
@@ -92,9 +94,9 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           </div>
           <div className="flex justify-between items-center py-0.5 border-b border-neutral-200/60 gap-3">
             <span className="text-neutral-600 font-medium">Status Cadastral:</span>
-            <span className={`font-bold flex items-center gap-1 text-right ${isReal ? 'text-emerald-800' : 'text-rose-700'}`}>
-              <span className={`w-2 h-2 rounded-full ${isReal ? 'bg-emerald-600' : 'bg-rose-600'}`} />
-              {isReal ? 'Verificado na fonte' : 'Não Verificado (DEMO)'}
+            <span className={`font-bold flex items-center gap-1 text-right ${isVerified ? 'text-emerald-800' : isReal ? 'text-orange-800' : 'text-rose-700'}`}>
+              <span className={`w-2 h-2 rounded-full ${isVerified ? 'bg-emerald-600' : isReal ? 'bg-orange-600' : 'bg-rose-600'}`} />
+              {isVerified ? 'Verificado na fonte' : isReal ? 'Cadastro colaborativo não verificado' : 'Não Verificado (DEMO)'}
             </span>
           </div>
           <div className="flex justify-between items-center py-0.5 border-b border-neutral-200/60 gap-3">
@@ -144,6 +146,23 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           </div>
         )}
 
+        {isReal && (
+          <div className="grid grid-cols-2 gap-2" aria-label="Abrir localização em aplicativos de mapas">
+            {([
+              ['google', 'Google Maps · rotas'],
+              ['waze', 'Waze · carro'],
+              ['apple', 'Apple Maps · rotas'],
+              ['organic', 'Organic Maps · ponto'],
+            ] as const).map(([provider, title]) => (
+              <a key={provider} href={routeUrl(point, 'driving', provider)}
+                target="_blank" rel="noopener noreferrer"
+                className="touch-target min-h-11 rounded-lg border border-[#355E3B]/30 bg-[#F5F0E6] p-2 text-center text-xs font-bold text-[#355E3B]">
+                {title}
+              </a>
+            ))}
+            <p className="col-span-2 text-[11px] text-neutral-600">Rotas e trânsito são calculados no aplicativo externo; a origem não é enviada por este mapa. Confirme o local antes de sair.</p>
+          </div>
+        )}
         <div className="flex gap-2 pt-1">
           {point.provenanceMeta.sourceUrl && (
             <a

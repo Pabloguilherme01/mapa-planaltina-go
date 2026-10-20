@@ -41,6 +41,8 @@ export function assessPublishedSnapshot(
   const seen = new Set<string>();
   let demoCount = 0;
   let realCount = 0;
+  let verifiedCount = 0;
+  let communityCount = 0;
   let oldest = 0;
   for (const value of payload.data) {
     if (!record(value) || typeof value.id !== 'string' || !value.id.trim() || seen.has(value.id)) {
@@ -62,19 +64,25 @@ export function assessPublishedSnapshot(
       throw new Error('Ponto real sem coordenadas válidas dentro da malha municipal de Planaltina-GO.');
     }
     const meta = value.provenanceMeta;
-    if (
-      !['official', 'verified_open_data'].includes(String(meta.provenance)) ||
-      meta.verificationStatus !== 'verified' ||
-      !isSnapshotDate(meta.retrievedAt, now.getTime())
-    ) {
-      throw new Error('Ponto real sem proveniência verificada ou data válida.');
+    const verified = ['official', 'verified_open_data'].includes(String(meta.provenance)) &&
+      meta.verificationStatus === 'verified';
+    const community = meta.provenance === 'community' &&
+      ['unverified', 'pending'].includes(String(meta.verificationStatus)) &&
+      /^osm-(node|way|relation)-[1-9]\d*$/.test(value.id) &&
+      typeof meta.sourceUrl === 'string' &&
+      /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\d*$/.test(meta.sourceUrl);
+    if ((!verified && !community) || !isSnapshotDate(meta.retrievedAt, now.getTime())) {
+      throw new Error('Ponto real sem classificação de procedência ou data válida.');
     }
     realCount++;
-    oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt));
+    if (community) communityCount++;
+    if (verified) { verifiedCount++; oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt)); }
   }
   if (
-    realCount === 0 ||
+    verifiedCount === 0 ||
     payload.meta.realCount !== realCount ||
+    (payload.meta.verifiedCount !== undefined && payload.meta.verifiedCount !== verifiedCount) ||
+    (payload.meta.communityCount !== undefined && payload.meta.communityCount !== communityCount) ||
     payload.meta.demoCount !== demoCount
   ) {
     throw new Error('Contagens reais/DEMO inconsistentes no catálogo.');

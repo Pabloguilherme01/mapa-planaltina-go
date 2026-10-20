@@ -3,6 +3,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { MUNICIPAL_BOUNDARY } from '../../data/municipalBoundary.ts';
 import { MapPoint } from '../../types/index.ts';
+import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
 export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation }: {
@@ -11,7 +12,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
 }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
-  const [streets, setStreets] = useState(false);
+  const [streets, setStreets] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const [tileError, setTileError] = useState(false);
   useEffect(() => {
     if (!host.current) return;
@@ -19,6 +20,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     map.current = instance;
     const zoom = L.control.zoom({ position: 'topright' }).addTo(instance);
     zoom.getContainer()!.style.marginTop = '76px';
+    L.control.scale({ metric: true, imperial: false, position: 'bottomright' }).addTo(instance);
     const attribution = L.control.attribution({ position: 'topleft' }).addTo(instance);
     attribution.getContainer()!.style.marginTop = '116px';
     L.geoJSON(MUNICIPAL_BOUNDARY as GeoJSON.GeoJsonObject, {
@@ -52,7 +54,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
         const point = bucket[0];
       const real = !point.isDemo;
       const icon = L.divIcon({ className: 'municipal-marker', iconSize: [32, 32], iconAnchor: [16, 16],
-        html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? '#355E3B' : '#b45309'};box-shadow:0 1px 5px #555"></span>` });
+        html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:0 1px 5px #555"></span>` });
       const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${real ? 'REAL' : 'DEMO'}`, keyboard: true }).addTo(group);
       marker.on('click', () => onSelectPoint(point));
       marker.getElement()?.setAttribute('aria-label', `${point.name} — ${real ? 'REAL' : 'DEMO'}`);
@@ -87,6 +89,6 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
       {userLocation && <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow" onClick={() => map.current?.setView([userLocation.lat, userLocation.lng], 15)}>Minha posição</button>}
       {tileError && <p role="status" className="rounded bg-white p-2 text-xs">Ruas indisponíveis. Limite e pontos continuam disponíveis.</p>}
     </div>
-    <p className="absolute bottom-8 left-2 z-10 max-w-[60%] rounded bg-white/95 p-2 text-[10px]">Limite IBGE simplificado • verde REAL / âmbar DEMO. Ruas online são opcionais e não são baixadas para uso offline.</p>
+    <p className="absolute bottom-8 left-2 z-10 max-w-[60%] rounded bg-white/95 p-2 text-[10px]">Limite IBGE simplificado • cores por categoria • <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="underline">© OpenStreetMap contributors (ODbL)</a>. Dados comunitários não verificados; ruas online sem download offline.</p>
   </div>;
 }
