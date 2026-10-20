@@ -72,7 +72,6 @@ jobs:
         id: static-build
         run: npm run build:pages
         env:
-          VITE_GOOGLE_MAPS_API_KEY: ${{ vars.VITE_GOOGLE_MAPS_API_KEY }}
           CNES_SNAPSHOT_PATH: .cache/cnes/snapshot.json
           OSM_SNAPSHOT_PATH: .cache/osm/snapshot.json
       - name: Verificar artefato estático
