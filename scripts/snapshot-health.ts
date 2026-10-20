@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { inPlanaltina } from '../src/utils/territory.ts';
 import { verifyPublishedCompanionResources } from './published-site-health.ts';
+import { assessRoadHealth } from './road-health.ts';
 
 export interface PublishedSnapshotHealth {
   status: 'healthy' | 'stale';
@@ -106,6 +107,11 @@ async function main() {
   if (!response.ok) throw new Error(`Catálogo indisponível (HTTP ${response.status}).`);
   const health = assessPublishedSnapshot(await response.json());
   const surface = await verifyPublishedCompanionResources(url);
+  const roadUrl = new URL('road-graph.json', url).toString();
+  const roadResponse = await fetch(roadUrl, { signal: AbortSignal.timeout(25_000),
+    headers: { 'Cache-Control': 'no-cache' } });
+  if (!roadResponse.ok) throw new Error('Malha viária publicada indisponível.');
+  const roadHealth = assessRoadHealth(await roadResponse.json());
   const summary = [
     '## Saúde do snapshot de Planaltina-GO',
     '',
@@ -114,12 +120,17 @@ async function main() {
     `- Registro real mais antigo: **${health.oldestAgeDays} dias**`,
     `- Modo da fonte: **${health.sourceMode}**`,
     `- Recursos da experiência pública confirmados: **${surface.checked.join(', ')}**`,
+    `- Grafo de rotas: **${roadHealth.nodes} nós, ${roadHealth.edges} conexões, ${roadHealth.ageDays} dias**`,
     '',
     'Idade é calculada pela coleta dos registros reais, não pela hora do deploy.',
   ].join('\n');
   console.log(summary);
   if (process.env.GITHUB_STEP_SUMMARY) {
     await appendFile(process.env.GITHUB_STEP_SUMMARY, summary + '\n');
+  }
+  if (roadHealth.status === 'stale') {
+    console.error('::error::Malha de ruas desatualizada; conferir extração Geofabrik.');
+    process.exitCode = 1;
   }
   if (health.status === 'stale') {
     console.error('::error::Snapshot real desatualizado; conferir a coleta CNES e o fallback preservado.');
