@@ -1,3 +1,4 @@
+import type { LocalRoute } from '../../utils/roadGraph.ts';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -6,9 +7,11 @@ import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
-export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation }: {
+export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation, routePreview, onClearRoute }: {
   points: MapPoint[]; selectedPoint: MapPoint | null; onSelectPoint: (point: MapPoint | null) => void;
   userLocation: { lat: number; lng: number } | null;
+  routePreview: LocalRoute | null;
+  onClearRoute: () => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
@@ -72,6 +75,14 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     return () => { marker.remove(); };
   }, [userLocation]);
   useEffect(() => {
+    if (!routePreview || !map.current || routePreview.coordinates.length < 2) return;
+    const coordinates = routePreview.coordinates;
+    const route = L.polyline(coordinates, { color: '#eea435', weight: 6, opacity: .95,
+      lineCap: 'round', lineJoin: 'round' }).addTo(map.current);
+    map.current.fitBounds(route.getBounds(), { padding: [60, 60], maxZoom: 16 });
+    return () => { route.remove(); };
+  }, [routePreview]);
+  useEffect(() => {
     if (!streets || !map.current) return;
     const layer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -86,6 +97,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
         onClick={() => { setTileError(false); setStreets(!streets); }}>Ruas online {streets ? 'ativadas' : 'desativadas'}</button>
       <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow"
         onClick={() => map.current?.fitBounds(L.geoJSON(MUNICIPAL_BOUNDARY as GeoJSON.GeoJsonObject).getBounds())}>Ver município</button>
+      {routePreview && <button className="touch-target rounded-xl bg-[#355E3B] px-3 py-2 text-xs font-bold text-white shadow" onClick={onClearRoute}>Limpar percurso · {(routePreview.distanceMeters/1000).toFixed(1)} km aprox.</button>}
       {userLocation && <button className="touch-target rounded-xl bg-white px-3 py-2 text-xs font-bold shadow" onClick={() => map.current?.setView([userLocation.lat, userLocation.lng], 15)}>Minha posição</button>}
       {tileError && <p role="status" className="rounded bg-white p-2 text-xs">Ruas indisponíveis. Limite e pontos continuam disponíveis.</p>}
     </div>
