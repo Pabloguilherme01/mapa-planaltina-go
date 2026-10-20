@@ -48,6 +48,16 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain("request.mode === 'navigate'");
   });
 
+  it('atualiza catálogo e fontes com rede disponível, preservando cache offline no PWA', () => {
+    const source = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-v1',
+      assets: ['index.html', 'data/points.json', 'data/sources.json', 'data/road-graph.json'] });
+    expect(source).toContain("const REFRESHABLE_DATA");
+    expect(source).toContain(`${BASE}data/points.json`);
+    expect(source).toContain(`${BASE}data/sources.json`);
+    expect(source).toContain("await fetch(request)");
+    expect(source).toContain("catch (error)");
+    expect(source).toContain("caches.match(request, { ignoreVary: true })");
+  });
   it('faz match do precache por URL mesmo quando a resposta varia por Origin', () => {
     const source = buildServiceWorkerSource({
       basePath: BASE,
