@@ -1,6 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Share2, ShieldCheck, AlertCircle, X } from 'lucide-react';
 import { useDialogFocus } from '../../hooks/useDialogFocus.ts';
+import { createLocationRequestGuard } from '../../utils/geolocationRequestGuard.ts';
 
 interface GeolocationConsentModalProps {
   isOpen: boolean;
@@ -16,8 +17,18 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
   const [isLocating, setIsLocating] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
-
-  useDialogFocus(isOpen, onClose, dialogRef);
+  const requestGuard = useRef(createLocationRequestGuard());
+  const closeConsent = () => {
+    requestGuard.current.cancel();
+    setIsLocating(false);
+    setErrorMessage(null);
+    onClose();
+  };
+  useDialogFocus(isOpen, closeConsent, dialogRef);
+  useEffect(() => {
+    // Invalida o callback mesmo se o pai fechar/desmontar o modal.
+    return () => requestGuard.current.cancel();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -27,19 +38,22 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
       return;
     }
 
+    const request = requestGuard.current.begin();
     setIsLocating(true);
     setErrorMessage(null);
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        if (!request.isCurrent()) return;
         setIsLocating(false);
         onSuccessLocation({
           lat: pos.coords.latitude,
           lng: pos.coords.longitude,
         });
-        onClose();
+        closeConsent();
       },
       (err) => {
+        if (!request.isCurrent()) return;
         setIsLocating(false);
         switch (err.code) {
           case err.PERMISSION_DENIED:
@@ -80,15 +94,15 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
       aria-describedby="geoConsentDescription"
       className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 font-sans animate-in fade-in focus:outline-none"
       onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) closeConsent();
       }}
     >
-      <div className="w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl flex flex-col gap-4 border border-neutral-200">
+      <div className="w-full max-w-sm max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col gap-4 border border-neutral-200">
         <div className="flex justify-end -mr-2 -mt-2">
           <button
             type="button"
-            onClick={onClose}
-            className="touch-target w-9 h-9 rounded-full flex items-center justify-center text-neutral-400 hover:text-neutral-700"
+            onClick={closeConsent}
+            className="touch-target min-w-11 min-h-11 rounded-full flex items-center justify-center text-neutral-500 hover:text-neutral-700"
             aria-label="Fechar"
           >
             <X size={18} />
@@ -103,15 +117,15 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
           <h3 id="geoConsentTitle" className="text-base font-bold text-[#121E14]">
             Ativar Geolocalização?
           </h3>
-          <p id="geoConsentDescription" className="text-xs text-neutral-600 leading-relaxed">
-            A posição é calculada <strong>exclusivamente no seu aparelho</strong>. Nenhum dado de GPS é armazenado, persistido ou transmitido a servidores ou IA.
+          <p id="geoConsentDescription" className="text-sm text-neutral-600 leading-relaxed">
+            A permissão é opcional e a posição é usada nesta sessão para mostrar sua região. O aplicativo não grava suas coordenadas nem as envia diretamente à IA. Ao carregar mapas, provedores externos podem receber solicitações da área visualizada.
           </p>
         </div>
 
         <div className="bg-[#EAE3D2]/60 rounded-xl p-3 flex items-start gap-2 border border-[#355E3B]/10">
           <ShieldCheck size={18} className="text-[#355E3B] shrink-0 mt-0.5" />
-          <p className="text-[11px] text-[#424941] leading-tight">
-            Garantia de privacidade territorial de <strong>Planaltina, Goiás</strong>: localização temporária em memória voltada apenas para recentralizar o mapa.
+          <p className="text-xs text-[#424941] leading-relaxed">
+            <strong>Planaltina, Goiás:</strong> você pode continuar usando o mapa sem ativar o GPS. Fechar esta janela cancela o uso de qualquer resposta de localização ainda pendente.
           </p>
         </div>
 
@@ -137,7 +151,7 @@ export const GeolocationConsentModal: React.FC<GeolocationConsentModalProps> = (
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={closeConsent}
             className="touch-target w-full min-h-[44px] rounded-xl bg-neutral-100 text-neutral-700 text-xs font-semibold hover:bg-neutral-200 transition-colors"
           >
             Cancelar
