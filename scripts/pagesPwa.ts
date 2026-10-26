@@ -195,6 +195,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Evitar cachear respostas GET de rotas não estáticas que possam conter
+  // consultas, tokens ou dados específicos do usuário no mesmo subdiretório.
+  // Snapshots municipais públicos são tratados no ramo REFRESHABLE_DATA acima.
+  if (!PRECACHE_URLS.includes(url.pathname)) return;
+
   event.respondWith(
     caches.match(request, { ignoreVary: true }).then((cached) => {
       if (cached) return cached;
