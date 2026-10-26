@@ -179,6 +179,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Query strings não fazem parte do precache. Evita persistir parâmetros de
+  // sessão/consulta, inclusive quando o caminho é de um arquivo público.
+  // Navegação com filtros permanece tratada acima, sem cachear sua URL.
+  if (url.search) return;
+
   if (REFRESHABLE_DATA.has(url.pathname)) {
     // Online-first: os cadastros e a malha podem ser atualizados diariamente;
     // offline: usar somente o último arquivo validado que o aparelho já possui.
