@@ -1,5 +1,5 @@
 import type { MapPoint, PointCategory, ProvenanceType, VerificationStatus } from '../types/index.ts';
-import { normalizeText } from './text.ts';
+import { normalizeSearchText } from './text.ts';
 export type MapCoordinates = { lat: number; lng: number };
 export type CatalogSort = 'default' | 'name' | 'nearest';
 export type VerificationFilter = 'all' | 'verified' | 'unverified';
@@ -22,7 +22,7 @@ export function distanceMeters(a: MapCoordinates, b: MapCoordinates): number {
   return 12_742_000 * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 export function filterCatalog(points: readonly MapPoint[], filters: CatalogFilters = {}): MapPoint[] {
-  const terms = normalizeText(filters.search || '').split(/\s+/).filter(Boolean);
+  const terms = normalizeSearchText(filters.search || '').split(/\s+/).filter(Boolean);
   const origin = filters.userLocation && Number.isFinite(filters.userLocation.lat) && Number.isFinite(filters.userLocation.lng)
     ? filters.userLocation : null;
   const withinRadius = origin && filters.radiusKm && Number.isFinite(filters.radiusKm) && filters.radiusKm > 0
@@ -37,7 +37,7 @@ export function filterCatalog(points: readonly MapPoint[], filters: CatalogFilte
     if (filters.zone && filters.zone !== point.zone) return false;
     if (withinRadius !== null && distanceMeters(origin!, point) > withinRadius) return false;
     if (!terms.length) return true;
-    const haystack = normalizeText([point.id, point.name, point.category, point.description,
+    const haystack = normalizeSearchText([point.id, point.name, point.category, point.description,
       point.addressHint || '', point.zone, point.provenanceMeta.sourceName, ...point.tags].join(' '));
     return terms.every(term => haystack.includes(term));
   });
