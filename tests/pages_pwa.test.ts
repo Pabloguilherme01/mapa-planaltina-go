@@ -115,7 +115,12 @@ describe('GitHub Pages PWA assets', () => {
     const onFetch = handlers.get('fetch');
     expect(onFetch).toBeTypeOf('function');
 
-    for (const relativePath of ['api/private-lookup?session=teste', 'dynamic/search']) {
+    for (const relativePath of [
+      'api/private-lookup?session=teste',
+      'dynamic/search',
+      'assets/app.js?token=teste',
+      'data/points.json?session=teste',
+    ]) {
       const respondWith = vi.fn();
       onFetch!({
         request: {
