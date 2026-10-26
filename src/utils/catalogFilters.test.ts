@@ -29,6 +29,7 @@ const market: MapPoint = {
   ...clinic,
   id: 'osm-node-123',
   name: 'Mercado de São Sebastião',
+  addressHint: 'Setor Oeste',
   category: 'Comércio',
   provenanceMeta: {
     ...clinic.provenanceMeta,
