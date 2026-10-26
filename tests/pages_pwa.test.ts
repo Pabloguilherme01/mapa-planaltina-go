@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { runInNewContext } from 'node:vm';
 import {
   buildServiceWorkerSource,
   buildWebManifest,
@@ -90,5 +91,53 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain('caches.match(request, { ignoreVary: true })');
     expect(source).toContain('caches.match(fallbackUrl, { ignoreVary: true })');
     expect(source).toContain(`caches.match('${BASE}', { ignoreVary: true })`);
+  });
+
+  it('não intercepta nem armazena rotas dinâmicas não listadas no escopo PWA', () => {
+    const source = buildServiceWorkerSource({
+      basePath: BASE,
+      cacheName: 'mapa-planaltina-v3',
+      assets: ['index.html', 'assets/app.js', 'data/points.json'],
+    });
+    const handlers = new Map<string, (event: unknown) => void>();
+    const match = vi.fn().mockResolvedValue(new Response('cached'));
+    runInNewContext(source, {
+      URL,
+      self: {
+        location: { origin: 'https://pabloguilherme01.github.io' },
+        addEventListener: (type: string, handler: (event: unknown) => void) => {
+          handlers.set(type, handler);
+        },
+      },
+      caches: { match },
+    });
+
+    const onFetch = handlers.get('fetch');
+    expect(onFetch).toBeTypeOf('function');
+
+    for (const relativePath of ['api/private-lookup?session=teste', 'dynamic/search']) {
+      const respondWith = vi.fn();
+      onFetch!({
+        request: {
+          method: 'GET',
+          mode: 'cors',
+          url: 'https://pabloguilherme01.github.io' + BASE + relativePath,
+        },
+        respondWith,
+      });
+      expect(respondWith).not.toHaveBeenCalled();
+    }
+    expect(match).not.toHaveBeenCalled();
+
+    const staticResponse = vi.fn();
+    onFetch!({
+      request: {
+        method: 'GET',
+        mode: 'cors',
+        url: 'https://pabloguilherme01.github.io' + BASE + 'assets/app.js',
+      },
+      respondWith: staticResponse,
+    });
+    expect(staticResponse).toHaveBeenCalledOnce();
   });
 });
