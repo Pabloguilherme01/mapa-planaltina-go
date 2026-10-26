@@ -23,7 +23,7 @@ jobs:
       - name: Preparar Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: '24'
+          node-version: '24.22.1'
           cache: npm
       - name: Instalar dependências do projeto
         run: npm ci
@@ -36,6 +36,7 @@ jobs:
           key: road-planaltina-v1-restore-${{ github.run_id }}
           restore-keys: road-planaltina-v1-
       - name: Garantir rede viária real para Browser QA
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p public/data
