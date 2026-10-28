@@ -62,6 +62,7 @@ export function isSourceUrl(value: unknown): boolean {
       hostname !== 'localhost' &&
       !hostname.endsWith('.localhost') &&
       !hostname.endsWith('.local') &&
+      !/\.(?:example|invalid|test)$/.test(hostname) &&
       !/^\d+\.\d+\.\d+\.\d+$/.test(hostname) &&
       !hostname.includes(':') &&
       !url.username && !url.password;
