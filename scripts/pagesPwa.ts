@@ -179,6 +179,11 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Query strings não fazem parte do precache. Evita persistir parâmetros de
+  // sessão/consulta, inclusive quando o caminho é de um arquivo público.
+  // Navegação com filtros permanece tratada acima, sem cachear sua URL.
+  if (url.search) return;
+
   if (REFRESHABLE_DATA.has(url.pathname)) {
     // Online-first: os cadastros e a malha podem ser atualizados diariamente;
     // offline: usar somente o último arquivo validado que o aparelho já possui.
@@ -194,6 +199,11 @@ self.addEventListener('fetch', (event) => {
     })());
     return;
   }
+
+  // Evitar cachear respostas GET de rotas não estáticas que possam conter
+  // consultas, tokens ou dados específicos do usuário no mesmo subdiretório.
+  // Snapshots municipais públicos são tratados no ramo REFRESHABLE_DATA acima.
+  if (!PRECACHE_URLS.includes(url.pathname)) return;
 
   event.respondWith(
     caches.match(request, { ignoreVary: true }).then((cached) => {
