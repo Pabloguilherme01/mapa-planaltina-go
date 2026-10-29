@@ -51,11 +51,21 @@ function hasText(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0;
 }
 
-function isSourceUrl(value: unknown): boolean {
+export function isSourceUrl(value: unknown): boolean {
   if (!hasText(value)) return false;
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && Boolean(url.hostname) && !url.username && !url.password;
+    const hostname = url.hostname.toLowerCase();
+    return url.protocol === 'https:' &&
+      hostname.includes('.') &&
+      !hostname.endsWith('.') &&
+      hostname !== 'localhost' &&
+      !hostname.endsWith('.localhost') &&
+      !hostname.endsWith('.local') &&
+      !/\.(?:example|invalid|test)$/.test(hostname) &&
+      !/^\d+\.\d+\.\d+\.\d+$/.test(hostname) &&
+      !hostname.includes(':') &&
+      !url.username && !url.password;
   } catch {
     return false;
   }
