@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MapPoint } from '../types';
 import { estimateFuelCost, readTrip, routeUrl, tripKey, type TravelMode, type ExternalMapsApp } from '../utils/mobility';
 import { findDestinations, susStatus } from '../utils/destinationSearch';
-import { favoritesKey, readFavorites, saveFavorite } from '../utils/favoriteTrips';
+import { favoritesKey, readFavorites, readFavoritesForUpdate, saveFavorite } from '../utils/favoriteTrips';
 import { SavedDestinations } from './SavedDestinations';
 import { distanceMeters } from '../utils/catalogFilters.ts';
 import { planLocalRoute, validateRoadGraph, type RoadGraph, type LocalRoute } from '../utils/roadGraph.ts';
@@ -133,7 +133,9 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
         setNotice('Destino salvo selecionado. Confira os dados antes de sair.');
       }} onRemove={id => {
         try {
-          const next = readFavorites(localStorage.getItem(favoritesKey)).filter(item => item.id !== id);
+          const savedFavorites = readFavoritesForUpdate(localStorage.getItem(favoritesKey));
+          if (savedFavorites === null) { setNotice('Os favoritos salvos não puderam ser lidos; foram preservados sem alterações.'); return; }
+          const next = savedFavorites.filter(item => item.id !== id);
           localStorage.setItem(favoritesKey, JSON.stringify(next)); setFavorites(next); setNotice('Destino removido dos favoritos deste aparelho.');
         } catch { setNotice('Não foi possível remover o favorito neste navegador.'); }
       }} />
@@ -200,7 +202,9 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
         const trip = { id: destination.id, mode: travel };
         try { localStorage.setItem(tripKey, JSON.stringify(trip)); } catch { setNotice('Não foi possível salvar neste navegador.'); return; }
         try {
-          const next = saveFavorite(readFavorites(localStorage.getItem(favoritesKey)), trip);
+          const savedFavorites = readFavoritesForUpdate(localStorage.getItem(favoritesKey));
+          if (savedFavorites === null) { setNotice('Última viagem salva. Os favoritos salvos não puderam ser lidos e foram preservados sem alterações.'); return; }
+          const next = saveFavorite(savedFavorites, trip);
           localStorage.setItem(favoritesKey, JSON.stringify(next)); setFavorites(next);
           setNotice('Viagem salva somente neste navegador, com até oito destinos favoritos. Sua localização não foi armazenada.');
         } catch { setNotice('Última viagem salva. Não foi possível atualizar os favoritos neste navegador.'); }
