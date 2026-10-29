@@ -12,21 +12,23 @@ concurrency:
 jobs:
   browser:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # Imagem oficial inclui Chromium, WebKit e dependencias do SO.
+    # Evita apt-get lento, que cancelou o Browser QA antes dos testes.
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    timeout-minutes: 25
     steps:
       - name: Obter código
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Preparar Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
-          node-version: '24'
+          node-version: '24.22.1'
           cache: npm
       - name: Instalar dependências do projeto
         run: npm ci
       - name: Instalar ferramentas de QA sem alterar o lockfile
         run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1 @axe-core/playwright@4.13.0
-      - name: Preparar Chromium e WebKit
-        run: npx playwright install --with-deps chromium webkit
       - name: Restaurar rede viária validada
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
@@ -34,6 +36,7 @@ jobs:
           key: road-planaltina-v1-restore-${{ github.run_id }}
           restore-keys: road-planaltina-v1-
       - name: Garantir rede viária real para Browser QA
+        shell: bash
         run: |
           set -euo pipefail
           mkdir -p public/data
