@@ -96,10 +96,31 @@ export function buildRoadGraph(payload: unknown, createdAt: string): RoadGraph {
         const first = line[i - 1], second = line[i];
         if (!goodCoordinates(first) || !goodCoordinates(second)) continue;
         if (!inPlanaltina(first[1], first[0]) || !inPlanaltina(second[1], second[0])) continue;
-        const a = nodeAt(first[0], first[1]), b = nodeAt(second[0], second[1]);
-        if (a === b) continue;
-        if (mask.forward) edges.push([a, b, mask.forward]);
-        if (mask.backward) edges.push([b, a, mask.backward]);
+        // Pontos de apoio interpolados somente sobre segmentos já mapeados
+        // no OSM. Trechos rurais longos não podem ficar inacessíveis apenas
+        // porque seus vértices originais estão a mais de 150 m do destino.
+        // A geometria, as conexões e as permissões de cada trecho são mantidas.
+        const length = distanceMeters(
+          { lat: first[1], lng: first[0] },
+          { lat: second[1], lng: second[0] },
+        );
+        const parts = Math.max(1, Math.ceil(length / 100));
+        let from = nodeAt(first[0], first[1]);
+        for (let part = 1; part <= parts; part++) {
+          const fraction = part / parts;
+          const to = nodeAt(
+            part === parts ? second[0] : first[0] + (second[0] - first[0]) * fraction,
+            part === parts ? second[1] : first[1] + (second[1] - first[1]) * fraction,
+          );
+          if (from !== to) {
+            if (mask.forward) edges.push([from, to, mask.forward]);
+            if (mask.backward) edges.push([to, from, mask.backward]);
+          }
+          from = to;
+          if (nodes.length > 450_000 || edges.length > 1_300_000) {
+            throw new Error('Malha rodoviária acima do limite do navegador.');
+          }
+        }
       }
     }
   }
