@@ -79,7 +79,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       id="bottomSheet"
       role="region"
       aria-label="Busca e lista do catálogo territorial"
-      className={`mobile-catalog lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
+        className={`mobile-catalog lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-12px_32px_rgba(19,44,32,0.16)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
         isExpanded ? 'catalog-expanded' : 'catalog-collapsed'
       }`}
     >
@@ -99,7 +99,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         <label htmlFor="mobile-search-input" className="sr-only">
           Buscar pontos em Planaltina, Goiás
         </label>
-        <div className="relative flex items-center bg-[#F5F0E6] rounded-xl border border-neutral-300 focus-within:border-[#355E3B] transition-colors">
+          <div className="relative flex items-center bg-[#F5F0E6] rounded-2xl border border-neutral-300 focus-within:border-[#355E3B] focus-within:ring-2 focus-within:ring-[#355E3B]/20 transition-colors">
           <Search size={16} className="text-neutral-500 ml-2.5 shrink-0" />
           <input
             id="mobile-search-input"
@@ -199,7 +199,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               {points.length} pontos no catálogo
             </h2>
             <p className="truncate text-[10px] text-neutral-500">
-              Planaltina, Goiás • {realCount} locais reais mapeados
+              Planaltina, Goiás • {realCount} locais mapeados
             </p>
           </div>
         </div>
@@ -245,7 +245,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             return (
               <div
                 key={point.id}
-                className={`bg-[#F5F0E6] rounded-2xl p-2.5 flex flex-col gap-1.5 border transition-all ${
+                className={`bg-[#F5F0E6] rounded-2xl p-3 flex flex-col gap-1.5 border shadow-sm transition-colors ${
                   isSelected ? 'border-[#B05835] ring-1 ring-[#B05835]' : 'border-neutral-200'
                 }`}
               >
@@ -255,7 +255,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       <IconComponent size={17} />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-xs font-bold text-[#121E14] truncate">{point.name}</h3>
+                      <h3 className="text-sm font-bold text-[#121E14] leading-snug break-words">{point.name}</h3>
                       <p className="text-[10px] text-neutral-600">{point.category} • {point.zone}</p>
                     </div>
                   </div>
