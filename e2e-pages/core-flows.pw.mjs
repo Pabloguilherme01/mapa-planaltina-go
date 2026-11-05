@@ -31,22 +31,49 @@ test('favoritos: persistem no aparelho, não duplicam e podem ser removidos offl
   await planner.getByLabel('Destino real').selectOption(id);
   await planner.getByRole('button', { name: 'Salvar viagem neste aparelho' }).click();
   await planner.getByRole('button', { name: 'Salvar viagem neste aparelho' }).click();
-  await expect(planner.locator('summary')).toHaveText('Destinos salvos (1)');
+  await expect(planner.locator('details').filter({ hasText: 'Destinos salvos (' }).locator('summary')).toHaveText('Destinos salvos (1)');
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('planaltina-private-favorites-v1')));
   expect(stored).toEqual([{ id, mode: 'driving' }]);
   await page.reload();
   await page.getByRole('button', { name: 'Planejar viagem' }).click();
   planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
-  await planner.locator('summary').click();
-  const saved = planner.locator('details');
+  const saved = planner.locator('details').filter({ hasText: 'Destinos salvos (' });
+  await saved.locator('summary').click();
   await saved.getByRole('button', { name: /Usar destino salvo/ }).click();
   await expect(planner.getByLabel('Destino real')).toHaveValue(id);
   await context.setOffline(true);
   await expect(planner.getByRole('link', { name: 'Abrir navegação externa' })).toHaveCount(0);
   await saved.getByRole('button', { name: /Remover destino salvo/ }).click();
-  await expect(planner.locator('details')).toHaveCount(0);
+  await expect(saved).toHaveCount(0);
   expect(await page.evaluate(() => JSON.parse(localStorage.getItem('planaltina-private-favorites-v1')))).toEqual([]);
   await context.setOffline(false);
+});
+
+test('rotas regionais: links externos usam cidades inequívocas sem GPS de origem', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  await planner.locator('details').filter({ hasText: 'Rotas regionais · 4 cidades' }).locator('summary').click();
+  const expected = new Map([
+    ['Planaltina (DF)', 'Planaltina, Distrito Federal, Brasil'],
+    ['Sobradinho (DF)', 'Sobradinho, Distrito Federal, Brasil'],
+    ['Brasília (DF)', 'Brasília, Distrito Federal, Brasil'],
+    ['Formosa (GO)', 'Formosa, Goiás, Brasil'],
+  ]);
+  for (const [label, city] of expected) {
+    const link = planner.getByRole('link', { name: `Abrir rota externa para ${label}` });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('target', '_blank');
+    const url = new URL(await link.getAttribute('href'));
+    expect(url.origin).toBe('https://www.google.com');
+    expect(url.searchParams.get('destination')).toBe(city);
+    expect(url.searchParams.get('travelmode')).toBe('driving');
+    expect(url.searchParams.has('origin')).toBe(false);
+    expect(url.searchParams.has('ll')).toBe(false);
+  }
+  await planner.getByLabel('Deslocamento').selectOption('walking');
+  const walking = new URL(await planner.getByRole('link', { name: 'Abrir rota externa para Formosa (GO)' }).getAttribute('href'));
+  expect(walking.searchParams.get('travelmode')).toBe('walking');
 });
 
 test('ANTT: fontes operacionais oficiais são consultáveis sem publicar horários não validados', async ({ page }) => {
