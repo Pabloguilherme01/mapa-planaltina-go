@@ -18,6 +18,9 @@ import {
 } from 'lucide-react';
 
 interface MobileBottomSheetProps {
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   points: MapPoint[];
   selectedPoint: MapPoint | null;
   onSelectPoint: (point: MapPoint | null) => void;
@@ -50,6 +53,7 @@ interface MobileBottomSheetProps {
 }
 
 export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
+  isLoading, isError, onRetry,
   points,
   selectedPoint,
   onSelectPoint,
@@ -76,8 +80,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       id="bottomSheet"
       role="region"
       aria-label="Busca e lista do catálogo territorial"
-      className={`lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
-        isExpanded ? 'h-[min(72dvh,720px)]' : 'h-[300px]'
+      className={`mobile-catalog lg:hidden fixed bottom-16 inset-x-0 z-30 bg-white rounded-t-3xl shadow-[0_-8px_24px_rgba(30,43,32,0.12)] border-t border-neutral-200 transition-all duration-300 ease-in-out px-3 pt-1.5 pb-2 flex flex-col ${
+        isExpanded ? 'catalog-expanded' : 'catalog-collapsed'
       }`}
     >
       <button
@@ -88,7 +92,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         onClick={() => setIsExpanded(!isExpanded)}
         className="touch-target w-full h-7 -mt-1 flex flex-col items-center justify-center cursor-pointer active:opacity-60 shrink-0"
       >
-        <span className="w-12 h-1.5 rounded-full bg-neutral-300" />
+        <span className="w-12 h-1 rounded-full bg-neutral-300" />
+        <span className="text-xs font-bold mt-1">{isExpanded ? 'Voltar ao mapa' : 'Explorar Planaltina'}</span>
       </button>
 
       <div className="relative w-full mb-1.5 shrink-0">
@@ -101,6 +106,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             id="mobile-search-input"
             type="text"
             value={searchQuery}
+            onFocus={() => setIsExpanded(true)}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar pontos em Planaltina, Goiás..."
             className="w-full min-h-[44px] py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-400 focus:outline-none"
@@ -119,17 +125,18 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </div>
 
-      <div className="mb-2 shrink-0">
+      {isExpanded && <div className="mb-2 shrink-0">
         <CategoryFilterBar
           selectedCategories={selectedCategories}
           onToggleCategory={onToggleCategory}
           onSelectAll={onSelectAllCategories}
           categoryCounts={categoryCounts}
         />
-      </div>
-      <FilterActions count={activeFilterCount} resultCount={points.length}
-          onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
-      {isExpanded && !browseDirectory && <div className="max-h-[36vh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
+      </div>}
+      {isExpanded && <FilterActions count={activeFilterCount} resultCount={points.length}
+          onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />}
+      {isExpanded && !browseDirectory && <details className="max-h-[28dvh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
+      <summary className="touch-target flex items-center text-sm font-bold cursor-pointer">Refinar busca · filtros avançados</summary>
       <label className="mb-2 flex shrink-0 items-center gap-2 text-xs font-bold">Origem dos pontos
         <select value={selectedProvenance} onChange={event => onSelectProvenance(event.target.value as ProvenanceType | 'all')} className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-400 bg-white px-2">
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
@@ -182,13 +189,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
       </section>
-      </div>}
-              <button type="button" aria-pressed={browseDirectory}
+      </details>}
+              {isExpanded && <button type="button" aria-pressed={browseDirectory}
           aria-label="Explorar cadastros e serviços sem localização"
           onClick={() => { setBrowseDirectory(current => !current); setIsExpanded(true); }}
           className="touch-target inline-flex items-center justify-center gap-2 rounded-xl border border-[#355E3B]/30 bg-white px-3 py-2 text-xs font-extrabold text-[#355E3B] shadow-sm">
-          {browseDirectory ? 'Fechar catálogo complementar' : 'Explorar 101 cadastros e serviços'}
-        </button>
+          {browseDirectory ? 'Fechar catálogo complementar' : 'Explorar cadastros e serviços'}
+        </button>}
 
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
         <div className="flex items-center gap-1.5">
@@ -218,14 +225,16 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       </div>
 
       <div
+        hidden={!isExpanded}
         id="mobile-points-list"
         aria-labelledby="mobile-results-heading"
-        className="min-h-0 overflow-y-auto overscroll-contain flex flex-col gap-2 flex-1 pr-0.5 pb-4"
+        className={`${isExpanded ? 'flex' : 'hidden'} min-h-0 overflow-y-auto overscroll-contain flex-col gap-2 flex-1 pr-0.5 pb-4`}
       >
+        {isExpanded && <>
         {(searchQuery.trim() || browseDirectory) && <React.Suspense fallback={<p role="status" className="text-xs">Consultando cadastros e serviços…</p>}>
           <DirectoryResults search={searchQuery} categories={selectedCategories} browse={browseDirectory} />
         </React.Suspense>}
-        {points.length === 0 ? (
+        {isLoading ? <p role="status" className="p-4 text-sm">Carregando locais de Planaltina…</p> : isError ? <div role="alert" className="p-4 text-sm"><p>Não foi possível carregar os locais.</p><button type="button" className="touch-target mt-2 rounded-xl border px-3 font-bold" onClick={onRetry}>Tentar novamente</button></div> : points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
             Nenhum ponto encontrado com os filtros atuais.
           </div>
@@ -275,7 +284,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   <div className="flex gap-1.5">
                     <button
                       type="button"
-                      onClick={() => onSelectPoint(point)}
+                      onClick={() => { onSelectPoint(point); setIsExpanded(false); }}
                       className="touch-target px-2 py-1 rounded-lg bg-white text-[#121E14] text-[11px] font-bold border border-neutral-300 active:scale-95 transition-transform"
                     >
                       Focar
@@ -300,6 +309,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             Mostrar mais locais ({Math.min(visibleLimit, points.length)} de {points.length})
           </button>
         )}
+        </>}
       </div>
     </div>
   );

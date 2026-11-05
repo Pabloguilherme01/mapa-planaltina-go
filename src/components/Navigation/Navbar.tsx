@@ -141,6 +141,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <button
             type="button"
             onClick={onRequestGeolocation}
+            aria-label="Perto de mim"
             className="touch-target flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#BA623D] text-white text-xs font-bold shadow-sm hover:bg-[#a35230] active:scale-95 transition-all"
             title="Localizar no dispositivo (privado, não enviado ao servidor)"
           >
@@ -164,7 +165,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             type="button"
             onClick={onToggleHighContrast}
             aria-label="Alternar modo de alto contraste"
-            className={`touch-target w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+            className={`hidden sm:flex touch-target w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
               highContrast ? 'bg-amber-400 text-black' : 'bg-white/15 text-white hover:bg-white/25'
             }`}
           >

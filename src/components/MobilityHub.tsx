@@ -10,7 +10,8 @@ import { planLocalRoute, validateRoadGraph, type RoadGraph, type LocalRoute } fr
 type Mode = 'automatico' | 'proxima' | 'repetir' | 'economia' | 'offline' | 'conducao';
 const modes: [Mode, string][] = [['automatico', 'Automático'], ['proxima', 'Próxima viagem'], ['repetir', 'Repetir'], ['economia', 'Economia'], ['offline', 'Sem internet'], ['conducao', 'Condução']];
 
-export function MobilityHub({ points, selectedPoint, userLocation, onRoutePreview, mapOrigin, mapDestination, onRequestMapPick }: {
+export function MobilityHub({ isPicking = false, points, selectedPoint, userLocation, onRoutePreview, mapOrigin, mapDestination, onRequestMapPick }: {
+  isPicking?: boolean;
   points: MapPoint[]; selectedPoint: MapPoint | null;
   userLocation: { lat: number; lng: number } | null;
   onRoutePreview: (route: LocalRoute) => void;
@@ -119,11 +120,11 @@ export function MobilityHub({ points, selectedPoint, userLocation, onRoutePrevie
   }
   const inputStyle = 'w-full rounded-lg border border-neutral-400 bg-white p-3 text-neutral-900';
   return <>
-    <button type="button" onClick={() => {
+    {!isPicking && <button type="button" onClick={() => {
       setQuery(''); setSusOnly(false);
       if (selectedPoint && !selectedPoint.isDemo) setDestinationId(selectedPoint.id);
       dialog.current?.showModal();
-    }} className="absolute right-3 top-16 lg:top-28 z-20 rounded-xl bg-[#355E3B] px-4 py-3 font-bold text-white shadow-lg">Planejar viagem</button>
+    }} className="absolute right-3 top-16 lg:top-28 z-20 rounded-xl bg-[#355E3B] px-4 py-3 font-bold text-white shadow-lg">Planejar viagem</button>}
     <dialog ref={dialog} aria-labelledby="mobility-title" className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl bg-[#F5F0E6] p-5 text-[#121E14] shadow-xl backdrop:bg-black/60">
       <div className="flex items-center justify-between gap-3"><h2 id="mobility-title" className="text-xl font-bold">Mobilidade em Planaltina</h2><button type="button" onClick={() => dialog.current?.close()} className="rounded-lg border p-3" aria-label="Fechar planejador">Fechar</button></div>
       <p className="my-3 text-sm">Escolha um destino real mapeado, confira sua fonte e abra a navegação. Trânsito e itinerários de ônibus não são calculados aqui.</p>
