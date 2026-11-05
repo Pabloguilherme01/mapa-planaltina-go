@@ -19,6 +19,29 @@ describe('catálogo OSM municipal', () => {
     expect(points.every(point => point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
   });
 
+  it('inclui serviços de deslocamento e patrimônio apenas com fonte OSM e nome real', () => {
+    const points = mapOverpassElements({ elements: [
+      entry(61, { amenity: 'taxi', name: 'Táxi exemplo' }),
+      entry(62, { amenity: 'bicycle_rental', name: 'Bicicletas exemplo' }),
+      entry(63, { railway: 'station', name: 'Estação exemplo' }),
+      entry(64, { emergency: 'ambulance_station', name: 'Base de ambulâncias exemplo' }),
+      entry(65, { historic: 'memorial', name: 'Memorial exemplo' }),
+      entry(66, { amenity: 'taxi', name: 'Privado', access: 'private' }),
+      entry(67, { amenity: 'taxi' }),
+      entry(68, { emergency: 'fire_hydrant', name: 'Hidrante não atendível' }),
+    ] }, snapshot);
+    expect(points.map(p => p.id)).toEqual([
+      'osm-node-61', 'osm-node-62', 'osm-node-63', 'osm-node-64', 'osm-node-65',
+    ]);
+    expect(points.map(p => p.category)).toEqual([
+      'Transporte', 'Transporte', 'Transporte', 'Segurança', 'Lazer',
+    ]);
+    expect(points.every(p => p.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+    expect(overpassQuery('urban')).toContain('["name"]["railway"]');
+    expect(overpassQuery('urban')).toContain('["name"]["emergency"]');
+    expect(overpassQuery('urban')).toContain('["name"]["historic"]');
+  });
+
   it('apresenta tipos comerciais conhecidos em português sem alterar a origem comunitária', () => {
     const points = mapOverpassElements({ elements: [
       entry(41, { shop: 'beverages', name: 'Loja A' }),
