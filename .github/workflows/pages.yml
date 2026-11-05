@@ -77,6 +77,9 @@ jobs:
           osmium tags-filter -t /tmp/planaltina-osm/municipio.osm.pbf \
             nwr/amenity nwr/shop nwr/office nwr/leisure nwr/tourism \
             nwr/public_transport nwr/healthcare nwr/highway=bus_stop \
+            nwr/railway=station nwr/railway=halt nwr/railway=tram_stop \
+            nwr/emergency=ambulance_station \
+            nwr/historic=memorial nwr/historic=monument nwr/historic=archaeological_site \
             -o /tmp/planaltina-osm/pois.osm.pbf
           osmium export --config scripts/osmium-export-config.json \
             -f geojson /tmp/planaltina-osm/pois.osm.pbf \
