@@ -33,6 +33,15 @@ const AMENITIES: Record<string, Kind> = {
   parking: { category: 'Transporte', label: 'Estacionamento' },
   bicycle_parking: { category: 'Transporte', label: 'Estacionamento de bicicletas' },
   recycling: { category: 'Meio Ambiente', label: 'Ponto de reciclagem' },
+  taxi: { category: 'Transporte', label: 'Ponto de táxi' },
+  bicycle_rental: { category: 'Transporte', label: 'Aluguel de bicicletas' },
+  car_rental: { category: 'Transporte', label: 'Locadora de veículos' },
+  car_sharing: { category: 'Transporte', label: 'Carro compartilhado' },
+  motorcycle_parking: { category: 'Transporte', label: 'Estacionamento de motos' },
+  parking_entrance: { category: 'Transporte', label: 'Entrada de estacionamento' },
+  public_bookcase: { category: 'Educação', label: 'Biblioteca comunitária' },
+  toilets: { category: 'Serviços Públicos', label: 'Banheiro público' },
+  drinking_water: { category: 'Serviços Públicos', label: 'Água potável mapeada' },
   bus_station: { category: 'Transporte', label: 'Rodoviária' },
   ferry_terminal: { category: 'Transporte', label: 'Terminal de transporte' },
   fuel: { category: 'Comércio', label: 'Posto de combustível' },
@@ -78,6 +87,9 @@ function classify(tags: Tags): Kind | null {
   if (office && !['no', 'yes'].includes(office)) return { category: 'Comércio', label: 'Escritório' };
   const transport = tag(tags, 'public_transport') || tag(tags, 'highway');
   if (['platform', 'station', 'stop_position', 'bus_stop'].includes(transport)) return { category: 'Transporte', label: 'Parada de transporte' };
+  if (['station', 'halt', 'tram_stop'].includes(tag(tags, 'railway'))) return { category: 'Transporte', label: 'Estação ferroviária ou parada' };
+  if (['ambulance_station'].includes(tag(tags, 'emergency'))) return { category: 'Segurança', label: 'Estrutura de emergência mapeada' };
+  if (['memorial', 'monument', 'archaeological_site'].includes(tag(tags, 'historic'))) return { category: 'Lazer', label: 'Patrimônio histórico mapeado' };
   const leisure = tag(tags, 'leisure');
   if (['park', 'garden', 'sports_centre', 'sports_hall', 'playground', 'stadium', 'fitness_centre', 'pitch'].includes(leisure)) return { category: 'Lazer', label: 'Lazer e esporte' };
   if (leisure === 'nature_reserve') return { category: 'Meio Ambiente', label: 'Reserva natural' };
@@ -104,7 +116,7 @@ export function overpassQuery(scope: 'municipality' | 'urban' = 'municipality'):
     ? [Math.max(minLat, urbanBounds[0]), Math.max(minLng, urbanBounds[1]), Math.min(maxLat, urbanBounds[2]), Math.min(maxLng, urbanBounds[3])]
     : [minLat, minLng, maxLat, maxLng];
   const bbox = bounds.map(value => value.toFixed(5)).join(',');
-  return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});node["highway"="bus_stop"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox}););out center tags;`;
+  return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});node["highway"="bus_stop"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox});nwr["name"]["railway"](${bbox});nwr["name"]["emergency"](${bbox});nwr["name"]["historic"](${bbox}););out center tags;`;
 }
 
 export function mapOverpassElements(payload: unknown, retrievedAt: string): MapPoint[] {
