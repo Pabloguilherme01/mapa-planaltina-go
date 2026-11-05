@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MapPoint } from '../types';
-import { estimateFuelCost, readTrip, routeUrl, tripKey, type TravelMode, type ExternalMapsApp } from '../utils/mobility';
+import { estimateFuelCost, readTrip, routeUrl, regionalRouteUrl, REGIONAL_DESTINATIONS, tripKey, type TravelMode, type ExternalMapsApp } from '../utils/mobility';
 import { findDestinations, susStatus } from '../utils/destinationSearch';
 import { favoritesKey, readFavorites, readFavoritesForUpdate, saveFavorite } from '../utils/favoriteTrips';
 import { SavedDestinations } from './SavedDestinations';
@@ -196,6 +196,36 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
           Pontos sem ligação na malha não recebem trajeto inventado.
         </p>
       </fieldset>
+      <details className="my-3 rounded-2xl border border-emerald-900/20 bg-[#F5F0E6] shadow-sm">
+        <summary className="touch-target cursor-pointer px-4 py-3 font-extrabold text-[#355E3B]">
+          Rotas regionais · 4 cidades
+        </summary>
+        <div className="border-t border-neutral-300 px-4 py-3">
+          <p className="text-sm text-neutral-700">
+            Planeje a viagem até cidades vizinhas em um aplicativo externo.
+            O mapa local não calcula o trajeto fora de Planaltina-GO.
+          </p>
+          {online && mode !== 'offline' ? (
+            <div className="my-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {REGIONAL_DESTINATIONS.map(point => (
+                <a key={point.id} href={regionalRouteUrl(point.id, travel)}
+                  target="_blank" rel="noopener noreferrer"
+                  className="touch-target flex items-center justify-between rounded-xl border border-emerald-800/25 bg-white p-3 text-sm font-bold text-[#355E3B] shadow-sm hover:border-emerald-800 hover:shadow-md"
+                  aria-label={`Abrir rota externa para ${point.name}`}>
+                  <span>{point.name}</span><span aria-hidden="true">↗</span>
+                </a>
+              ))}
+            </div>
+          ) : <p role="status" className="my-3 text-sm font-semibold">
+            Conecte-se à internet para consultar rotas regionais externas.
+          </p>}
+          <p className="text-xs text-neutral-600">
+            O link contém somente o destino e o modo escolhido, sem origem GPS.
+            O aplicativo externo calcula a rota e pode pedir sua localização.
+            Não representa linha, horário, tarifa ou itinerário de ônibus confirmado.
+          </p>
+        </div>
+      </details>
       <label className="my-3 block">Aplicativo de mapas
         <select className={inputStyle} value={externalMap} onChange={event => setExternalMap(event.target.value as ExternalMapsApp)}>
           <option value="google">Google Maps (rotas)</option>
