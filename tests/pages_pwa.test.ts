@@ -113,6 +113,31 @@ describe('GitHub Pages PWA assets', () => {
     expect(sw.indexOf('await migrateOfflineRoadGraph()')).toBeLessThan(sw.indexOf('caches.delete(key)'));
   });
 
+  it('procura outra malha ao migrar cache antigo com JSON quebrado', async () => {
+    const source = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-new', assets: [] });
+    const handlers = new Map<string, (event: any) => void>();
+    const graph = { version: 1, source: 'OpenStreetMap/Geofabrik', createdAt: new Date().toISOString(),
+      nodes: Array.from({ length: 100 }, (_, i) => [-15.45, -47.60 + i / 100000]),
+      edges: Array.from({ length: 100 }, (_, i) => [i, (i + 1) % 100, 1]) };
+    const put = vi.fn().mockResolvedValue(undefined);
+    const oldCaches: Record<string, any> = {
+      'mapa-planaltina-new': { match: async () => undefined, put },
+      'mapa-planaltina-corrupted': { match: async () => new Response('não é JSON') },
+      'mapa-planaltina-valid': { match: async () => new Response(JSON.stringify(graph)) },
+    };
+    const remove = vi.fn().mockResolvedValue(true);
+    runInNewContext(source, { URL, Response, Date,
+      caches: { open: async (key: string) => oldCaches[key], keys: async () => Object.keys(oldCaches), delete: remove },
+      self: { clients: { claim: vi.fn().mockResolvedValue(undefined) },
+        addEventListener: (type: string, handler: (event: any) => void) => handlers.set(type, handler) } });
+    let activation: Promise<void> | undefined;
+    handlers.get('activate')!({ waitUntil: (promise: Promise<void>) => { activation = promise; } });
+    await activation;
+    expect(put).toHaveBeenCalledOnce();
+    expect(await put.mock.calls[0][1].json()).toEqual(graph);
+    expect(remove).toHaveBeenCalledTimes(2);
+  });
+
   it('faz match do precache por URL mesmo quando a resposta varia por Origin', () => {
     const source = buildServiceWorkerSource({
       basePath: BASE,
