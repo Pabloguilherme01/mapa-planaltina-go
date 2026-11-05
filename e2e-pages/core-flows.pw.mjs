@@ -385,7 +385,8 @@ test('rotas: publicação oferece malha rodoviária verdadeira e rejeita origem 
   const dialog = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
   await expect(dialog.getByLabel('Ponto de partida')).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Traçar rota no mapa' })).toBeDisabled();
-  await expect(dialog).toContainText('Não possui tráfego ao vivo');
+  await expect(dialog).toContainText('Não considera restrições de conversão, tráfego ao vivo');
+  await expect(dialog).toContainText('Confira a sinalização no local');
 });
 
 test('busca compartilhável: aplica filtros da URL, permite limpar e mantém GPS fora do endereço', async ({page}, testInfo) => {
