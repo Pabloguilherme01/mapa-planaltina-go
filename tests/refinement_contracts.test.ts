@@ -32,11 +32,14 @@ describe('contratos de refinamento da interface', () => {
     expect(source).toContain('.register(`${import.meta.env.BASE_URL}sw.js`');
   });
 
-  it('só promete cache offline quando há service worker controlando a página', () => {
+  it('não confunde service worker ativo com conteúdo efetivamente disponível offline', () => {
     const source = read('src/components/Common/OfflineBanner.tsx');
     expect(source).toContain('navigator.serviceWorker?.controller');
     expect(source).toContain('controllerchange');
-    expect(source).toContain('snapshots locais');
+    expect(source).toContain('hasActiveServiceWorker');
+    expect(source).toContain('não garante que todos os mapas, dados ou rotas estejam salvos');
+    expect(source).toContain('navegação offline não está garantida');
+    expect(source).not.toContain('snapshots locais do último acesso continuam disponíveis');
   });
 
   it('mantém Google Maps fora do bundle inicial e carrega o provider sob demanda', () => {
