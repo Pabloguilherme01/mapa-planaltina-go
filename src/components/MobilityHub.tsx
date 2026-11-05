@@ -173,7 +173,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
           {calculating ? 'Calculando…' : 'Traçar rota no mapa'}
         </button>
         <p className="mt-2 text-xs text-neutral-600">
-          Rota aproximada calculada no navegador a partir da malha OpenStreetMap. Não possui tráfego ao vivo, alertas de segurança, bloqueios atualizados ou linhas e horários de ônibus. O GPS não é enviado ao serviço de rotas.
+          Rota aproximada calculada no navegador a partir da malha OpenStreetMap. Não considera restrições de conversão, tráfego ao vivo, alertas de segurança, bloqueios atualizados ou linhas e horários de ônibus. Confira a sinalização no local. O GPS não é enviado ao serviço de rotas.
           Pontos sem ligação na malha não recebem trajeto inventado.
         </p>
       </fieldset>
