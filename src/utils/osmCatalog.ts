@@ -88,7 +88,7 @@ function classify(tags: Tags): Kind | null {
   const transport = tag(tags, 'public_transport') || tag(tags, 'highway');
   if (['platform', 'station', 'stop_position', 'bus_stop'].includes(transport)) return { category: 'Transporte', label: 'Parada de transporte' };
   if (['station', 'halt', 'tram_stop'].includes(tag(tags, 'railway'))) return { category: 'Transporte', label: 'Estação ferroviária ou parada' };
-  if (['ambulance_station', 'fire_hydrant'].includes(tag(tags, 'emergency'))) return { category: 'Segurança', label: 'Estrutura de emergência mapeada' };
+  if (['ambulance_station'].includes(tag(tags, 'emergency'))) return { category: 'Segurança', label: 'Estrutura de emergência mapeada' };
   if (['memorial', 'monument', 'archaeological_site'].includes(tag(tags, 'historic'))) return { category: 'Lazer', label: 'Patrimônio histórico mapeado' };
   const leisure = tag(tags, 'leisure');
   if (['park', 'garden', 'sports_centre', 'sports_hall', 'playground', 'stadium', 'fitness_centre', 'pitch'].includes(leisure)) return { category: 'Lazer', label: 'Lazer e esporte' };
