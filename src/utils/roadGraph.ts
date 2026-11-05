@@ -37,8 +37,9 @@ function permissions(tags: Record<string, unknown>): { forward: number; backward
     !accessDenied(tags.bicycle) && !accessDenied(tags.vehicle);
   if (tags.motor_vehicle === 'destination' || tags.motorcar === 'destination') drive = false;
   if (!drive && !walk && !bike) return { forward: 0, backward: 0 };
+  // Em OSM, autoestradas e rotatórias implicam mão única, salvo oneway=no.
   const oneway = tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true' ||
-    tags.junction === 'roundabout';
+    (tags.oneway == null && (tags.junction === 'roundabout' || highway === 'motorway'));
   const reverse = tags.oneway === '-1';
   const bicycleOneway = tags['oneway:bicycle'];
   const bikeForward = bicycleOneway === 'no' ? true :

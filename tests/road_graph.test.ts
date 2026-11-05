@@ -40,6 +40,18 @@ describe('roteamento local por ruas OSM', () => {
     expect(planLocalRoute(graph, b, a, 'walking')?.coordinates).toHaveLength(3);
     expect(planLocalRoute(graph, a, b, 'driving')).not.toBeNull();
   });
+  it('respeita sentido implícito e exceções explícitas em autoestradas e rotatórias', () => {
+    const motorway = network([road('way/1', { highway: 'motorway' })]);
+    expect(planLocalRoute(motorway, a, b, 'driving')).not.toBeNull();
+    expect(planLocalRoute(motorway, b, a, 'driving')).toBeNull();
+    const twoWay = network([road('way/1', { highway: 'motorway', oneway: 'no' })]);
+    expect(planLocalRoute(twoWay, b, a, 'driving')).not.toBeNull();
+    const roundabout = network([road('way/1', { junction: 'roundabout' })]);
+    expect(planLocalRoute(roundabout, b, a, 'driving')).toBeNull();
+    const reverse = network([road('way/1', { highway: 'motorway', oneway: '-1' })]);
+    expect(planLocalRoute(reverse, a, b, 'driving')).toBeNull();
+    expect(planLocalRoute(reverse, b, a, 'driving')).not.toBeNull();
+  });
   it('respeita os sentidos específicos para bicicleta, inclusive exceções em mão única invertida', () => {
     for (const [tags, forward, backward] of [
       [{ oneway: 'yes', 'oneway:bicycle': 'no' }, true, true],
