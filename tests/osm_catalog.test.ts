@@ -6,6 +6,19 @@ const entry = (id: number, tags: Record<string, string>, lat = -15.4542, lon = -
   ({ type: 'node', id, lat, lon, tags });
 
 describe('catálogo OSM municipal', () => {
+  it('inclui tipos adicionais nomeados, preservando a indicação de fonte comunitária', () => {
+    const points = mapOverpassElements({ elements: [
+      entry(31, { amenity: 'veterinary', name: 'Veterinária Exemplo' }),
+      entry(32, { amenity: 'training', name: 'Centro de formação Exemplo' }),
+      entry(33, { leisure: 'nature_reserve', name: 'Reserva Exemplo' }),
+      entry(34, { leisure: 'pitch', name: 'Quadra Exemplo' }),
+      entry(35, { tourism: 'artwork', name: 'Obra Exemplo' }),
+      entry(36, { amenity: 'veterinary' }),
+      entry(37, { amenity: 'training', name: 'Fechado', access: 'private' }),
+    ] }, snapshot);
+    expect(points.map(point => point.category)).toEqual(['Saúde', 'Educação', 'Meio Ambiente', 'Lazer', 'Lazer']);
+    expect(points.every(point => point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+  });
   it('publica somente POIs nomeados dentro da malha IBGE e conserva identidade OSM', () => {
     const result = mapOverpassElements({ elements: [
       entry(1, { amenity: 'school', name: 'Escola Comunitária' }),
