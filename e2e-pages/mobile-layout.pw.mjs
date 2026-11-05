@@ -23,3 +23,38 @@ for (const width of [320, 390, 768]) {
     await expect(sheet).toHaveClass(/catalog-collapsed/);
   });
 }
+
+for (const viewport of [
+  { width: 320, height: 700 },
+  { width: 390, height: 844 },
+]) {
+  test(`mobile ${viewport.width}px: zoom acessível, lista utilizável e fontes claras`, async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+    await page.setViewportSize(viewport);
+    await page.goto('./');
+
+    const zoomIn = page.locator('.leaflet-control-zoom-in');
+    const planner = page.getByRole('button', { name: 'Planejar viagem' });
+    await expect(zoomIn).toBeVisible();
+    await expect(planner).toBeVisible();
+    const zoomRect = await zoomIn.boundingBox();
+    const planRect = await planner.boundingBox();
+    expect(zoomRect).not.toBeNull();
+    expect(planRect).not.toBeNull();
+    const overlap = zoomRect.x < planRect.x + planRect.width
+      && zoomRect.x + zoomRect.width > planRect.x
+      && zoomRect.y < planRect.y + planRect.height
+      && zoomRect.y + zoomRect.height > planRect.y;
+    expect(overlap, 'Zoom não pode ser encoberto pelo planejador').toBe(false);
+
+    await page.locator('#mobile-search-input').fill('centro');
+    const results = page.locator('#mobile-points-list');
+    await expect(results).toBeVisible();
+    const resultsRect = await results.boundingBox();
+    expect(resultsRect?.height, 'Resultados precisam de espaço para leitura e toque').toBeGreaterThan(100);
+
+    await page.getByRole('navigation', { name: 'Navegação móvel' })
+      .getByRole('button', { name: 'Fontes, proveniência e serviços digitais' }).click();
+    await expect(page).toHaveURL(/\/fontes\/?$/);
+  });
+}
