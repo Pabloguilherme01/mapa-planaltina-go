@@ -117,6 +117,9 @@ export function buildRoadGraph(payload: unknown, createdAt: string): RoadGraph {
             if (mask.backward) edges.push([to, from, mask.backward]);
           }
           from = to;
+          if (nodes.length > 450_000 || edges.length > 1_300_000) {
+            throw new Error('Malha rodoviária acima do limite do navegador.');
+          }
         }
       }
     }
