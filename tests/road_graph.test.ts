@@ -40,6 +40,18 @@ describe('roteamento local por ruas OSM', () => {
     expect(planLocalRoute(graph, b, a, 'walking')?.coordinates).toHaveLength(3);
     expect(planLocalRoute(graph, a, b, 'driving')).not.toBeNull();
   });
+  it('respeita os sentidos específicos para bicicleta, inclusive exceções em mão única invertida', () => {
+    for (const [tags, forward, backward] of [
+      [{ oneway: 'yes', 'oneway:bicycle': 'no' }, true, true],
+      [{ oneway: '-1', 'oneway:bicycle': 'yes' }, true, false],
+      [{ 'oneway:bicycle': '-1' }, false, true],
+      [{ 'oneway:bicycle': 'yes' }, true, false],
+    ] as const) {
+      const graph = network([road('way/1', tags)]);
+      expect(Boolean(planLocalRoute(graph, a, b, 'bicycling'))).toBe(forward);
+      expect(Boolean(planLocalRoute(graph, b, a, 'bicycling'))).toBe(backward);
+    }
+  });
   it('não manda carro para ciclovia nem cria pontes entre ruas desconexas', () => {
     const graph = network([
       road('way/1', { highway: 'cycleway' }),
