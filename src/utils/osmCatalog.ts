@@ -48,6 +48,8 @@ const SHOPS: Record<string, string> = {
   hardware: 'Ferragens', car_repair: 'Oficina', pharmacy: 'Farmácia',
   greengrocer: 'Hortifruti', electronics: 'Eletrônicos', furniture: 'Móveis',
   books: 'Livraria', hairdresser: 'Cabeleireiro', beauty: 'Beleza',
+  beverages: 'Bebidas', car_parts: 'Autopeças', mall: 'Centro comercial',
+  stationery: 'Papelaria', travel_agency: 'Agência de viagens',
   mobile_phone: 'Telefonia', optician: 'Ótica', pet: 'Pet shop',
   agrarian: 'Agropecuária', farm: 'Produtos rurais',
 };
