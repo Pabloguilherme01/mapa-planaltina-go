@@ -22,20 +22,30 @@ type RawFeature = { geometry?: { type?: unknown; coordinates?: unknown }; proper
 const driveRoads = new Set(['motorway','trunk','primary','secondary','tertiary','unclassified','residential','living_street','service','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link','track']);
 const walkRoads = new Set([...driveRoads, 'pedestrian','footway','path','steps','cycleway','bridleway']);
 const cycleRoads = new Set([...driveRoads, 'cycleway','path','footway','pedestrian','bridleway']);
-const accessDenied = (v: unknown) => v === 'private' || v === 'no';
+// OSM usa hierarquia de permissões: foot/bicycle/motorcar sobrescrevem
+// access/vehicle apenas no modo especificado. Valores condicionados a
+// cliente, destino ou autorização não são usados como acesso de passagem.
+const noThroughAccess = new Set([
+  'no', 'private', 'destination', 'delivery', 'customers', 'agricultural', 'forestry',
+]);
+function canPass(tags: Record<string, unknown>, hierarchy: readonly string[]): boolean {
+  let permission = tags.access;
+  for (const key of hierarchy) {
+    if (tags[key] !== undefined) permission = tags[key];
+  }
+  return !noThroughAccess.has(permission as string);
+}
 
 function permissions(tags: Record<string, unknown>): { forward: number; backward: number } {
   const highway = tags.highway;
-  if (typeof highway !== 'string' || accessDenied(tags.access) ||
+  if (typeof highway !== 'string' ||
       tags.abandoned === 'yes' || tags.disused === 'yes' || tags.construction === 'yes' ||
       highway === 'construction' || highway === 'proposed') return { forward: 0, backward: 0 };
-  let drive = driveRoads.has(highway) && !accessDenied(tags.motor_vehicle) && !accessDenied(tags.motorcar) &&
-    !accessDenied(tags.vehicle);
+  const drive = driveRoads.has(highway) && canPass(tags, ['vehicle', 'motor_vehicle', 'motorcar']);
   const walk = walkRoads.has(highway) && highway !== 'motorway' && highway !== 'motorway_link' &&
-    !accessDenied(tags.foot);
+    tags.motorroad !== 'yes' && canPass(tags, ['foot']);
   const bike = cycleRoads.has(highway) && !['motorway','trunk','motorway_link','trunk_link','steps'].includes(highway) &&
-    !accessDenied(tags.bicycle) && !accessDenied(tags.vehicle);
-  if (tags.motor_vehicle === 'destination' || tags.motorcar === 'destination') drive = false;
+    tags.motorroad !== 'yes' && canPass(tags, ['vehicle', 'bicycle']);
   if (!drive && !walk && !bike) return { forward: 0, backward: 0 };
   // Em OSM, autoestradas e rotatórias implicam mão única, salvo oneway=no.
   const oneway = tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true' ||
@@ -48,9 +58,12 @@ function permissions(tags: Record<string, unknown>): { forward: number; backward
   const bikeBackward = bicycleOneway === 'no' ? true :
     bicycleOneway === '-1' ? true :
     bicycleOneway === 'yes' || bicycleOneway === '1' || bicycleOneway === 'true' ? false : !oneway;
-  const forward = (drive && !reverse ? CAR : 0) | (walk ? WALK : 0) | (bike && bikeForward ? BIKE : 0);
+  const footOneway = tags['oneway:foot'];
+  const walkForward = footOneway !== '-1';
+  const walkBackward = !['yes', '1', 'true'].includes(String(footOneway));
+  const forward = (drive && !reverse ? CAR : 0) | (walk && walkForward ? WALK : 0) | (bike && bikeForward ? BIKE : 0);
   const backward = (drive && !oneway && !reverse ? CAR : 0) |
-    (walk ? WALK : 0) |
+    (walk && walkBackward ? WALK : 0) |
     (bike && bikeBackward ? BIKE : 0);
   if (reverse) {
     return { forward, backward: backward | (drive ? CAR : 0) };
@@ -244,19 +257,31 @@ export function planLocalRoute(graph: RoadGraph, start: MapCoordinates, end: Map
   if (!source || !target || source.id === target.id) return null;
   const distances = new Float64Array(graph.nodes.length).fill(Infinity);
   const previous = new Int32Array(graph.nodes.length).fill(-1);
+  // A* com heurística geodésica admissível: a distância em linha reta
+  // nunca ultrapassa o custo de uma rota por segmentos da própria malha.
+  // Assim preservamos a menor distância do Dijkstra e evitamos percorrer
+  // regiões desnecessárias no celular. O cálculo continua 100% local.
+  const goal = graph.nodes[target.id];
+  const heuristic = (id: number): number => {
+    const node = graph.nodes[id];
+    return distanceMeters(
+      { lat: node[0], lng: node[1] },
+      { lat: goal[0], lng: goal[1] },
+    );
+  };
   const heap = new MinHeap();
   distances[source.id] = 0;
-  heap.push([0, source.id]);
+  heap.push([heuristic(source.id), source.id]);
   while (heap.length) {
-    const item = heap.pop()!;
-    const [cost, from] = item;
-    if (cost > distances[from]) continue;
+    const [score, from] = heap.pop()!;
+    if (score > distances[from] + heuristic(from) + 1e-7) continue;
     if (from === target.id) break;
     for (const edge of prepared.adjacency[from]) {
-      const d = cost + edge.weight;
+      const d = distances[from] + edge.weight;
       if (d < distances[edge.to]) {
-        distances[edge.to] = d; previous[edge.to] = from;
-        heap.push([d, edge.to]);
+        distances[edge.to] = d;
+        previous[edge.to] = from;
+        heap.push([d + heuristic(edge.to), edge.to]);
       }
     }
   }
