@@ -497,3 +497,38 @@ test('catálogo completo: permite explorar registros sem conhecer nome e procura
   await expect(docs).toContainText('ESCOLA MUNICIPAL MACHADO DE ASSIS');
   await expect(docs).toContainText('Não geramos pinos nem rotas');
 });
+
+
+test.describe('planejamento com rede lenta', () => {
+  test.use({ serviceWorkers: 'block' });
+  test('fechar o planejador cancela cálculo pendente sem afetar uma nova abertura', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name.includes('mobile'), 'Seleção de origem e destino no mapa desktop');
+    let release;
+    let markRequested;
+    const held = new Promise(resolve => { release = resolve; });
+    const requested = new Promise(resolve => { markRequested = resolve; });
+    await page.route('**/data/road-graph.json', async route => {
+      markRequested();
+      await held;
+      try { await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); }
+      catch { /* A requisição pode ter sido abortada pelo aplicativo. */ }
+    });
+    await page.goto('./');
+    await page.getByRole('button', { name: 'Planejar viagem' }).click();
+    const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+    await planner.getByRole('button', { name: 'Marcar origem no mapa' }).click();
+    await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 300, y: 220 }, force: true });
+    await expect(planner).toBeVisible();
+    await planner.getByRole('button', { name: 'Marcar destino no mapa' }).click();
+    await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 460, y: 320 }, force: true });
+    await expect(planner).toBeVisible();
+    await planner.getByRole('button', { name: 'Traçar rota no mapa' }).click();
+    await requested;
+    await planner.getByRole('button', { name: 'Fechar planejador' }).click();
+    await page.getByRole('button', { name: 'Planejar viagem' }).click();
+    release();
+    await expect(planner).toBeVisible();
+    await expect(planner).not.toContainText('Malha viária inválida');
+    await expect(planner.getByRole('button', { name: 'Traçar rota no mapa' })).not.toHaveText('Calculando…');
+  });
+});
