@@ -206,7 +206,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
         {isExpanded ? (
           <button type="button" aria-pressed={browseDirectory}
-            aria-label="Explorar cadastros e serviços sem localização"
+            aria-label={browseDirectory ? 'Voltar aos pontos mapeados' : 'Explorar cadastros e serviços sem localização'}
             onClick={() => setBrowseDirectory(current => !current)}
             className="touch-target shrink-0 rounded-lg border border-[#355E3B]/30 bg-white px-2.5 py-1 text-xs font-bold text-[#355E3B]">
             {browseDirectory ? 'Ver locais' : 'Cadastros'}
