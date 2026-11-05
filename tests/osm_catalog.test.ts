@@ -6,6 +6,19 @@ const entry = (id: number, tags: Record<string, string>, lat = -15.4542, lon = -
   ({ type: 'node', id, lat, lon, tags });
 
 describe('catálogo OSM municipal', () => {
+  it('classifica serviços mapeados de mobilidade e reciclagem sem presumir verificação', () => {
+    const points = mapOverpassElements({ elements: [
+      entry(51, { amenity: 'charging_station', name: 'Recarga Exemplo' }),
+      entry(52, { amenity: 'parking', name: 'Estacionamento Exemplo' }),
+      entry(53, { amenity: 'bicycle_parking', name: 'Bicicletário Exemplo' }),
+      entry(54, { amenity: 'recycling', name: 'Reciclagem Exemplo' }),
+      entry(55, { amenity: 'parking', name: 'Área privada', access: 'private' }),
+      entry(56, { amenity: 'recycling' }),
+    ] }, snapshot);
+    expect(points.map(point => point.category)).toEqual(['Transporte', 'Transporte', 'Transporte', 'Meio Ambiente']);
+    expect(points.every(point => point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+  });
+
   it('apresenta tipos comerciais conhecidos em português sem alterar a origem comunitária', () => {
     const points = mapOverpassElements({ elements: [
       entry(41, { shop: 'beverages', name: 'Loja A' }),
