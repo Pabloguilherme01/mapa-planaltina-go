@@ -20,7 +20,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   return (
     <nav
       aria-label="Navegação móvel"
-      className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-neutral-200 shadow-[0_-2px_12px_rgba(30,43,32,0.08)]"
+      className="mobile-navigation lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-xl border-t border-neutral-200 shadow-[0_-2px_12px_rgba(30,43,32,0.08)]"
     >
       <div className="flex justify-around items-center h-16 px-4">
         {tabs.map((tab) => {

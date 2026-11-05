@@ -100,6 +100,7 @@ test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais',
   expect(response.ok()).toBeTruthy();
   const { data: points } = await response.json();
   expect(points.some(point => !point.isDemo)).toBeTruthy();
+  await page.getByText('Refinar busca · filtros avançados', { exact: true }).click();
   for (const provenance of ['demo', 'official', 'verified_open_data', 'community', 'all']) {
     await page.getByLabel('Origem dos pontos').selectOption(provenance);
     const expected = points.filter(point => provenance === 'all' || point.provenanceMeta.provenance === provenance).length;
@@ -404,6 +405,7 @@ test('mobile: filtros recolhidos mantêm mapa acessível e controles avançados 
   const sheet = page.getByRole('region',{name:'Busca e lista do catálogo territorial'});
   await expect(sheet.getByLabel('Origem dos pontos')).not.toBeVisible();
   await sheet.getByRole('button',{name:'Expandir ou recolher lista de pontos e filtros'}).click();
+  await sheet.getByText('Refinar busca · filtros avançados', { exact: true }).click();
   await expect(sheet.getByLabel('Origem dos pontos')).toBeVisible();
   await sheet.getByLabel('Situação da verificação').selectOption('verified');
   await expect(sheet.getByRole('button',{name:'Limpar todos os filtros'})).toBeVisible();
@@ -471,6 +473,7 @@ test('catálogo completo: permite explorar registros sem conhecer nome e procura
   const panel = mobile
     ? page.getByRole('region', { name: 'Busca e lista do catálogo territorial' })
     : page.getByRole('complementary', { name: 'Painel de busca e catálogo territorial' });
+  if (mobile) await panel.getByRole('button', { name: 'Expandir ou recolher lista de pontos e filtros' }).click();
   await panel.getByRole('button', { name: 'Explorar cadastros e serviços sem localização' }).click();
   const docs = panel.getByRole('region', { name: 'Cadastros sem geolocalização' });
   await expect(docs).toBeVisible();

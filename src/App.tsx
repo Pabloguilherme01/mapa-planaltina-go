@@ -336,9 +336,10 @@ export default function App() {
           </div>
 
           <main
-            className="flex-1 h-[calc(100vh-6rem)] relative overflow-hidden flex flex-col"
+            className="map-workspace flex-1 relative overflow-hidden flex flex-col"
             role="main"
             aria-label="Área principal do mapa"
+            data-picking={Boolean(routePickMode)}
           >
             {showWelcomeBanner && (
               <div className="lg:hidden absolute top-2 inset-x-3 z-30 pointer-events-auto">
@@ -382,7 +383,7 @@ export default function App() {
               />
             </div>
 
-            <MobileBottomSheet
+            {!routePickMode && <MobileBottomSheet
               selectedProvenance={selectedProvenance}
               onSelectProvenance={setSelectedProvenance}
               kindOptions={kindOptions}
@@ -412,8 +413,9 @@ export default function App() {
               onToggleCategory={handleToggleCategory}
               onSelectAllCategories={handleSelectAllCategories}
               categoryCounts={categoryCounts}
-            />
-            <MobilityHub points={allPoints} selectedPoint={selectedPoint}
+              isLoading={isLoading} isError={isError} onRetry={loadData}
+            />}
+            <MobilityHub isPicking={Boolean(routePickMode)} points={allPoints} selectedPoint={selectedPoint}
               userLocation={userLocation} onRoutePreview={setRoutePreview}
               mapOrigin={mapOrigin} mapDestination={mapDestination}
               onRequestMapPick={setRoutePickMode} />

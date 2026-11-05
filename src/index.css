@@ -151,3 +151,24 @@
 @media (prefers-reduced-motion: reduce) {
   .transition-all, .transition-colors { transition-duration: 0ms !important; }
 }
+
+/* Trajeto: superfícies claras, sinalização forte e espaço para decidir no mapa. */
+:root { --mobile-nav-height: calc(4rem + env(safe-area-inset-bottom, 0px)); }
+.premium-header { background: #101b22; }
+.map-workspace { height: calc(100dvh - 6rem); }
+.mobile-navigation { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.mobile-navigation button[aria-current="page"] { border-top: 3px solid #355e3b; }
+.mobile-catalog { bottom: var(--mobile-nav-height); background: #fff; }
+.catalog-collapsed { height: 166px; }
+.catalog-expanded { height: min(72dvh, 720px); max-height: calc(100dvh - 4rem - var(--mobile-nav-height)); padding-bottom: 166px; }
+  .map-workspace[data-picking="true"] { padding-bottom: 0; }
+@media (max-width: 1023px) {
+  .map-workspace { height: calc(100dvh - 4rem - var(--mobile-nav-height)); padding-bottom: 166px; }
+  .map-workspace[data-picking="true"] { padding-bottom: 0; }
+  .mobile-catalog input, .mobile-catalog select, dialog input, dialog select { font-size: 16px; }
+  .mobile-catalog:has(input:focus-visible) { border-color: #355e3b; }
+  .leaflet-control-attribution { max-width: 70vw; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-catalog { transition: none; }
+}
