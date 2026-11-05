@@ -36,17 +36,23 @@ function permissions(tags: Record<string, unknown>): { forward: number; backward
   const bike = cycleRoads.has(highway) && !['motorway','trunk','motorway_link','trunk_link','steps'].includes(highway) &&
     !accessDenied(tags.bicycle) && !accessDenied(tags.vehicle);
   if (tags.motor_vehicle === 'destination' || tags.motorcar === 'destination') drive = false;
-  const forward = (drive ? CAR : 0) | (walk ? WALK : 0) | (bike ? BIKE : 0);
-  if (!forward) return { forward: 0, backward: 0 };
+  if (!drive && !walk && !bike) return { forward: 0, backward: 0 };
   const oneway = tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true' ||
     tags.junction === 'roundabout';
   const reverse = tags.oneway === '-1';
-  const bothCycle = tags['oneway:bicycle'] === 'no';
+  const bicycleOneway = tags['oneway:bicycle'];
+  const bikeForward = bicycleOneway === 'no' ? true :
+    bicycleOneway === '-1' ? false :
+    bicycleOneway === 'yes' || bicycleOneway === '1' || bicycleOneway === 'true' ? true : !reverse;
+  const bikeBackward = bicycleOneway === 'no' ? true :
+    bicycleOneway === '-1' ? true :
+    bicycleOneway === 'yes' || bicycleOneway === '1' || bicycleOneway === 'true' ? false : !oneway;
+  const forward = (drive && !reverse ? CAR : 0) | (walk ? WALK : 0) | (bike && bikeForward ? BIKE : 0);
   const backward = (drive && !oneway && !reverse ? CAR : 0) |
     (walk ? WALK : 0) |
-    (bike && (!oneway && !reverse || bothCycle) ? BIKE : 0);
+    (bike && bikeBackward ? BIKE : 0);
   if (reverse) {
-    return { forward: forward & ~(CAR | (bothCycle ? 0 : BIKE)), backward: backward | (drive ? CAR : 0) | (bike ? BIKE : 0) };
+    return { forward, backward: backward | (drive ? CAR : 0) };
   }
   return { forward, backward };
 }
