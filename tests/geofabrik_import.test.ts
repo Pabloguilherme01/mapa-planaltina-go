@@ -9,6 +9,10 @@ const validPoint = (id: number, name: string) => ({
 });
 
 describe('importação do extrato Geofabrik sem geocodificação', () => {
+  it('limita geometria extensa sem alocar arrays de coordenadas intermediários', () => {
+    const feature = { type: 'Feature', geometry: { type: 'LineString', coordinates: Array.from({ length: 100_001 }, () => [-47.6029, -15.4542]) }, properties: { '@id': 59, '@type': 'way', name: 'Área extensa', leisure: 'park' } };
+    expect(geojsonToOsmElements({ features: [feature] })).toEqual([]);
+  });
   it('inclui paradas de ônibus sem nome apenas com coordenadas reais de nós OSM', () => {
     const features = [
       { ...validPoint(56, 'x'), properties: { '@id': 56, '@type': 'node', highway: 'bus_stop' } },
