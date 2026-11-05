@@ -9,6 +9,17 @@ const validPoint = (id: number, name: string) => ({
 });
 
 describe('importação do extrato Geofabrik sem geocodificação', () => {
+  it('inclui paradas de ônibus sem nome apenas com coordenadas reais de nós OSM', () => {
+    const features = [
+      { ...validPoint(56, 'x'), properties: { '@id': 56, '@type': 'node', highway: 'bus_stop' } },
+      { ...validPoint(57, 'x'), properties: { '@id': 57, '@type': 'node', shop: 'bakery' } },
+    ];
+    const result = mapOverpassElements({ elements: geojsonToOsmElements({ features }) }, '2026-10-19T12:00:00.000Z');
+    expect(result).toHaveLength(1);
+    expect(result[0].name).toBe('Parada de ônibus sem nome no OSM');
+    expect(result[0].category).toBe('Transporte');
+    expect(result[0].provenanceMeta.verificationStatus).toBe('unverified');
+  });
   it('preserva IDs nativos de nós e dados escolares identificados', () => {
     const result = geojsonToOsmElements({ type: 'FeatureCollection', features: [validPoint(55, 'Escola Teste')] });
     expect(mapOverpassElements({ elements: result }, '2026-10-19T12:00:00.000Z')[0].id).toBe('osm-node-55');

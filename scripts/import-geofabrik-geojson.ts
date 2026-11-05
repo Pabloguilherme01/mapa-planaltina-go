@@ -66,7 +66,8 @@ export function geojsonToOsmElements(payload: unknown): OsmElement[] {
     for (const [key, value] of Object.entries(properties)) {
       if (TAG_KEYS.has(key) && typeof value === 'string') tags[key] = value;
     }
-    if (!tags.name || !Object.keys(tags).some(key => key !== 'name' && !key.startsWith('addr:'))) continue;
+    const unnamedBusStop = type === 'node' && tags.highway === 'bus_stop' && !tags.name;
+    if ((!tags.name && !unnamedBusStop) || !Object.keys(tags).some(key => key !== 'name' && !key.startsWith('addr:'))) continue;
     result.push(type === 'node'
       ? { type, id, lat: center.lat, lon: center.lon, tags }
       : { type, id, center, tags });

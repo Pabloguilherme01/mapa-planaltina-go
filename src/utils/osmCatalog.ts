@@ -94,7 +94,7 @@ export function overpassQuery(scope: 'municipality' | 'urban' = 'municipality'):
     ? [Math.max(minLat, urbanBounds[0]), Math.max(minLng, urbanBounds[1]), Math.min(maxLat, urbanBounds[2]), Math.min(maxLng, urbanBounds[3])]
     : [minLat, minLng, maxLat, maxLng];
   const bbox = bounds.map(value => value.toFixed(5)).join(',');
-  return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox}););out center tags;`;
+  return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});node["highway"="bus_stop"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox}););out center tags;`;
 }
 
 export function mapOverpassElements(payload: unknown, retrievedAt: string): MapPoint[] {
@@ -113,7 +113,8 @@ export function mapOverpassElements(payload: unknown, retrievedAt: string): MapP
         ['yes', 'true'].includes(tag(tags, 'abandoned')) ||
         ['yes', 'true'].includes(tag(tags, 'demolished')) ||
         tag(tags, 'opening_date') === 'planned') continue;
-    const name = clean(tags.name);
+    const name = clean(tags.name) || (tags.name == null && raw.type === 'node' && tag(tags, 'highway') === 'bus_stop'
+      ? 'Parada de ônibus sem nome no OSM' : null);
     const kind = classify(tags);
     if (!name || !kind) continue;
     const lat = raw.type === 'node' ? raw.lat : raw.center?.lat;
