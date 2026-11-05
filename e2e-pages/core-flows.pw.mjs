@@ -505,6 +505,8 @@ test.describe('planejamento com rede lenta', () => {
     test.skip(testInfo.project.name.includes('mobile'), 'Seleção de origem e destino no mapa desktop');
     let release;
     let markRequested;
+    let markFinished;
+    const finished = new Promise(resolve => { markFinished = resolve; });
     const held = new Promise(resolve => { release = resolve; });
     const requested = new Promise(resolve => { markRequested = resolve; });
     await page.route('**/data/road-graph.json', async route => {
@@ -512,6 +514,7 @@ test.describe('planejamento com rede lenta', () => {
       await held;
       try { await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); }
       catch { /* A requisição pode ter sido abortada pelo aplicativo. */ }
+      finally { markFinished(); }
     });
     await page.goto('./');
     await page.getByRole('button', { name: 'Planejar viagem' }).click();
@@ -527,6 +530,7 @@ test.describe('planejamento com rede lenta', () => {
     await planner.getByRole('button', { name: 'Fechar planejador' }).click();
     await page.getByRole('button', { name: 'Planejar viagem' }).click();
     release();
+    await finished;
     await expect(planner).toBeVisible();
     await expect(planner).not.toContainText('Malha viária inválida');
     await expect(planner.getByRole('button', { name: 'Traçar rota no mapa' })).not.toHaveText('Calculando…');
