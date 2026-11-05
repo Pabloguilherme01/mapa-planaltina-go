@@ -49,6 +49,25 @@ describe('roteamento local por ruas OSM', () => {
     expect(planLocalRoute(oneWay, finish, mid, 'driving')).toBeNull();
   });
 
+  it('A* escolhe a menor ligação OSM e não ignora mão única em percurso alternativo', () => {
+    const west = [-47.603, -15.4542];
+    const east = [-47.601, -15.4542];
+    const eastNorth = [-47.601, -15.4537];
+    const westNorth = [-47.603, -15.4537];
+    const graph = network([
+      road('way/direta', { oneway: 'yes' }, [west, [-47.602, -15.4542], east]),
+      road('way/retorno', { oneway: 'yes' }, [east, eastNorth, westNorth, west]),
+    ]);
+    const outbound = planLocalRoute(graph, a, { lat: east[1], lng: east[0] }, 'driving');
+    const returnTrip = planLocalRoute(graph, { lat: east[1], lng: east[0] }, a, 'driving');
+    expect(outbound).not.toBeNull();
+    expect(returnTrip).not.toBeNull();
+    expect(outbound!.distanceMeters).toBeLessThan(260);
+    expect(returnTrip!.distanceMeters).toBeGreaterThan(outbound!.distanceMeters);
+    expect(outbound!.coordinates.every(([lat]) => Math.abs(lat - west[1]) < 0.00001)).toBe(true);
+    expect(returnTrip!.coordinates.some(([lat]) => lat > west[1] + 0.0004)).toBe(true);
+  });
+
   it('não perde a rua mais próxima em bordas de células do índice espacial', () => {
     const graph = network([road('way/1')]);
     const start = { lat: -15.4542 + 0.0012, lng: -47.603 };
