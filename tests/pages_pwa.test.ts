@@ -59,6 +59,38 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain("catch (error)");
     expect(source).toContain("caches.match(request, { ignoreVary: true })");
   });
+  it('preserva a malha offline quando o servidor retorna JSON inválido ou arestas corrompidas', async () => {
+    const source = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-test', assets: [] });
+    const handlers = new Map<string, (event: any) => void>();
+    const cachedGraph = { version: 1, source: 'OpenStreetMap/Geofabrik', createdAt: '2026-11-05T00:00:00Z',
+      nodes: [[-15.45, -47.60], [-15.45, -47.61]], edges: [[0, 1, 1]] };
+    const put = vi.fn().mockResolvedValue(undefined);
+    const match = vi.fn().mockImplementation(async () => new Response(JSON.stringify(cachedGraph)));
+    const fetchMock = vi.fn();
+    runInNewContext(source, { URL, Response, AbortSignal, fetch: fetchMock,
+      caches: { match, open: async () => ({ put }) },
+      self: { location: { origin: 'https://pabloguilherme01.github.io' },
+        addEventListener: (type: string, handler: (event: any) => void) => handlers.set(type, handler) } });
+    const onFetch = handlers.get('fetch')!;
+    async function getGraph() {
+      let result: Promise<Response> | undefined;
+      onFetch({ request: { method: 'GET', mode: 'cors', url: 'https://pabloguilherme01.github.io' + BASE + 'data/road-graph.json' },
+        respondWith: (value: Promise<Response>) => { result = value; } });
+      return await result!;
+    }
+    fetchMock.mockResolvedValueOnce(new Response('<html>falha</html>', { status: 200 }));
+    expect(await (await getGraph()).json()).toEqual(cachedGraph);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ...cachedGraph, edges: [[0, 9, 1]] }), { status: 200 }));
+    expect(await (await getGraph()).json()).toEqual(cachedGraph);
+    expect(put).not.toHaveBeenCalled();
+    match.mockResolvedValueOnce(new Response('{"nodes":[]}'));
+    fetchMock.mockResolvedValueOnce(new Response('inválido', { status: 200 }));
+    expect((await getGraph()).type).toBe('error');
+    expect(put).not.toHaveBeenCalled();
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(cachedGraph), { status: 200 }));
+    expect(await (await getGraph()).json()).toEqual(cachedGraph);
+    expect(put).toHaveBeenCalledOnce();
+  });
   it('usa timeout em redes intermitentes para não prender o mapa offline', () => {
     const sw = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-v2',
       assets: ['data/points.json', 'assets/app.js'] });
@@ -79,6 +111,31 @@ describe('GitHub Pages PWA assets', () => {
     expect(sw).toContain("await migrateOfflineRoadGraph()");
     expect(sw).toContain("caches.delete(key)");
     expect(sw.indexOf('await migrateOfflineRoadGraph()')).toBeLessThan(sw.indexOf('caches.delete(key)'));
+  });
+
+  it('procura outra malha ao migrar cache antigo com JSON quebrado', async () => {
+    const source = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-new', assets: [] });
+    const handlers = new Map<string, (event: any) => void>();
+    const graph = { version: 1, source: 'OpenStreetMap/Geofabrik', createdAt: new Date().toISOString(),
+      nodes: Array.from({ length: 100 }, (_, i) => [-15.45, -47.60 + i / 100000]),
+      edges: Array.from({ length: 100 }, (_, i) => [i, (i + 1) % 100, 1]) };
+    const put = vi.fn().mockResolvedValue(undefined);
+    const oldCaches: Record<string, any> = {
+      'mapa-planaltina-new': { match: async () => undefined, put },
+      'mapa-planaltina-corrupted': { match: async () => new Response('não é JSON') },
+      'mapa-planaltina-valid': { match: async () => new Response(JSON.stringify(graph)) },
+    };
+    const remove = vi.fn().mockResolvedValue(true);
+    runInNewContext(source, { URL, Response, Date,
+      caches: { open: async (key: string) => oldCaches[key], keys: async () => Object.keys(oldCaches), delete: remove },
+      self: { clients: { claim: vi.fn().mockResolvedValue(undefined) },
+        addEventListener: (type: string, handler: (event: any) => void) => handlers.set(type, handler) } });
+    let activation: Promise<void> | undefined;
+    handlers.get('activate')!({ waitUntil: (promise: Promise<void>) => { activation = promise; } });
+    await activation;
+    expect(put).toHaveBeenCalledOnce();
+    expect(await put.mock.calls[0][1].json()).toEqual(graph);
+    expect(remove).toHaveBeenCalledTimes(2);
   });
 
   it('faz match do precache por URL mesmo quando a resposta varia por Origin', () => {

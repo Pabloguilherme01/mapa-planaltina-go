@@ -97,6 +97,22 @@ const REFRESHABLE_DATA = new Set([
 ]);
 const PRECACHE_URLS = ${JSON.stringify(precacheUrls, null, 2)};
 
+// Uma resposta HTTP 200 não comprova que o JSON contém uma malha utilizável.
+// Aplicar os mesmos limites do planejador antes de substituir o cache offline.
+function validRoadGraph(graph) {
+  if (!graph || graph.version !== 1 || graph.source !== 'OpenStreetMap/Geofabrik' ||
+      typeof graph.createdAt !== 'string' || !Number.isFinite(Date.parse(graph.createdAt)) ||
+      !Array.isArray(graph.nodes) || !Array.isArray(graph.edges) ||
+      graph.nodes.length === 0 || graph.edges.length === 0 ||
+      graph.nodes.length > 450000 || graph.edges.length > 1300000) return false;
+  return graph.nodes.every(n => Array.isArray(n) && n.length === 2 &&
+    Number.isFinite(n[0]) && Number.isFinite(n[1]) && Math.abs(n[0]) <= 90 && Math.abs(n[1]) <= 180) &&
+    graph.edges.every(e => Array.isArray(e) && e.length === 3 &&
+      Number.isSafeInteger(e[0]) && e[0] >= 0 && e[0] < graph.nodes.length &&
+      Number.isSafeInteger(e[1]) && e[1] >= 0 && e[1] < graph.nodes.length &&
+      Number.isSafeInteger(e[2]) && e[2] >= 1 && e[2] <= 7);
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -117,10 +133,11 @@ async function migrateOfflineRoadGraph() {
       const previous = await caches.open(key);
       const response = await previous.match(GRAPH_URL, { ignoreVary: true });
       if (!response || !response.ok) continue;
-      const graph = await response.clone().json();
+      let graph;
+      try { graph = await response.clone().json(); } catch { continue; }
       const stamp = Date.parse(graph?.createdAt);
       const age = Date.now() - stamp;
-      if (graph?.version !== 1 || graph?.source !== 'OpenStreetMap/Geofabrik' ||
+      if (!validRoadGraph(graph) ||
           !Array.isArray(graph.nodes) || graph.nodes.length < 100 ||
           !Array.isArray(graph.edges) || graph.edges.length < 100 ||
           !Number.isFinite(stamp) || age < -24 * 60 * 60 * 1000 ||
@@ -152,6 +169,13 @@ async function cacheResponse(request, response) {
     // Falha de armazenamento ou cota offline não deve impedir o acesso online.
   }
   return response;
+}
+
+async function cachedData(request, pathname) {
+  const cached = await caches.match(request, { ignoreVary: true });
+  if (!cached || pathname !== GRAPH_URL) return cached;
+  try { return validRoadGraph(await cached.clone().json()) ? cached : undefined; }
+  catch { return undefined; }
 }
 
 async function navigationFallback(request) {
@@ -190,11 +214,16 @@ self.addEventListener('fetch', (event) => {
     event.respondWith((async () => {
       try {
         const fresh = await fetch(request, { signal: AbortSignal.timeout(6000) });
-        if (fresh.ok) return cacheResponse(request, fresh);
-        const cached = await caches.match(request, { ignoreVary: true });
+        if (fresh.ok) {
+          if (url.pathname === GRAPH_URL && !validRoadGraph(await fresh.clone().json())) {
+            throw new Error('Malha viária inválida');
+          }
+          return cacheResponse(request, fresh);
+        }
+        const cached = await cachedData(request, url.pathname);
         return cached || fresh;
       } catch (error) {
-        return await caches.match(request, { ignoreVary: true }) || Response.error();
+        return await cachedData(request, url.pathname) || Response.error();
       }
     })());
     return;
