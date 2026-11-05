@@ -8,7 +8,6 @@ import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { CategoryFilterBar } from '../Filters/CategoryFilterBar.tsx';
 import {
   ChevronUp,
-  ChevronDown,
   AlertTriangle,
   Eye,
   Search,
@@ -125,18 +124,18 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </div>
 
-      {isExpanded && <div className="mb-2 shrink-0">
+      {isExpanded && !browseDirectory && <details className="max-h-[28dvh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
+      <summary className="touch-target flex items-center text-sm font-bold cursor-pointer">Refinar busca · filtros avançados</summary>
+      <div className="mt-2 mb-2">
         <CategoryFilterBar
           selectedCategories={selectedCategories}
           onToggleCategory={onToggleCategory}
           onSelectAll={onSelectAllCategories}
           categoryCounts={categoryCounts}
         />
-      </div>}
-      {isExpanded && <FilterActions count={activeFilterCount} resultCount={points.length}
-          onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />}
-      {isExpanded && !browseDirectory && <details className="max-h-[28dvh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
-      <summary className="touch-target flex items-center text-sm font-bold cursor-pointer">Refinar busca · filtros avançados</summary>
+      </div>
+      <FilterActions count={activeFilterCount} resultCount={points.length}
+        onClear={onClearAllFilters} onCopy={onShareFilters} feedback={shareFeedback} />
       <label className="mb-2 flex shrink-0 items-center gap-2 text-xs font-bold">Origem dos pontos
         <select value={selectedProvenance} onChange={event => onSelectProvenance(event.target.value as ProvenanceType | 'all')} className="min-h-11 min-w-0 flex-1 rounded-lg border border-neutral-400 bg-white px-2">
           <option value="all">Todas as origens</option><option value="official">Oficiais</option><option value="verified_open_data">Dados abertos verificados</option><option value="community">Comunidade</option><option value="demo">Somente DEMO</option>
@@ -190,38 +189,35 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </section>
       </details>}
-              {isExpanded && <button type="button" aria-pressed={browseDirectory}
-          aria-label="Explorar cadastros e serviços sem localização"
-          onClick={() => { setBrowseDirectory(current => !current); setIsExpanded(true); }}
-          className="touch-target inline-flex items-center justify-center gap-2 rounded-xl border border-[#355E3B]/30 bg-white px-3 py-2 text-xs font-extrabold text-[#355E3B] shadow-sm">
-          {browseDirectory ? 'Fechar catálogo complementar' : 'Explorar cadastros e serviços'}
-        </button>}
-
       <div className="flex items-center justify-between mb-1.5 px-1 shrink-0">
-        <div className="flex items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-1.5">
           <div className="w-6 h-6 rounded-lg bg-emerald-100 text-[#355E3B] flex items-center justify-center">
             <Building size={14} />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 id="mobile-results-heading" className="text-xs font-bold text-[#121E14] leading-tight">
               {points.length} pontos no catálogo
             </h2>
-            <p className="text-[10px] text-neutral-500">
+            <p className="truncate text-[10px] text-neutral-500">
               Planaltina, Goiás • {realCount} locais reais mapeados
             </p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsExpanded(!isExpanded)}
-          aria-expanded={isExpanded}
-          aria-controls="mobile-points-list"
-          className="touch-target px-2.5 py-1 text-[#355E3B] text-xs font-bold flex items-center gap-1"
-        >
-          <span>{isExpanded ? 'Recolher' : 'Expandir lista'}</span>
-          {isExpanded ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-        </button>
+        {isExpanded ? (
+          <button type="button" aria-pressed={browseDirectory}
+            aria-label={browseDirectory ? 'Voltar aos pontos mapeados' : 'Explorar cadastros e serviços sem localização'}
+            onClick={() => setBrowseDirectory(current => !current)}
+            className="touch-target shrink-0 rounded-lg border border-[#355E3B]/30 bg-white px-2.5 py-1 text-xs font-bold text-[#355E3B]">
+            {browseDirectory ? 'Ver locais' : 'Cadastros'}
+          </button>
+        ) : (
+          <button type="button" onClick={() => setIsExpanded(true)}
+            aria-expanded={false} aria-controls="mobile-points-list"
+            className="touch-target shrink-0 px-2.5 py-1 text-[#355E3B] text-xs font-bold flex items-center gap-1">
+            Expandir lista <ChevronUp size={15} />
+          </button>
+        )}
       </div>
 
       <div

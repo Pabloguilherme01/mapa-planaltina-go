@@ -23,3 +23,54 @@ for (const width of [320, 390, 768]) {
     await expect(sheet).toHaveClass(/catalog-collapsed/);
   });
 }
+
+for (const viewport of [
+  { width: 320, height: 700 },
+  { width: 390, height: 844 },
+]) {
+  test(`mobile ${viewport.width}px: zoom acessível, lista utilizável e fontes claras`, async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+    await page.setViewportSize(viewport);
+    await page.goto('./');
+
+    const zoomIn = page.locator('.leaflet-control-zoom-in');
+    const planner = page.getByRole('button', { name: 'Planejar viagem' });
+    await expect(zoomIn).toBeVisible();
+    await expect(planner).toBeVisible();
+    const zoomRect = await zoomIn.boundingBox();
+    const planRect = await planner.boundingBox();
+    expect(zoomRect).not.toBeNull();
+    expect(planRect).not.toBeNull();
+    const overlap = zoomRect.x < planRect.x + planRect.width
+      && zoomRect.x + zoomRect.width > planRect.x
+      && zoomRect.y < planRect.y + planRect.height
+      && zoomRect.y + zoomRect.height > planRect.y;
+    expect(overlap, 'Zoom não pode ser encoberto pelo planejador').toBe(false);
+    // Detecta sobreposição por hit-test, mesmo quando os retângulos parecem separados.
+    await zoomIn.click({ trial: true });
+    await page.locator('.leaflet-control-zoom-out').click({ trial: true });
+
+    await page.locator('#mobile-search-input').fill('centro');
+    const results = page.locator('#mobile-points-list');
+    await expect(results).toBeVisible();
+    // A expansão tem transição CSS de 300ms; medir o tamanho final,
+    // não o primeiro frame (que ainda tem altura de painel recolhido).
+    await expect.poll(async () => (await results.boundingBox())?.height ?? 0, {
+      message: 'Resultados precisam de espaço para leitura e toque após expandir',
+      timeout: 5_000,
+    }).toBeGreaterThan(100);
+
+    await page.getByRole('navigation', { name: 'Navegação móvel' })
+      .getByRole('button', { name: 'Fontes, proveniência e serviços digitais' }).click();
+    await expect(page).toHaveURL(/\/fontes\/?$/);
+  });
+}
+
+test('desktop: os dois controles de zoom ficam clicáveis sem sobreposição do planejador', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Fluxo específico desktop');
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('./');
+  await expect(page.getByRole('button', { name: 'Planejar viagem' })).toBeVisible();
+  await page.locator('.leaflet-control-zoom-in').click({ trial: true });
+  await page.locator('.leaflet-control-zoom-out').click({ trial: true });
+});
