@@ -27,6 +27,8 @@ jobs:
           cache: npm
       - name: Instalar dependências do projeto
         run: npm ci
+      - name: Validar runtime exato instalado pelo lockfile
+        run: npm run check:runtime
       - name: Instalar ferramentas de QA sem alterar o lockfile
         run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1 @axe-core/playwright@4.13.0
       - name: Restaurar rede viária validada
