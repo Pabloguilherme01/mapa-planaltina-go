@@ -26,6 +26,9 @@ const AMENITIES: Record<string, Kind> = {
   public_building: { category: 'Serviços Públicos', label: 'Órgão público' },
   social_facility: { category: 'Serviços Públicos', label: 'Assistência social' },
   community_centre: { category: 'Serviços Públicos', label: 'Centro comunitário' },
+  childcare: { category: 'Educação', label: 'Cuidado infantil' },
+  training: { category: 'Educação', label: 'Centro de formação' },
+  veterinary: { category: 'Saúde', label: 'Clínica veterinária' },
   bus_station: { category: 'Transporte', label: 'Rodoviária' },
   ferry_terminal: { category: 'Transporte', label: 'Terminal de transporte' },
   fuel: { category: 'Comércio', label: 'Posto de combustível' },
@@ -70,12 +73,13 @@ function classify(tags: Tags): Kind | null {
   const transport = tag(tags, 'public_transport') || tag(tags, 'highway');
   if (['platform', 'station', 'stop_position', 'bus_stop'].includes(transport)) return { category: 'Transporte', label: 'Parada de transporte' };
   const leisure = tag(tags, 'leisure');
-  if (['park', 'sports_centre', 'sports_hall', 'playground', 'stadium', 'fitness_centre'].includes(leisure)) return { category: 'Lazer', label: 'Lazer e esporte' };
+  if (['park', 'garden', 'sports_centre', 'sports_hall', 'playground', 'stadium', 'fitness_centre', 'pitch'].includes(leisure)) return { category: 'Lazer', label: 'Lazer e esporte' };
+  if (leisure === 'nature_reserve') return { category: 'Meio Ambiente', label: 'Reserva natural' };
   const tourism = tag(tags, 'tourism');
-  if (['attraction', 'museum', 'viewpoint', 'gallery'].includes(tourism)) return { category: 'Lazer', label: 'Atrativo' };
+  if (['attraction', 'museum', 'viewpoint', 'gallery', 'artwork', 'zoo'].includes(tourism)) return { category: 'Lazer', label: 'Atrativo' };
   if (['hotel', 'guest_house', 'hostel', 'motel'].includes(tourism)) return { category: 'Comércio', label: 'Hospedagem' };
   const healthcare = tag(tags, 'healthcare');
-  if (['hospital', 'clinic', 'doctor', 'dentist', 'pharmacy'].includes(healthcare)) return { category: 'Saúde', label: 'Serviço de saúde' };
+  if (['hospital', 'clinic', 'doctor', 'dentist', 'pharmacy', 'physiotherapist', 'laboratory', 'psychotherapist', 'rehabilitation'].includes(healthcare)) return { category: 'Saúde', label: 'Serviço de saúde' };
   return null;
 }
 
