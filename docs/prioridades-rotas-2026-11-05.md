@@ -2,6 +2,21 @@
 
 Esta lista identifica ligações prioritárias para pesquisa e validação. Não afirma que cada via está ausente do mapa, nem apresenta itinerários calculados ou horários vigentes. A malha local é recortada pelo limite municipal; portanto não calcula viagens completas para outras cidades.
 
+## Vias urbanas prioritárias para avaliação
+
+O memorial estadual das circunscrições de Planaltina-GO descreve os cruzamentos abaixo. A prioridade é proposta para testar a rede; o documento não classifica fluxo de veículos nem prova que exista falha no aplicativo. A grafia e o enquadramento espacial devem ser conferidos no OSM e em campo antes de destacar trechos no mapa.
+
+| Via ou trecho | Referência documental | Teste prioritário |
+| --- | --- | --- |
+| Avenida Elísio Vaz | Conecta-se à Rua 7 e à Avenida Pedro Ludovico no memorial; há também endereço de serviço público estadual nessa avenida. | Testar acessos entre os dois cruzamentos e destinos verificados próximos, nos dois sentidos e por modo. |
+| Avenida Pedro Ludovico | O memorial a liga à Elísio Vaz e à Rua 16. | Testar a continuidade com os trechos vizinhos, direções permitidas e acesso a serviços. |
+| Rua dos Carbonari / GO-534 | O memorial descreve mudança de nome após o cruzamento da Pedro Ludovico com a Rua 16 e continuidade em direção à divisa do DF. | Testar o trecho municipal e a transição na Rua 16; viagens além da divisa não são cobertas pelo grafo atual. |
+| Avenida B / GO-430 | O memorial usa ambos os nomes no trecho que cruza a Rua 7. | Testar o acesso à Rua 7 e a conectividade com a rede urbana em ambos os sentidos. |
+| Rua 7 | O memorial identifica seus cruzamentos com Avenida B/GO-430 e Elísio Vaz. | Verificar conexão aos dois eixos, sentidos e acessos para pedestres e bicicletas. |
+| Rua 16 | O memorial a usa como referência para a mudança entre Pedro Ludovico e Rua dos Carbonari/GO-534. | Testar continuidade e opções legais de conversão; relações de restrição ainda não são processadas pelo grafo. |
+
+Fontes: [memorial estadual das circunscrições de Planaltina](https://legisla.casacivil.go.gov.br/api/v1/arquivos/18608) e [endereço estadual de serviço na Avenida Elísio Vaz](https://goias.gov.br/administracao/inexigibilidade-2024/). Consultadas em 05/11/2026.
+
 | Prioridade | Ligação a estudar | Evidência e próximo passo | Aceite |
 | --- | --- | --- | --- |
 | P0 | Deslocamentos locais: bairros, saúde e serviços | Medir conectividade no grafo OSM publicado usando origens e destinos com coordenadas verificadas, nos dois sentidos e por modo. Registrar data do snapshot e pontos sem ligação. | Testes de trajetos representativos e checagem de campo; corrigir no OSM com evidência, sem gerar segmentos artificiais. |
