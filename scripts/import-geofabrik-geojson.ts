@@ -35,19 +35,24 @@ function geometryCenter(raw: unknown): Position | null {
   if (!asRecord(raw)) return null;
   const type = raw.type;
   if (!['Point', 'LineString', 'MultiLineString', 'Polygon', 'MultiPolygon'].includes(String(type))) return null;
-  const pairs: [number, number][] = [];
+  let count = 0;
+  let minLon = Infinity, maxLon = -Infinity, minLat = Infinity, maxLat = -Infinity;
   const visit = (part: unknown, depth = 0) => {
-    if (!Array.isArray(part) || depth > 8 || pairs.length > 100_000) return;
+    if (!Array.isArray(part) || depth > 8 || count > 100_000) return;
     if (part.length >= 2 && typeof part[0] === 'number' && typeof part[1] === 'number') {
-      if (Number.isFinite(part[0]) && Number.isFinite(part[1])) pairs.push([part[0], part[1]]);
+      if (Number.isFinite(part[0]) && Number.isFinite(part[1])) {
+        count++;
+        minLon = Math.min(minLon, part[0]); maxLon = Math.max(maxLon, part[0]);
+        minLat = Math.min(minLat, part[1]); maxLat = Math.max(maxLat, part[1]);
+      }
       return;
     }
     for (const child of part) visit(child, depth + 1);
   };
   visit(raw.coordinates);
-  if (pairs.length === 0 || pairs.length > 100_000) return null;
-  const lon = (Math.min(...pairs.map(p => p[0])) + Math.max(...pairs.map(p => p[0]))) / 2;
-  const lat = (Math.min(...pairs.map(p => p[1])) + Math.max(...pairs.map(p => p[1]))) / 2;
+  if (count === 0 || count > 100_000) return null;
+  const lon = (minLon + maxLon) / 2;
+  const lat = (minLat + maxLat) / 2;
   return Number.isFinite(lat) && Number.isFinite(lon) ? { lat, lon } : null;
 }
 
