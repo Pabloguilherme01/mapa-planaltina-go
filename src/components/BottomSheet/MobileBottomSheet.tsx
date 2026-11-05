@@ -256,10 +256,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                     </div>
                     <div className="min-w-0">
                       <h3 className="text-sm font-bold text-[#121E14] leading-snug break-words">{point.name}</h3>
-                      <p className="text-[10px] text-neutral-600">{point.category} • {point.zone}</p>
+                      <p className="text-xs text-neutral-600">{point.category} • {point.zone}</p>
                     </div>
                   </div>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[11px] font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
                     {isVerified ? <BadgeCheck size={9} /> : <AlertTriangle size={9} />}
                     {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : 'COLABORATIVO') : 'DEMO'}
                   </span>
@@ -267,7 +267,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 
                 {!isVerified && <div className="flex items-start gap-1 rounded-lg border border-orange-200 bg-orange-50 p-1.5 text-orange-900">
                   <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
-                  <p className="text-[10px] leading-tight">
+                  <p className="text-xs leading-snug">
                     {isReal ? 'Cadastro comunitário não verificado. Confirme o local na fonte.' :
                       'Ilustrativo. Não use para deslocamento.'}
                   </p>
