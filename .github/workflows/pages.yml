@@ -138,6 +138,8 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -161,3 +163,40 @@ jobs:
           grep -q '"ibgeCode":"5217609"' /tmp/points.json
           grep -q '"start_url": "/mapa-planaltina-go/"' /tmp/manifest.webmanifest
           grep -q '/mapa-planaltina-go/data/points.json' /tmp/sw.js
+
+  smoke-live:
+    name: Validar interface pública pós-deploy
+    if: github.event_name != 'pull_request'
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    container:
+      image: mcr.microsoft.com/playwright:v1.64.1-noble
+    steps:
+      - name: Obter código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Preparar Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24.22.1'
+          cache: npm
+      - name: Instalar dependências
+        run: npm ci
+      - name: Proteger contra divergência React e React DOM
+        run: npm run check:runtime
+      - name: Instalar Playwright sem alterar lockfile
+        run: npm install --no-save --package-lock=false --no-audit --no-fund @playwright/test@1.64.1
+      - name: Verificar mapa, catálogo e planejador no site público
+        env:
+          PUBLIC_SITE_URL: ${{ needs.deploy.outputs.page_url }}
+        run: npx playwright test --config=playwright.published.config.mjs
+      - name: Salvar traces e capturas em caso de falha
+        if: failure()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: live-render-smoke-${{ github.run_id }}
+          path: test-results/
+          retention-days: 7
+          if-no-files-found: warn
