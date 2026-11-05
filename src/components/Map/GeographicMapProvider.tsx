@@ -112,6 +112,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     if (!userLocation || !map.current) return;
     const marker = L.circleMarker([userLocation.lat, userLocation.lng], { radius: 8, color: '#fff', fillColor: '#1d4ed8', fillOpacity: 1 }).addTo(map.current);
     marker.bindTooltip('Sua posição — fornecida pelo dispositivo');
+    // O usuário solicitou explicitamente "Perto de mim"; mostrar a posição na tela.
+    map.current.setView([userLocation.lat, userLocation.lng], Math.max(14, map.current.getZoom()), { animate: false });
     return () => { marker.remove(); };
   }, [userLocation]);
   useEffect(() => {
