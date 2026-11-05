@@ -6,6 +6,20 @@ const entry = (id: number, tags: Record<string, string>, lat = -15.4542, lon = -
   ({ type: 'node', id, lat, lon, tags });
 
 describe('catálogo OSM municipal', () => {
+  it('apresenta tipos comerciais conhecidos em português sem alterar a origem comunitária', () => {
+    const points = mapOverpassElements({ elements: [
+      entry(41, { shop: 'beverages', name: 'Loja A' }),
+      entry(42, { shop: 'car_parts', name: 'Loja B' }),
+      entry(43, { shop: 'mall', name: 'Loja C' }),
+      entry(44, { shop: 'stationery', name: 'Loja D' }),
+      entry(45, { shop: 'travel_agency', name: 'Loja E' }),
+    ] }, snapshot);
+    expect(points.map(point => point.tags[0])).toEqual([
+      'Tipo: Bebidas', 'Tipo: Autopeças', 'Tipo: Centro comercial', 'Tipo: Papelaria', 'Tipo: Agência de viagens',
+    ]);
+    expect(points.every(point => point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+  });
+
   it('inclui tipos adicionais nomeados, preservando a indicação de fonte comunitária', () => {
     const points = mapOverpassElements({ elements: [
       entry(31, { amenity: 'veterinary', name: 'Veterinária Exemplo' }),
