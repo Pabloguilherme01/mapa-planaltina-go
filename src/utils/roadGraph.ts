@@ -244,19 +244,31 @@ export function planLocalRoute(graph: RoadGraph, start: MapCoordinates, end: Map
   if (!source || !target || source.id === target.id) return null;
   const distances = new Float64Array(graph.nodes.length).fill(Infinity);
   const previous = new Int32Array(graph.nodes.length).fill(-1);
+  // A* com heurística geodésica admissível: a distância em linha reta
+  // nunca ultrapassa o custo de uma rota por segmentos da própria malha.
+  // Assim preservamos a menor distância do Dijkstra e evitamos percorrer
+  // regiões desnecessárias no celular. O cálculo continua 100% local.
+  const goal = graph.nodes[target.id];
+  const heuristic = (id: number): number => {
+    const node = graph.nodes[id];
+    return distanceMeters(
+      { lat: node[0], lng: node[1] },
+      { lat: goal[0], lng: goal[1] },
+    );
+  };
   const heap = new MinHeap();
   distances[source.id] = 0;
-  heap.push([0, source.id]);
+  heap.push([heuristic(source.id), source.id]);
   while (heap.length) {
-    const item = heap.pop()!;
-    const [cost, from] = item;
-    if (cost > distances[from]) continue;
+    const [score, from] = heap.pop()!;
+    if (score > distances[from] + heuristic(from) + 1e-7) continue;
     if (from === target.id) break;
     for (const edge of prepared.adjacency[from]) {
-      const d = cost + edge.weight;
+      const d = distances[from] + edge.weight;
       if (d < distances[edge.to]) {
-        distances[edge.to] = d; previous[edge.to] = from;
-        heap.push([d, edge.to]);
+        distances[edge.to] = d;
+        previous[edge.to] = from;
+        heap.push([d + heuristic(edge.to), edge.to]);
       }
     }
   }
