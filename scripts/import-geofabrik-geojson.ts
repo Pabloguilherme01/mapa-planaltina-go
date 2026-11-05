@@ -8,7 +8,7 @@ type Position = { lat: number; lon: number };
 type OsmElement = { type: 'node' | 'way' | 'relation'; id: number; lat?: number; lon?: number; center?: Position; tags: Record<string, string> };
 const TAG_KEYS = new Set([
   'name', 'amenity', 'shop', 'office', 'leisure', 'tourism',
-  'public_transport', 'highway', 'healthcare', 'access',
+  'public_transport', 'highway', 'healthcare', 'railway', 'emergency', 'historic', 'access',
   'disused', 'abandoned', 'demolished', 'opening_date',
   'addr:street', 'addr:housenumber',
 ]);

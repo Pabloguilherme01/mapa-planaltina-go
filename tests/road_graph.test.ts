@@ -29,6 +29,26 @@ describe('roteamento local por ruas OSM', () => {
     expect(prepareRoadGraph(graph, 'walking')).toBe(first);
     expect(prepareRoadGraph({ ...graph, edges: [[0, 999999, 2]] }, 'walking')).toBeNull();
   });
+  it('permite planejar em segmentos longos já mapeados no OSM, sem ligar ruas independentes', () => {
+    const path = [[-47.603, -15.4542], [-47.597, -15.4542]];
+    const graph = network([road('way/longa', {}, path)]);
+    expect(validateRoadGraph(graph)).toBe(true);
+    expect(graph.nodes.length).toBeGreaterThan(2);
+    const mid = { lat: -15.4542, lng: -47.600 };
+    const finish = { lat: -15.4542, lng: -47.597 };
+    const calculated = planLocalRoute(graph, mid, finish, 'walking');
+    expect(calculated).not.toBeNull();
+    expect(calculated!.startAccessMeters).toBeLessThan(65);
+    expect(calculated!.distanceMeters).toBeGreaterThan(200);
+    const distances = calculated!.coordinates.slice(1).map((p, i) => {
+      const prev = calculated!.coordinates[i];
+      return Math.abs(p[1] - prev[1]);
+    });
+    expect(Math.max(...distances)).toBeLessThan(0.001);
+    const oneWay = network([road('way/longa-mao-unica', { oneway: 'yes' }, path)]);
+    expect(planLocalRoute(oneWay, finish, mid, 'driving')).toBeNull();
+  });
+
   it('não perde a rua mais próxima em bordas de células do índice espacial', () => {
     const graph = network([road('way/1')]);
     const start = { lat: -15.4542 + 0.0012, lng: -47.603 };

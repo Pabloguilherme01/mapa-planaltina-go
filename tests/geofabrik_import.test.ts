@@ -24,6 +24,17 @@ describe('importação do extrato Geofabrik sem geocodificação', () => {
     expect(result[0].category).toBe('Transporte');
     expect(result[0].provenanceMeta.verificationStatus).toBe('unverified');
   });
+  it('preserva tags OSM de transporte e emergência sem inventar lugares', () => {
+    const features = [
+      { ...validPoint(101, 'Estação de exemplo'), properties: { '@id': 101, '@type': 'node', name: 'Estação de exemplo', railway: 'station' } },
+      { ...validPoint(102, 'Base de exemplo'), properties: { '@id': 102, '@type': 'node', name: 'Base de exemplo', emergency: 'ambulance_station' } },
+    ];
+    const converted = geojsonToOsmElements({ features });
+    const points = mapOverpassElements({ elements: converted }, '2026-10-19T12:00:00.000Z');
+    expect(points.map(point => point.category)).toEqual(['Transporte', 'Segurança']);
+    expect(points.map(point => point.provenanceMeta.verificationStatus)).toEqual(['unverified', 'unverified']);
+  });
+
   it('preserva IDs nativos de nós e dados escolares identificados', () => {
     const result = geojsonToOsmElements({ type: 'FeatureCollection', features: [validPoint(55, 'Escola Teste')] });
     expect(mapOverpassElements({ elements: result }, '2026-10-19T12:00:00.000Z')[0].id).toBe('osm-node-55');
