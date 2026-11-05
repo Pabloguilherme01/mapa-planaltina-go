@@ -59,6 +59,38 @@ describe('GitHub Pages PWA assets', () => {
     expect(source).toContain("catch (error)");
     expect(source).toContain("caches.match(request, { ignoreVary: true })");
   });
+  it('preserva a malha offline quando o servidor retorna JSON inválido ou arestas corrompidas', async () => {
+    const source = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-test', assets: [] });
+    const handlers = new Map<string, (event: any) => void>();
+    const cachedGraph = { version: 1, source: 'OpenStreetMap/Geofabrik', createdAt: '2026-11-05T00:00:00Z',
+      nodes: [[-15.45, -47.60], [-15.45, -47.61]], edges: [[0, 1, 1]] };
+    const put = vi.fn().mockResolvedValue(undefined);
+    const match = vi.fn().mockImplementation(async () => new Response(JSON.stringify(cachedGraph)));
+    const fetchMock = vi.fn();
+    runInNewContext(source, { URL, Response, AbortSignal, fetch: fetchMock,
+      caches: { match, open: async () => ({ put }) },
+      self: { location: { origin: 'https://pabloguilherme01.github.io' },
+        addEventListener: (type: string, handler: (event: any) => void) => handlers.set(type, handler) } });
+    const onFetch = handlers.get('fetch')!;
+    async function getGraph() {
+      let result: Promise<Response> | undefined;
+      onFetch({ request: { method: 'GET', mode: 'cors', url: 'https://pabloguilherme01.github.io' + BASE + 'data/road-graph.json' },
+        respondWith: (value: Promise<Response>) => { result = value; } });
+      return await result!;
+    }
+    fetchMock.mockResolvedValueOnce(new Response('<html>falha</html>', { status: 200 }));
+    expect(await (await getGraph()).json()).toEqual(cachedGraph);
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ ...cachedGraph, edges: [[0, 9, 1]] }), { status: 200 }));
+    expect(await (await getGraph()).json()).toEqual(cachedGraph);
+    expect(put).not.toHaveBeenCalled();
+    match.mockResolvedValueOnce(new Response('{"nodes":[]}'));
+    fetchMock.mockResolvedValueOnce(new Response('inválido', { status: 200 }));
+    expect((await getGraph()).type).toBe('error');
+    expect(put).not.toHaveBeenCalled();
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify(cachedGraph), { status: 200 }));
+    expect(await (await getGraph()).json()).toEqual(cachedGraph);
+    expect(put).toHaveBeenCalledOnce();
+  });
   it('usa timeout em redes intermitentes para não prender o mapa offline', () => {
     const sw = buildServiceWorkerSource({ basePath: BASE, cacheName: 'mapa-planaltina-v2',
       assets: ['data/points.json', 'assets/app.js'] });
