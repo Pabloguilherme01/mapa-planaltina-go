@@ -28,7 +28,10 @@ for (const device of ['desktop-chromium', 'mobile-chromium']) {
       : 'Buscar locais, órgãos e serviços em Planaltina, Goiás');
     await expect(search).toBeVisible();
     await search.fill('termo-inexistente-smoke-published-90538');
-    await expect(page.getByText(/Nenhum ponto encontrado/).first()).toBeVisible();
+    const emptyMessage = isMobile
+      ? page.locator('#bottomSheet').getByText('Nenhum ponto encontrado com os filtros atuais.')
+      : page.getByText('Nenhum ponto encontrado', { exact: true });
+    await expect(emptyMessage).toBeVisible();
     await search.fill('');
 
     const plannerButton = page.getByRole('button', { name: 'Planejar viagem', exact: true });
