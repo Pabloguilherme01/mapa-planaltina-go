@@ -34,12 +34,15 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
   const [consumption, setConsumption] = useState('');
   const [price, setPrice] = useState('');
   const [query, setQuery] = useState('');
+  const [originQuery, setOriginQuery] = useState('');
   const [susOnly, setSusOnly] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     try { return readFavorites(localStorage.getItem(favoritesKey)); } catch { return []; }
   });
   const real = useMemo(() => findDestinations(points, '', false), [points]);
   const results = useMemo(() => findDestinations(real, query, susOnly), [real, query, susOnly]);
+  const origins = useMemo(() => findDestinations(real, originQuery, false), [real, originQuery]);
+  const selectedOrigin = real.find(point => point.id === originId);
   const destination = real.find(point => point.id === destinationId);
   const origin = originId === '__gps__' ? userLocation :
     originId === '__map__' ? mapOrigin : real.find(p => p.id === originId);
@@ -173,15 +176,22 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
         setTravel(next);
         if (next !== 'driving' && externalMap === 'waze') setExternalMap('google');
       }}><option value="driving">Carro</option><option value="walking">A pé</option><option value="bicycling">Bicicleta</option></select></label>
-      <fieldset className="my-3 rounded-xl border border-neutral-400 p-3">
+      <fieldset className="my-4 rounded-2xl border border-emerald-900/20 bg-white/80 p-4 shadow-sm">
         <legend className="font-bold">Rota pelas ruas de Planaltina · gratuita</legend>
+        <label className="my-2 block text-sm font-semibold">Buscar ponto de partida
+          <input type="search" className={inputStyle} value={originQuery}
+            onChange={event => setOriginQuery(event.target.value)} placeholder="Nome ou endereço" />
+        </label>
+        <p aria-live="polite" className="text-xs text-neutral-600">{origins.length} locais encontrados para a origem</p>
         <label className="my-2 block text-sm">Ponto de partida
           <select className={inputStyle} aria-label="Ponto de partida" value={originId}
             onChange={event => setOriginId(event.target.value)}>
             <option value="">Escolha onde começa</option>
             {userLocation && <option value="__gps__">Minha posição (GPS autorizado)</option>}
             {mapOrigin && <option value="__map__">Ponto marcado no mapa ({mapOrigin.lat.toFixed(5)}, {mapOrigin.lng.toFixed(5)})</option>}
-            {real.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}
+            {selectedOrigin && !origins.some(point => point.id === selectedOrigin.id) &&
+              <option value={selectedOrigin.id}>{selectedOrigin.name} (selecionado)</option>}
+            {origins.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}
           </select>
         </label>
         <button type="button" className="touch-target my-2 mr-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('origin')}>

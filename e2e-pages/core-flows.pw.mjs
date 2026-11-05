@@ -3,6 +3,23 @@ import AxeBuilder from '@axe-core/playwright';
 
 const BASE_PATH = '/mapa-planaltina-go/';
 
+test('origem: busca locais e preserva a seleção ao mudar o filtro', async ({ page }) => {
+  await page.goto('./');
+  await page.getByRole('button', { name: 'Planejar viagem' }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  const select = planner.getByLabel('Ponto de partida', { exact: true });
+  const options = select.locator('option');
+  await expect(options).not.toHaveCount(1);
+  const id = await options.nth(1).getAttribute('value');
+  await select.selectOption(id);
+  await planner.getByLabel('Buscar ponto de partida').fill('busca-que-nao-corresponde-a-local');
+  await expect(select).toHaveValue(id);
+  await expect(options).toHaveCount(2);
+  await planner.getByLabel('Buscar ponto de partida').clear();
+  await expect(select).toHaveValue(id);
+  await expect(options).not.toHaveCount(2);
+});
+
 test('abastecimento: consulta ANP municipal sem preços, pins ou exportação', async ({ page }) => {
   await page.goto('fontes/');
   const registry = page.getByRole('region', { name: 'Abastecimento — cadastro oficial ANP' });
