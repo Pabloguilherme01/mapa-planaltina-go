@@ -5,7 +5,7 @@ export const OfflineBanner: React.FC = () => {
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
-  const [hasOfflineCache, setHasOfflineCache] = useState<boolean>(
+  const [hasActiveServiceWorker, setHasOfflineCache] = useState<boolean>(
     typeof navigator !== 'undefined' ? Boolean(navigator.serviceWorker?.controller) : false
   );
 
@@ -37,7 +37,7 @@ export const OfflineBanner: React.FC = () => {
     >
       <WifiOff size={16} className="mt-0.5 shrink-0" />
       <span>
-        {hasOfflineCache
+        {hasActiveServiceWorker
           ? 'Sem conexão. O aplicativo possui um service worker ativo, mas isso não garante que todos os mapas, dados ou rotas estejam salvos. Consulte os conteúdos já abertos; mapas externos podem não carregar.'
           : 'Sem conexão e sem controle ativo do service worker nesta página. Alguns dados já carregados podem continuar visíveis, mas a navegação offline não está garantida.'}
       </span>
