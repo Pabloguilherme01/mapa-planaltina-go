@@ -25,6 +25,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
   const [originId, setOriginId] = useState('');
   const [calculating, setCalculating] = useState(false);
   const graphCache = useRef<RoadGraph | null>(null);
+  const routeRequest = useRef<AbortController | null>(null);
   const [travel, setTravel] = useState<TravelMode>('driving');
   const [externalMap, setExternalMap] = useState<ExternalMapsApp>('google');
   const [online, setOnline] = useState(navigator.onLine);
@@ -91,19 +92,34 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
     if (value === 'repetir' || value === 'offline') restore();
     if (value === 'automatico') { if (!online) { setMode('offline'); restore(); } else setMode('proxima'); }
   }
+  function cancelCalculation() {
+    if (routeRequest.current) {
+      routeRequest.current.abort();
+      setNotice('Cálculo cancelado. Confira os pontos e tente novamente.');
+    }
+    routeRequest.current = null;
+    setCalculating(false);
+  }
+  useEffect(() => {
+    cancelCalculation();
+  }, [origin?.lat, origin?.lng, routeDestination?.lat, routeDestination?.lng, travel]);
+  useEffect(() => () => { routeRequest.current?.abort(); }, []);
   async function calculateOnDevice() {
     if (!origin || !routeDestination || !routeEnabled || calculating) return;
+    const request = new AbortController();
+    routeRequest.current = request;
     setCalculating(true); setNotice('Calculando percurso sobre a malha pública de ruas…');
     try {
       let graph = graphCache.current;
       if (!graph) {
-        const response = await fetch(`${import.meta.env.BASE_URL}data/road-graph.json`);
+        const response = await fetch(`${import.meta.env.BASE_URL}data/road-graph.json`, { signal: request.signal });
         if (!response.ok) throw new Error('Malha viária indisponível nesta instalação.');
         const payload: unknown = await response.json();
         if (!validateRoadGraph(payload)) throw new Error('Malha viária inválida. Confira a próxima atualização.');
         graph = payload;
         graphCache.current = graph;
       }
+      if (request.signal.aborted) return;
       const result = planLocalRoute(graph, origin, routeDestination, travel);
       if (!result) {
         setNotice('Não foi encontrada ligação viária confiável neste modo, ou a origem/destino está longe da rede. Use um aplicativo de navegação externa.');
@@ -113,9 +129,12 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
       setNotice(`Percurso aproximado de ${(result.distanceMeters / 1000).toFixed(1)} km no mapa.`);
       dialog.current?.close();
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : 'Não foi possível calcular o caminho local.');
+      if (!request.signal.aborted) setNotice(error instanceof Error ? error.message : 'Não foi possível calcular o caminho local.');
     } finally {
-      setCalculating(false);
+      if (routeRequest.current === request) {
+        routeRequest.current = null;
+        setCalculating(false);
+      }
     }
   }
   const inputStyle = 'w-full rounded-lg border border-neutral-400 bg-white p-3 text-neutral-900';
@@ -125,7 +144,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
       if (selectedPoint && !selectedPoint.isDemo) setDestinationId(selectedPoint.id);
       dialog.current?.showModal();
     }} className="absolute right-3 top-16 lg:top-28 z-20 rounded-xl bg-[#355E3B] px-4 py-3 font-bold text-white shadow-lg">Planejar viagem</button>}
-    <dialog ref={dialog} aria-labelledby="mobility-title" className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl bg-[#F5F0E6] p-5 text-[#121E14] shadow-xl backdrop:bg-black/60">
+    <dialog ref={dialog} onClose={cancelCalculation} aria-labelledby="mobility-title" className="m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-xl overflow-y-auto rounded-2xl bg-[#F5F0E6] p-5 text-[#121E14] shadow-xl backdrop:bg-black/60">
       <div className="flex items-center justify-between gap-3"><h2 id="mobility-title" className="text-xl font-bold">Mobilidade em Planaltina</h2><button type="button" onClick={() => dialog.current?.close()} className="rounded-lg border p-3" aria-label="Fechar planejador">Fechar</button></div>
       <p className="my-3 text-sm">Escolha um destino real mapeado, confira sua fonte e abra a navegação. Trânsito e itinerários de ônibus não são calculados aqui.</p>
       <label className="block">Modo de uso<select className={inputStyle} value={mode} onChange={event => choose(event.target.value as Mode)}>{modes.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label>
