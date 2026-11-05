@@ -279,8 +279,9 @@ test('desktop: recarrega o mapa sem rede depois que o service worker assume o co
   try {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('main', { name: 'Área principal do mapa' })).toBeVisible();
-    await expect(page.getByText(/Sem conexão:/)).toBeVisible();
-    await expect(page.getByText(/snapshots locais/)).toBeVisible();
+    // SW ativo não comprova que todo recurso foi realmente cacheado.
+    await expect(page.getByText(/Sem conexão\./)).toBeVisible();
+    await expect(page.getByText(/não garante que todos os mapas, dados ou rotas estejam salvos/)).toBeVisible();
   } finally {
     await context.setOffline(false);
   }
