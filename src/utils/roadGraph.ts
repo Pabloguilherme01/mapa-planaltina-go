@@ -22,20 +22,30 @@ type RawFeature = { geometry?: { type?: unknown; coordinates?: unknown }; proper
 const driveRoads = new Set(['motorway','trunk','primary','secondary','tertiary','unclassified','residential','living_street','service','motorway_link','trunk_link','primary_link','secondary_link','tertiary_link','track']);
 const walkRoads = new Set([...driveRoads, 'pedestrian','footway','path','steps','cycleway','bridleway']);
 const cycleRoads = new Set([...driveRoads, 'cycleway','path','footway','pedestrian','bridleway']);
-const accessDenied = (v: unknown) => v === 'private' || v === 'no';
+// OSM usa hierarquia de permissões: foot/bicycle/motorcar sobrescrevem
+// access/vehicle apenas no modo especificado. Valores condicionados a
+// cliente, destino ou autorização não são usados como acesso de passagem.
+const noThroughAccess = new Set([
+  'no', 'private', 'destination', 'delivery', 'customers', 'agricultural', 'forestry',
+]);
+function canPass(tags: Record<string, unknown>, hierarchy: readonly string[]): boolean {
+  let permission = tags.access;
+  for (const key of hierarchy) {
+    if (tags[key] !== undefined) permission = tags[key];
+  }
+  return !noThroughAccess.has(permission as string);
+}
 
 function permissions(tags: Record<string, unknown>): { forward: number; backward: number } {
   const highway = tags.highway;
-  if (typeof highway !== 'string' || accessDenied(tags.access) ||
+  if (typeof highway !== 'string' ||
       tags.abandoned === 'yes' || tags.disused === 'yes' || tags.construction === 'yes' ||
       highway === 'construction' || highway === 'proposed') return { forward: 0, backward: 0 };
-  let drive = driveRoads.has(highway) && !accessDenied(tags.motor_vehicle) && !accessDenied(tags.motorcar) &&
-    !accessDenied(tags.vehicle);
+  const drive = driveRoads.has(highway) && canPass(tags, ['vehicle', 'motor_vehicle', 'motorcar']);
   const walk = walkRoads.has(highway) && highway !== 'motorway' && highway !== 'motorway_link' &&
-    !accessDenied(tags.foot);
+    tags.motorroad !== 'yes' && canPass(tags, ['foot']);
   const bike = cycleRoads.has(highway) && !['motorway','trunk','motorway_link','trunk_link','steps'].includes(highway) &&
-    !accessDenied(tags.bicycle) && !accessDenied(tags.vehicle);
-  if (tags.motor_vehicle === 'destination' || tags.motorcar === 'destination') drive = false;
+    tags.motorroad !== 'yes' && canPass(tags, ['vehicle', 'bicycle']);
   if (!drive && !walk && !bike) return { forward: 0, backward: 0 };
   // Em OSM, autoestradas e rotatórias implicam mão única, salvo oneway=no.
   const oneway = tags.oneway === 'yes' || tags.oneway === '1' || tags.oneway === 'true' ||
@@ -48,9 +58,12 @@ function permissions(tags: Record<string, unknown>): { forward: number; backward
   const bikeBackward = bicycleOneway === 'no' ? true :
     bicycleOneway === '-1' ? true :
     bicycleOneway === 'yes' || bicycleOneway === '1' || bicycleOneway === 'true' ? false : !oneway;
-  const forward = (drive && !reverse ? CAR : 0) | (walk ? WALK : 0) | (bike && bikeForward ? BIKE : 0);
+  const footOneway = tags['oneway:foot'];
+  const walkForward = footOneway !== '-1';
+  const walkBackward = !['yes', '1', 'true'].includes(String(footOneway));
+  const forward = (drive && !reverse ? CAR : 0) | (walk && walkForward ? WALK : 0) | (bike && bikeForward ? BIKE : 0);
   const backward = (drive && !oneway && !reverse ? CAR : 0) |
-    (walk ? WALK : 0) |
+    (walk && walkBackward ? WALK : 0) |
     (bike && bikeBackward ? BIKE : 0);
   if (reverse) {
     return { forward, backward: backward | (drive ? CAR : 0) };
