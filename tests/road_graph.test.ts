@@ -103,6 +103,39 @@ describe('roteamento local por ruas OSM', () => {
       expect(Boolean(planLocalRoute(graph, b, a, 'bicycling'))).toBe(backward);
     }
   });
+  it('respeita exceções explícitas OSM de acesso por modo, sem liberar acesso privado para outros', () => {
+    const pedestrian = network([road('way/pedestres', { access: 'private', foot: 'yes' })]);
+    expect(planLocalRoute(pedestrian, a, b, 'walking')).not.toBeNull();
+    expect(planLocalRoute(pedestrian, a, b, 'driving')).toBeNull();
+    expect(planLocalRoute(pedestrian, a, b, 'bicycling')).toBeNull();
+
+    const cycle = network([road('way/bicicleta', { access: 'no', bicycle: 'designated' })]);
+    expect(planLocalRoute(cycle, a, b, 'bicycling')).not.toBeNull();
+    expect(planLocalRoute(cycle, a, b, 'walking')).toBeNull();
+    expect(planLocalRoute(cycle, a, b, 'driving')).toBeNull();
+
+    const car = network([road('way/carro', { access: 'no', vehicle: 'no', motorcar: 'yes' })]);
+    expect(planLocalRoute(car, a, b, 'driving')).not.toBeNull();
+    expect(planLocalRoute(car, a, b, 'walking')).toBeNull();
+    expect(planLocalRoute(car, a, b, 'bicycling')).toBeNull();
+
+    const localOnly = network([road('way/destino', { access: 'destination' })]);
+    expect(localOnly.edges).toHaveLength(0);
+  });
+
+  it('não cria rota contrária a oneway:foot ou em via motorroad para pedestres', () => {
+    const oneWay = network([road('way/sentido-pedestre', { 'oneway:foot': 'yes' })]);
+    expect(planLocalRoute(oneWay, a, b, 'walking')).not.toBeNull();
+    expect(planLocalRoute(oneWay, b, a, 'walking')).toBeNull();
+    const reverse = network([road('way/sentido-inverso', { 'oneway:foot': '-1' })]);
+    expect(planLocalRoute(reverse, a, b, 'walking')).toBeNull();
+    expect(planLocalRoute(reverse, b, a, 'walking')).not.toBeNull();
+    const motorroad = network([road('way/motorroad', { highway: 'trunk', motorroad: 'yes' })]);
+    expect(planLocalRoute(motorroad, a, b, 'walking')).toBeNull();
+    expect(planLocalRoute(motorroad, a, b, 'bicycling')).toBeNull();
+    expect(planLocalRoute(motorroad, a, b, 'driving')).not.toBeNull();
+  });
+
   it('não manda carro para ciclovia nem cria pontes entre ruas desconexas', () => {
     const graph = network([
       road('way/1', { highway: 'cycleway' }),
