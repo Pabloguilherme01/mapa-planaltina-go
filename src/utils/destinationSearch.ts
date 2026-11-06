@@ -22,5 +22,14 @@ export function findDestinations(points: MapPoint[], query: string, susOnly: boo
         (point.lat === 0 && point.lng === 0) || (susOnly && susStatus(point) !== 'yes')) return false;
     const text = normalizeSearchText(`${point.name} ${point.addressHint ?? ''} ${point.id} ${point.tags.join(' ')}`);
     return matchesSearchTerms(text, terms);
-  }).sort((a, b) => a.name.localeCompare(b.name, 'pt-BR') || a.id.localeCompare(b.id));
+  }).sort((a, b) => Number(b.provenanceMeta.verificationStatus === 'verified') - Number(a.provenanceMeta.verificationStatus === 'verified') ||
+    a.name.localeCompare(b.name, 'pt-BR') || a.id.localeCompare(b.id));
+}
+
+/** Mantém a escolha visível sem montar milhares de opções no celular. */
+export function visibleDestinations(points: readonly MapPoint[], selectedId: string, limit = 100): MapPoint[] {
+  const visible = points.slice(0, limit);
+  const selected = points.find(point => point.id === selectedId);
+  if (selected && !visible.some(point => point.id === selectedId)) visible.push(selected);
+  return visible;
 }

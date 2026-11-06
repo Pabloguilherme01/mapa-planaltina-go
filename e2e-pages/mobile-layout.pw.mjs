@@ -20,6 +20,13 @@ test('mobile: busca histórica, teclado e recuperação de filtros', async ({ pa
   await search.press('Escape');
   await expect(sheet).toHaveClass(/catalog-collapsed/);
   await expect(search).not.toBeFocused();
+  await page.getByRole('button', { name: 'Planejar viagem', exact: true }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  expect(await planner.getByLabel('Destino real').locator('option').count()).toBeLessThanOrEqual(102);
+  expect(await planner.getByLabel('Ponto de partida', { exact: true }).locator('option').count()).toBeLessThanOrEqual(104);
+  await planner.getByLabel('Buscar ponto de partida', { exact: true }).fill('JOVEM LATAS');
+  await expect(planner.getByLabel('Ponto de partida', { exact: true }).locator('option')).toHaveCount(2);
+  await expect(planner.getByLabel('Ponto de partida', { exact: true })).toContainText('Censo 2022');
 });
 
 for (const width of [320, 390, 768]) {

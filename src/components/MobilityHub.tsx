@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { MapPoint } from '../types';
 import { estimateFuelCost, readTrip, routeUrl, regionalRouteUrl, REGIONAL_DESTINATIONS, tripKey, type TravelMode, type ExternalMapsApp } from '../utils/mobility';
-import { findDestinations, susStatus } from '../utils/destinationSearch';
+import { findDestinations, susStatus, visibleDestinations } from '../utils/destinationSearch';
+import { isCensusPoint, CNEFE_NOTICE } from '../utils/censusCatalog.ts';
 import { favoritesKey, readFavorites, readFavoritesForUpdate, saveFavorite } from '../utils/favoriteTrips';
 import { SavedDestinations } from './SavedDestinations';
 import { distanceMeters } from '../utils/catalogFilters.ts';
@@ -34,12 +35,16 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
   const [consumption, setConsumption] = useState('');
   const [price, setPrice] = useState('');
   const [query, setQuery] = useState('');
+  const [originQuery, setOriginQuery] = useState('');
   const [susOnly, setSusOnly] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     try { return readFavorites(localStorage.getItem(favoritesKey)); } catch { return []; }
   });
   const real = useMemo(() => findDestinations(points, '', false), [points]);
   const results = useMemo(() => findDestinations(real, query, susOnly), [real, query, susOnly]);
+  const originResults = useMemo(() => findDestinations(real, originQuery, false), [real, originQuery]);
+  const shownResults = visibleDestinations(results, destinationId);
+  const shownOrigins = visibleDestinations(originResults, originId);
   const destination = real.find(point => point.id === destinationId);
   const origin = originId === '__gps__' ? userLocation :
     originId === '__map__' ? mapOrigin : real.find(p => p.id === originId);
@@ -162,9 +167,10 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
       <label className="my-3 block">Buscar destino por nome ou endereço<input type="search" className={inputStyle} value={query} onChange={event => { setQuery(event.target.value); setDestinationId(''); }} /></label>
       <label className="my-2 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={susOnly} onChange={event => { setSusOnly(event.target.checked); setDestinationId(''); }} />Somente vínculo SUS informado no CNES</label>
       <p aria-live="polite" className="text-xs">{results.length} {results.length === 1 ? "destino disponível" : "destinos disponíveis"}{susOnly ? ' com vínculo SUS informado' : ''}</p>
+      {results.length > shownResults.length && <p className="text-xs">Mostrando {shownResults.length} opções. Busque por nome, rua ou bairro para encontrar as demais.</p>}
       <label className="my-3 block">Destino real<select className={inputStyle} value={destinationId} onChange={event => setDestinationId(event.target.value)}><option value="">Escolha um local</option>
         {mapDestination && <option value="__map__">Ponto marcado no mapa ({mapDestination.lat.toFixed(5)}, {mapDestination.lng.toFixed(5)})</option>}
-        {results.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}</select></label>
+        {shownResults.map(point => <option key={point.id} value={point.id}>{point.name}{isCensusPoint(point) ? ` · Censo 2022 · ${point.addressHint}` : ''}</option>)}</select></label>
       <button type="button" className="touch-target my-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('destination')}>
         Marcar destino no mapa
       </button>
@@ -175,13 +181,18 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
       }}><option value="driving">Carro</option><option value="walking">A pé</option><option value="bicycling">Bicicleta</option></select></label>
       <fieldset className="my-3 rounded-xl border border-neutral-400 p-3">
         <legend className="font-bold">Rota pelas ruas de Planaltina · gratuita</legend>
+        <label className="my-2 block text-sm">Buscar ponto de partida
+          <input type="search" className={inputStyle} value={originQuery} placeholder="Nome, rua ou bairro"
+            onChange={event => { setOriginQuery(event.target.value); setOriginId(''); }} />
+        </label>
+        {originResults.length > shownOrigins.length && <p className="text-xs">Mostrando {shownOrigins.length} pontos de partida. Refine a busca para acessar os demais.</p>}
         <label className="my-2 block text-sm">Ponto de partida
           <select className={inputStyle} aria-label="Ponto de partida" value={originId}
             onChange={event => setOriginId(event.target.value)}>
             <option value="">Escolha onde começa</option>
             {userLocation && <option value="__gps__">Minha posição (GPS autorizado)</option>}
             {mapOrigin && <option value="__map__">Ponto marcado no mapa ({mapOrigin.lat.toFixed(5)}, {mapOrigin.lng.toFixed(5)})</option>}
-            {real.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}
+            {shownOrigins.map(point => <option key={point.id} value={point.id}>{point.name}{isCensusPoint(point) ? ` · Censo 2022 · ${point.addressHint}` : ''}</option>)}
           </select>
         </label>
         <button type="button" className="touch-target my-2 mr-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('origin')}>
@@ -242,7 +253,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
         </a>}
       </div>}
       {destination && <div className="my-3 rounded-xl border border-neutral-400 p-3"><strong>{destination.name}</strong><p>{destination.addressHint}</p><p className="text-sm">{destination.provenanceMeta.sourceName} • {destination.lat}, {destination.lng}</p>
-        <p className="mt-2 text-sm">Vínculo SUS: {destinationSus === 'yes' ? 'Sim' : destinationSus === 'no' ? 'Não' : 'Não informado'}. Coleta: {new Date(destination.provenanceMeta.retrievedAt).toLocaleDateString('pt-BR')}. {destination.provenanceMeta.verificationStatus !== 'verified' ? ' Cadastro comunitário sem verificação oficial; confirme o local.' : ' Confirme o atendimento antes de sair.'}</p>
+        <p className="mt-2 text-sm">Vínculo SUS: {destinationSus === 'yes' ? 'Sim' : destinationSus === 'no' ? 'Não' : 'Não informado'}. Coleta: {new Date(destination.provenanceMeta.retrievedAt).toLocaleDateString('pt-BR')}. {isCensusPoint(destination) ? CNEFE_NOTICE : destination.provenanceMeta.verificationStatus !== 'verified' ? ' Cadastro comunitário sem verificação oficial; confirme o local.' : ' Confirme o atendimento antes de sair.'}</p>
         {online && mode !== 'offline' ? <a className="mt-3 inline-block rounded-lg bg-[#355E3B] p-3 font-bold text-white" href={routeUrl(destination, travel, externalMap)} target="_blank" rel="noopener noreferrer">{externalMap === 'organic' ? 'Abrir ponto no Organic Maps' : 'Abrir navegação externa'}</a> : <p className="mt-2 font-semibold">Consulta offline: endereço e coordenadas disponíveis. Navegação externa exige conexão.</p>}
       </div>}
       {mode === 'economia' && <fieldset className="my-3 space-y-2 rounded-xl border border-neutral-400 p-3"><legend className="font-bold">Estimativa de combustível</legend><p className="text-sm">Informe a distância do seu percurso e o preço observado. Não são dados de trânsito nem preços ao vivo.</p><label className="block">Distância (km)<input type="number" min="0" step="any" className={inputStyle} value={km} onChange={event => setKm(event.target.value)} /></label><label className="block">Consumo (km/l)<input type="number" min="0" step="any" className={inputStyle} value={consumption} onChange={event => setConsumption(event.target.value)} /></label><label className="block">Preço (R$/l)<input type="number" min="0" step="any" className={inputStyle} value={price} onChange={event => setPrice(event.target.value)} /></label><output aria-live="polite">{cost === null ? 'Preencha três valores positivos.' : `Estimativa: ${cost.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}</output></fieldset>}

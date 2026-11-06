@@ -154,7 +154,7 @@ export const SourcesPage: React.FC<SourcesPageProps> = ({ onBackToMap }) => {
             O mapa publica <strong>pontos reais com procedência por registro</strong>. As fichas OSM são <strong>colaborativas e não verificadas oficialmente</strong>; pontos DEMO ficam restritos à homologação. Um registro só é publicado como real quando possui fonte auditável, data de coleta, classificação de procedência e coordenadas válidas.
           </p>
           <p>
-            A camada institucional inicial é Saúde; comércio, escolas e serviços geolocalizados podem vir do OpenStreetMap. O sistema tenta atualizar o CNES/SES-GO e, se o órgão bloquear ou ficar indisponível, preserva somente o último snapshot validado e mostra esse modo explicitamente. Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento.
+            Saúde vem do CNES/SES-GO; o CNEFE/IBGE amplia escolas, comércio e outros estabelecimentos com registros históricos do Censo 2022, sem confirmação de funcionamento atual. Somente coordenadas originais de estabelecimentos identificados são aceitas; domicílios e obras são excluídos. O OpenStreetMap complementa a cobertura. Se o CNES ficar indisponível, o último snapshot validado é preservado. Horários e contatos operacionais não são replicados; confirme atendimento antes do deslocamento.
           </p>
         </div>
       </div>

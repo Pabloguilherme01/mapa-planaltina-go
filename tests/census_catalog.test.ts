@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { censusPoints, CNEFE_SOURCE, isCensusPoint } from '../src/utils/censusCatalog.ts';
-import { findDestinations, susStatus } from '../src/utils/destinationSearch.ts';
+import { findDestinations, susStatus, visibleDestinations } from '../src/utils/destinationSearch.ts';
 import { filterCatalog } from '../src/utils/catalogFilters.ts';
 import snapshot from '../data/cnefe-2022-planaltina.json';
 
@@ -29,5 +29,14 @@ describe('estabelecimentos históricos CNEFE', () => {
     expect(new Set(points.map(point => point.id)).size).toBe(points.length);
     expect(points.every(point => isCensusPoint(point))).toBe(true);
     expect(new Set(points.map(point => point.category))).toEqual(new Set(['Rural', 'Educação', 'Saúde', 'Comércio', 'Lazer']));
+  });
+  it('limita opções no planejador e preserva destino escolhido fora da primeira página', () => {
+    const points = censusPoints(snapshot);
+    const selected = points.at(-1)!;
+    const visible = visibleDestinations(points, selected.id);
+    expect(visible).toHaveLength(101);
+    expect(visible).toContain(selected);
+    expect(visibleDestinations(points, points[0].id)).toHaveLength(100);
+    expect(visibleDestinations([], selected.id)).toEqual([]);
   });
 });
