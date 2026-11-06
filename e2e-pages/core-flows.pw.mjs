@@ -127,11 +127,11 @@ test('mobile: filtro de procedência mantém DEMO separado dos pontos oficiais',
   expect(response.ok()).toBeTruthy();
   const { data: points } = await response.json();
   expect(points.some(point => !point.isDemo)).toBeTruthy();
-  await page.getByText('Refinar busca · filtros avançados', { exact: true }).click();
+  await page.getByText('Filtrar locais · categorias, tipo e bairro', { exact: true }).click();
   for (const provenance of ['demo', 'official', 'verified_open_data', 'community', 'all']) {
     await page.getByLabel('Origem dos pontos').selectOption(provenance);
     const expected = points.filter(point => provenance === 'all' || point.provenanceMeta.provenance === provenance).length;
-    await expect(page.locator('#mobile-results-heading')).toHaveText(`${expected} pontos no catálogo`);
+    await expect(page.locator('#mobile-results-heading')).toHaveText(`${expected} ${expected === 1 ? 'ponto' : 'pontos'} no catálogo`);
   }
 });
 
@@ -434,7 +434,7 @@ test('mobile: filtros recolhidos mantêm mapa acessível e controles avançados 
   const sheet = page.getByRole('region',{name:'Busca e lista do catálogo territorial'});
   await expect(sheet.getByLabel('Origem dos pontos')).not.toBeVisible();
   await sheet.getByRole('button',{name:'Expandir ou recolher lista de pontos e filtros'}).click();
-  await sheet.getByText('Refinar busca · filtros avançados', { exact: true }).click();
+  await sheet.getByText('Filtrar locais · categorias, tipo e bairro', { exact: true }).click();
   await expect(sheet.getByLabel('Origem dos pontos')).toBeVisible();
   await sheet.getByLabel('Situação da verificação').selectOption('verified');
   await expect(sheet.getByRole('button',{name:'Limpar todos os filtros'})).toBeVisible();

@@ -161,7 +161,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
       }} />
       <label className="my-3 block">Buscar destino por nome ou endereço<input type="search" className={inputStyle} value={query} onChange={event => { setQuery(event.target.value); setDestinationId(''); }} /></label>
       <label className="my-2 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={susOnly} onChange={event => { setSusOnly(event.target.checked); setDestinationId(''); }} />Somente vínculo SUS informado no CNES</label>
-      <p aria-live="polite" className="text-xs">{results.length} destinos disponíveis{susOnly ? ' com vínculo SUS informado' : ''}</p>
+      <p aria-live="polite" className="text-xs">{results.length} {results.length === 1 ? "destino disponível" : "destinos disponíveis"}{susOnly ? ' com vínculo SUS informado' : ''}</p>
       <label className="my-3 block">Destino real<select className={inputStyle} value={destinationId} onChange={event => setDestinationId(event.target.value)}><option value="">Escolha um local</option>
         {mapDestination && <option value="__map__">Ponto marcado no mapa ({mapDestination.lat.toFixed(5)}, {mapDestination.lng.toFixed(5)})</option>}
         {results.map(point => <option key={point.id} value={point.id}>{point.name}</option>)}</select></label>

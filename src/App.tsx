@@ -374,6 +374,7 @@ export default function App() {
                 points={filteredPoints}
                 selectedPoint={selectedPoint}
                 onSelectPoint={handleSelectPoint}
+                onOpenPointDetails={handleOpenPointDetails}
                 onOpenProvenanceLegend={() => navigateTo('/fontes')}
                 onRequestGeolocation={() => setIsGeoConsentOpen(true)}
                 userLocation={userLocation}

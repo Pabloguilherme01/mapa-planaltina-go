@@ -22,7 +22,7 @@ export const CategoryFilterBar: React.FC<CategoryFilterBarProps> = ({
     <div
       role="group"
       aria-label="Filtro de categorias cívicas de Planaltina, Goiás"
-      className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 no-scrollbar"
+      className="flex flex-wrap items-center gap-1.5 pb-1 pt-0.5 lg:flex-nowrap lg:overflow-x-auto"
     >
       {/* "Todos" Chip */}
       <button

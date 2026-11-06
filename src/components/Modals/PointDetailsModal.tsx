@@ -69,6 +69,25 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           <p className="text-xs text-neutral-600 mt-1 leading-relaxed">{point.description}</p>
         </div>
 
+        {/* Destino e mapa são a ação principal: expor navegação antes dos metadados extensos. */}
+        {isReal && (
+          <div className="grid grid-cols-2 gap-2" aria-label="Abrir localização em aplicativos de mapas">
+            {([
+              ['google', 'Google Maps · rotas'],
+              ['waze', 'Waze · carro'],
+              ['apple', 'Apple Maps · rotas'],
+              ['organic', 'Organic Maps · ponto'],
+            ] as const).map(([provider, title]) => (
+              <a key={provider} href={routeUrl(point, 'driving', provider)}
+                target="_blank" rel="noopener noreferrer"
+                className="touch-target min-h-11 rounded-lg border border-[#355E3B]/30 bg-[#F5F0E6] p-2 text-center text-xs font-bold text-[#355E3B]">
+                {title}
+              </a>
+            ))}
+            <p className="col-span-2 text-[11px] text-neutral-600">Rotas e trânsito são calculados no aplicativo externo; a origem não é enviada por este mapa. Confirme o local antes de sair.</p>
+          </div>
+        )}
+
         <div className="bg-[#EAE3D2]/70 rounded-2xl p-3.5 flex flex-col gap-1 border border-[#355E3B]/10">
           <div className="flex items-center gap-1.5 text-[#121E14]">
             <Lock size={16} className="text-[#984E2E]" />
@@ -146,23 +165,6 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
           </div>
         )}
 
-        {isReal && (
-          <div className="grid grid-cols-2 gap-2" aria-label="Abrir localização em aplicativos de mapas">
-            {([
-              ['google', 'Google Maps · rotas'],
-              ['waze', 'Waze · carro'],
-              ['apple', 'Apple Maps · rotas'],
-              ['organic', 'Organic Maps · ponto'],
-            ] as const).map(([provider, title]) => (
-              <a key={provider} href={routeUrl(point, 'driving', provider)}
-                target="_blank" rel="noopener noreferrer"
-                className="touch-target min-h-11 rounded-lg border border-[#355E3B]/30 bg-[#F5F0E6] p-2 text-center text-xs font-bold text-[#355E3B]">
-                {title}
-              </a>
-            ))}
-            <p className="col-span-2 text-[11px] text-neutral-600">Rotas e trânsito são calculados no aplicativo externo; a origem não é enviada por este mapa. Confirme o local antes de sair.</p>
-          </div>
-        )}
         <div className="flex gap-2 pt-1">
           {point.provenanceMeta.sourceUrl && (
             <a

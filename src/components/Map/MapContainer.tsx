@@ -16,6 +16,7 @@ interface MapContainerProps {
   points: MapPoint[];
   selectedPoint: MapPoint | null;
   onSelectPoint: (point: MapPoint | null) => void;
+  onOpenPointDetails: (point: MapPoint) => void;
   onOpenProvenanceLegend: () => void;
   onRequestGeolocation: () => void;
   userLocation: { lat: number; lng: number } | null;
@@ -30,6 +31,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
   points,
   selectedPoint,
   onSelectPoint,
+  onOpenPointDetails,
   onOpenProvenanceLegend,
   onRequestGeolocation,
   userLocation,
@@ -101,7 +103,7 @@ export const MapContainer: React.FC<MapContainerProps> = ({
         )}
       </div>}
 
-      {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} routePickMode={routePickMode} onMapCoordinatePicked={onMapCoordinatePicked} onCancelMapPick={onCancelMapPick} /></Suspense> : provider === 'demo' ? (
+      {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} onOpenPointDetails={onOpenPointDetails} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} routePickMode={routePickMode} onMapCoordinatePicked={onMapCoordinatePicked} onCancelMapPick={onCancelMapPick} /></Suspense> : provider === 'demo' ? (
         <Suspense fallback={<p role="status">Carregando mapa de teste…</p>}><DemoMapProvider
           points={points}
           selectedPoint={selectedPoint}

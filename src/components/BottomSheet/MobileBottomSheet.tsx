@@ -124,9 +124,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </div>
       </div>
 
-      {isExpanded && !browseDirectory && <details className="max-h-[28dvh] overflow-y-auto rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
-      <summary className="touch-target flex items-center text-sm font-bold cursor-pointer">Refinar busca · filtros avançados</summary>
+      {isExpanded && !browseDirectory && <details className="max-h-[42dvh] overflow-y-auto overscroll-contain rounded-xl border border-neutral-200 p-2 mb-2 shrink-0">
+      <summary className="touch-target flex items-center text-sm font-bold cursor-pointer">Filtrar locais · categorias, tipo e bairro</summary>
       <div className="mt-2 mb-2">
+        <p className="mb-1 text-xs font-semibold text-neutral-600">Categorias — toque para selecionar uma ou mais</p>
         <CategoryFilterBar
           selectedCategories={selectedCategories}
           onToggleCategory={onToggleCategory}
@@ -196,10 +197,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           </div>
           <div className="min-w-0">
             <h2 id="mobile-results-heading" className="text-sm font-bold text-[#121E14] leading-tight">
-              {points.length} pontos no catálogo
+              {points.length} {points.length === 1 ? "ponto" : "pontos"} no catálogo
             </h2>
             <p className="truncate text-xs text-neutral-600">
-              Planaltina, Goiás • {realCount} locais mapeados
+              Planaltina, Goiás • {realCount} {realCount === 1 ? "local mapeado" : "locais mapeados"}
             </p>
           </div>
         </div>
