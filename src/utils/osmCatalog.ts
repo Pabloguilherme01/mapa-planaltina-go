@@ -67,6 +67,19 @@ const SHOPS: Record<string, string> = {
   agrarian: 'Agropecuária', farm: 'Produtos rurais',
 };
 
+// Mapeamentos OSM úteis sem nome: mostra o tipo, nunca inventa uma marca ou endereço.
+// Restringir a equipamentos/serviços claramente identificados evita inundar o catálogo
+// com tags genéricas de comércio e propriedades privadas.
+const UNNAMED_AMENITIES = new Set([
+  'school', 'kindergarten', 'library', 'hospital', 'clinic', 'pharmacy',
+  'police', 'fire_station', 'townhall', 'post_office', 'bus_station',
+  'fuel', 'bank', 'atm', 'community_centre', 'social_facility',
+]);
+export function hasMappableUnnamedAmenity(tags: Record<string, unknown>): boolean {
+  return tags.name == null &&
+    typeof tags.amenity === 'string' && UNNAMED_AMENITIES.has(tags.amenity);
+}
+
 const clean = (value: unknown, max = 160): string | null => {
   if (typeof value !== 'string') return null;
   const text = value.trim().replace(/\s+/g, ' ');
@@ -116,7 +129,7 @@ export function overpassQuery(scope: 'municipality' | 'urban' = 'municipality'):
     ? [Math.max(minLat, urbanBounds[0]), Math.max(minLng, urbanBounds[1]), Math.min(maxLat, urbanBounds[2]), Math.min(maxLng, urbanBounds[3])]
     : [minLat, minLng, maxLat, maxLng];
   const bbox = bounds.map(value => value.toFixed(5)).join(',');
-  return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});node["highway"="bus_stop"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox});nwr["name"]["railway"](${bbox});nwr["name"]["emergency"](${bbox});nwr["name"]["historic"](${bbox}););out center tags;`;
+  return `[out:json][timeout:25];(nwr["name"]["amenity"](${bbox});nwr["amenity"~"^(${[...UNNAMED_AMENITIES].join('|')})$"](${bbox});nwr["name"]["shop"](${bbox});nwr["name"]["office"](${bbox});nwr["name"]["leisure"](${bbox});nwr["name"]["tourism"](${bbox});nwr["name"]["public_transport"](${bbox});node["highway"="bus_stop"](${bbox});nwr["name"]["highway"="bus_stop"](${bbox});nwr["name"]["healthcare"](${bbox});nwr["name"]["railway"](${bbox});nwr["name"]["emergency"](${bbox});nwr["name"]["historic"](${bbox}););out center tags;`;
 }
 
 export function mapOverpassElements(payload: unknown, retrievedAt: string): MapPoint[] {
@@ -135,9 +148,11 @@ export function mapOverpassElements(payload: unknown, retrievedAt: string): MapP
         ['yes', 'true'].includes(tag(tags, 'abandoned')) ||
         ['yes', 'true'].includes(tag(tags, 'demolished')) ||
         tag(tags, 'opening_date') === 'planned') continue;
-    const name = clean(tags.name) || (tags.name == null && raw.type === 'node' && tag(tags, 'highway') === 'bus_stop'
-      ? 'Parada de ônibus sem nome no OSM' : null);
     const kind = classify(tags);
+    const isUnnamedBusStop = tags.name == null && raw.type === 'node' && tag(tags, 'highway') === 'bus_stop';
+    const unnamed = hasMappableUnnamedAmenity(tags);
+    const name = clean(tags.name) || (isUnnamedBusStop ? 'Parada de ônibus sem nome no OSM'
+      : unnamed && kind ? `${kind.label} sem nome no OpenStreetMap` : null);
     if (!name || !kind) continue;
     const lat = raw.type === 'node' ? raw.lat : raw.center?.lat;
     const lng = raw.type === 'node' ? raw.lon : raw.center?.lon;
