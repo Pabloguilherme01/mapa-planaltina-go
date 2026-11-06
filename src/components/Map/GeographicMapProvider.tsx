@@ -8,8 +8,9 @@ import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
 import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
-export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, userLocation, routePreview, onClearRoute, routePickMode, onMapCoordinatePicked, onCancelMapPick }: {
+export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, onOpenPointDetails, userLocation, routePreview, onClearRoute, routePickMode, onMapCoordinatePicked, onCancelMapPick }: {
   points: MapPoint[]; selectedPoint: MapPoint | null; onSelectPoint: (point: MapPoint | null) => void;
+  onOpenPointDetails: (point: MapPoint) => void;
   userLocation: { lat: number; lng: number } | null;
   routePreview: LocalRoute | null;
   onClearRoute: () => void;
@@ -80,7 +81,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
               option.textContent = `${point.name} · ${point.category}`;
               option.addEventListener('click', () => {
                 if (routePickMode) onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
-                else onSelectPoint(point);
+                else onOpenPointDetails(point);
                 instance.closePopup();
               });
               options.appendChild(option);
@@ -109,7 +110,9 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
         if (routePickMode) {
           onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
         } else {
-          onSelectPoint(point);
+          // Tocar no pin abre a ficha; antes apenas alterava a cor do marcador,
+          // sem apresentar ao cidadão qualquer ação visível no mapa.
+          onOpenPointDetails(point);
         }
       });
       marker.getElement()?.setAttribute('aria-label', `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`);
@@ -118,7 +121,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     render();
     instance.on('zoomend', render);
     return () => { instance.off('zoomend', render); group.remove(); };
-  }, [points, onSelectPoint, selectedPoint?.id, routePickMode, onMapCoordinatePicked]);
+  }, [points, onSelectPoint, onOpenPointDetails, selectedPoint?.id, routePickMode, onMapCoordinatePicked]);
   useEffect(() => { if (selectedPoint) map.current?.panTo([selectedPoint.lat, selectedPoint.lng]); }, [selectedPoint]);
   useEffect(() => {
     if (!routePickMode) return;
