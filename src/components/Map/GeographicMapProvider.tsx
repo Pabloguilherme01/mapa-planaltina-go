@@ -54,13 +54,56 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
           const icon = L.divIcon({ className: 'municipal-cluster', iconSize: [40, 40], html: `<span style="display:grid;place-items:center;width:40px;height:40px;border:3px solid white;border-radius:50%;background:#27472c;color:white;font-weight:bold">${bucket.length}</span>` });
           const marker = L.marker(bounds.getCenter(), { icon, title, keyboard: true }).addTo(group);
           marker.getElement()?.setAttribute('aria-label', title);
-          marker.on('click', () => instance.fitBounds(bounds, { maxZoom: Math.min(17, instance.getZoom() + 2), padding: [32, 32] }));
+          marker.on('click', () => {
+            // Um agrupamento com coordenadas coincidentes não pode ser separado
+            // pelo zoom; fornecer uma lista com nomes e ações acessíveis.
+            if (instance.getZoom() < 17 &&
+                bounds.getNorthEast().distanceTo(bounds.getSouthWest()) > 2) {
+              instance.fitBounds(bounds, {
+                maxZoom: Math.min(17, instance.getZoom() + 2),
+                padding: [32, 32],
+              });
+              return;
+            }
+            const panel = document.createElement('section');
+            panel.className = 'municipal-cluster-panel';
+            panel.setAttribute('aria-label', 'Selecionar local no agrupamento');
+            const heading = document.createElement('strong');
+            heading.textContent = `${bucket.length} locais neste ponto`;
+            panel.appendChild(heading);
+            const options = document.createElement('div');
+            options.className = 'municipal-cluster-options';
+            for (const point of bucket.slice(0, 40)) {
+              const option = document.createElement('button');
+              option.type = 'button';
+              option.className = 'municipal-cluster-choice';
+              option.textContent = `${point.name} · ${point.category}`;
+              option.addEventListener('click', () => {
+                if (routePickMode) onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
+                else onSelectPoint(point);
+                instance.closePopup();
+              });
+              options.appendChild(option);
+            }
+            panel.appendChild(options);
+            if (bucket.length > 40) {
+              const hint = document.createElement('p');
+              hint.className = 'municipal-cluster-hint';
+              hint.textContent = 'Há mais locais aqui. Use a busca para refinar.';
+              panel.appendChild(hint);
+            }
+            L.popup({ maxWidth: 320 })
+              .setLatLng(bounds.getCenter())
+              .setContent(panel)
+              .openOn(instance);
+          });
           continue;
         }
         const point = bucket[0];
       const real = !point.isDemo;
+      const selected = selectedPoint?.id === point.id;
       const icon = L.divIcon({ className: 'municipal-marker', iconSize: [32, 32], iconAnchor: [16, 16],
-        html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:0 1px 5px #555"></span>` });
+        html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:${selected ? '0 0 0 4px #e5b744,0 2px 9px #333' : '0 1px 5px #555'}"></span>` });
       const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`, keyboard: true }).addTo(group);
       marker.on('click', () => {
         if (routePickMode) {
@@ -75,7 +118,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     render();
     instance.on('zoomend', render);
     return () => { instance.off('zoomend', render); group.remove(); };
-  }, [points, onSelectPoint, routePickMode, onMapCoordinatePicked]);
+  }, [points, onSelectPoint, selectedPoint?.id, routePickMode, onMapCoordinatePicked]);
   useEffect(() => { if (selectedPoint) map.current?.panTo([selectedPoint.lat, selectedPoint.lng]); }, [selectedPoint]);
   useEffect(() => {
     if (!routePickMode) return;
@@ -92,7 +135,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     const picked = (event: MouseEvent) => {
       if (event.detail === 0) return; // teclado em um marcador: usar o handler do próprio marcador
       const target = event.target;
-      if (target instanceof Element && target.closest('.leaflet-control')) return;
+      if (target instanceof Element && target.closest('.leaflet-control, .leaflet-popup, .municipal-cluster, .municipal-marker')) return;
       const bounds = element.getBoundingClientRect();
       const x = event.clientX - bounds.left;
       const y = event.clientY - bounds.top;
