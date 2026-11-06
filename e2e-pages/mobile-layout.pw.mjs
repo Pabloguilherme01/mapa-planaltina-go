@@ -242,3 +242,21 @@ test('mobile: tela cheia mantém mapa montado, controle de foco e saída por Esc
   await page.getByRole('button', { name: 'Sair do mapa em tela cheia' }).click();
   await expect(page.getByRole('dialog', { name: 'Mapa de Planaltina em tela cheia' })).toHaveCount(0);
 });
+
+test('trocar o tamanho da tela preserva a busca e monta um único catálogo', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+  const mobile = page.locator('#mobile-search-input');
+  const desktop = page.locator('#search-input');
+  await expect(desktop).toHaveCount(0);
+  await mobile.fill('JOVEM LATAS');
+  await expect(page.locator('#bottomSheet').getByRole('heading', { name: 'JOVEM LATAS' })).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(mobile).toHaveCount(0);
+  await expect(desktop).toHaveValue('JOVEM LATAS');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(desktop).toHaveCount(0);
+  await expect(mobile).toHaveValue('JOVEM LATAS');
+});
