@@ -10,6 +10,9 @@ import { assessRoadHealth } from './road-health.ts';
 export interface PublishedSnapshotHealth {
   status: 'healthy' | 'stale';
   realCount: number;
+  verifiedCount: number;
+  communityCount: number;
+  censusCount: number;
   oldestAgeDays: number;
   sourceMode: 'live' | 'snapshot_fallback';
 }
@@ -105,6 +108,9 @@ export function assessPublishedSnapshot(
   return {
     status: oldestAgeDays >= maxAgeDays ? 'stale' : 'healthy',
     realCount,
+    verifiedCount,
+    communityCount,
+    censusCount,
     oldestAgeDays,
     sourceMode,
   };
@@ -129,7 +135,10 @@ async function main() {
     '## Saúde do snapshot de Planaltina-GO',
     '',
     `- Estado: **${health.status}**`,
-    `- Pontos reais: **${health.realCount}**`,
+    `- Registros georreferenciados (inclui históricos): **${health.realCount}**`,
+    `- Estabelecimentos com fonte oficial verificada: **${health.verifiedCount}**`,
+    `- Pontos comunitários OSM (não verificados): **${health.communityCount}**`,
+    `- Registros históricos CNEFE 2022 (funcionamento pendente): **${health.censusCount}**`,
     `- Registro real mais antigo: **${health.oldestAgeDays} dias**`,
     `- Modo da fonte: **${health.sourceMode}**`,
     `- Recursos da experiência pública confirmados: **${surface.checked.join(', ')}**`,
