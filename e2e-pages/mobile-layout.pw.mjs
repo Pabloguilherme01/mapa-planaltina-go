@@ -6,7 +6,10 @@ test('mobile: busca histórica, teclado e recuperação de filtros', async ({ pa
   const search = page.locator('#mobile-search-input');
   const sheet = page.locator('#bottomSheet');
   await search.fill('JOVEM LATAS');
+  await expect(search).toHaveValue('JOVEM LATAS');
+  await expect(sheet.getByRole('heading', { name: 'JOVEM LATAS' })).toBeVisible();
   await search.press('Enter');
+  await expect(search).toHaveValue('JOVEM LATAS');
   await expect(search).not.toBeFocused();
   await expect(sheet.getByText('CENSO 2022', { exact: true }).first()).toBeVisible();
   await sheet.getByRole('button', { name: 'Ficha', exact: true }).first().click();
@@ -78,6 +81,8 @@ test('mobile: tocar em um marcador abre sua ficha e preserva o mapa ao fechar', 
   await page.goto('./');
   const search = page.getByLabel('Buscar pontos em Planaltina, Goiás');
   await search.fill('UNIDADE DE PRONTO ATENDIMENTO UPA');
+  await expect(search).toHaveValue('UNIDADE DE PRONTO ATENDIMENTO UPA');
+  await expect(page.locator('#bottomSheet').getByRole('heading', { name: 'UNIDADE DE PRONTO ATENDIMENTO UPA' })).toBeVisible();
   await page.getByRole('button', { name: 'Focar', exact: true }).first().click();
   await expect(page.locator('#bottomSheet')).toHaveClass(/catalog-collapsed/);
   const marker = page.locator('.municipal-marker').first();
