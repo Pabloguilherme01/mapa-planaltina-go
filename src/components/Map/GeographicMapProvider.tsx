@@ -135,7 +135,9 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, us
     const picked = (event: MouseEvent) => {
       if (event.detail === 0) return; // teclado em um marcador: usar o handler do próprio marcador
       const target = event.target;
-      if (target instanceof Element && target.closest('.leaflet-control, .leaflet-popup, .municipal-cluster, .municipal-marker')) return;
+      // Durante a marcação, inclusive um toque sobre marcador ou cluster define
+      // o ponto selecionado. Apenas controles e menus devem bloquear o evento.
+      if (target instanceof Element && target.closest('.leaflet-control, .leaflet-popup')) return;
       const bounds = element.getBoundingClientRect();
       const x = event.clientX - bounds.left;
       const y = event.clientY - bounds.top;
