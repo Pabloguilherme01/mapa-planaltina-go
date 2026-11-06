@@ -24,6 +24,25 @@ for (const width of [320, 390, 768]) {
   });
 }
 
+test('mobile: busca singular, categorias completas e navegação visível na ficha', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./?q=UPA');
+  const sheet = page.locator('#bottomSheet');
+  await expect(sheet.locator('#mobile-results-heading')).toHaveText('1 ponto no catálogo');
+  await expect(sheet).toContainText('1 local mapeado');
+  await sheet.getByRole('button', { name: 'Expandir ou recolher lista de pontos e filtros' }).click();
+  await sheet.getByText('Filtrar locais · categorias, tipo e bairro', { exact: true }).click();
+  const categories = sheet.getByRole('group', { name: 'Filtro de categorias cívicas de Planaltina, Goiás' });
+  await expect(categories).toHaveCSS('flex-wrap', 'wrap');
+  await expect(categories.getByRole('button', { name: /Rural/ })).toBeVisible();
+  await sheet.getByRole('button', { name: 'Ficha', exact: true }).first().click();
+  const detail = page.getByRole('dialog', { name: 'UNIDADE DE PRONTO ATENDIMENTO UPA' });
+  await expect(detail).toBeVisible();
+  await expect(detail.getByRole('link', { name: 'Google Maps · rotas' })).toBeInViewport();
+  await detail.getByRole('button', { name: 'Fechar ficha cadastral' }).click();
+});
+
 test('mobile: tocar em um marcador abre sua ficha e preserva o mapa ao fechar', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
   await page.setViewportSize({ width: 390, height: 844 });
