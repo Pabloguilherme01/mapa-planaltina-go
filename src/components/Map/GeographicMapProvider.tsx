@@ -52,7 +52,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
         if (bucket.length > 1) {
           const bounds = L.latLngBounds(bucket.map(point => L.latLng(point.lat, point.lng)));
           const title = `${bucket.length} locais — ampliar grupo`;
-          const icon = L.divIcon({ className: 'municipal-cluster', iconSize: [40, 40], html: `<span style="display:grid;place-items:center;width:40px;height:40px;border:3px solid white;border-radius:50%;background:#27472c;color:white;font-weight:bold">${bucket.length}</span>` });
+          const icon = L.divIcon({ className: 'municipal-cluster', iconSize: [44, 44], iconAnchor: [22, 22], html: `<span style="display:grid;place-items:center;width:44px;height:44px;border:3px solid white;border-radius:50%;background:#27472c;color:white;font-weight:bold">${bucket.length}</span>` });
           const marker = L.marker(bounds.getCenter(), { icon, title, keyboard: true }).addTo(group);
           marker.getElement()?.setAttribute('aria-label', title);
           marker.on('click', () => {
@@ -103,8 +103,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
         const point = bucket[0];
       const real = !point.isDemo;
       const selected = selectedPoint?.id === point.id;
-      const icon = L.divIcon({ className: 'municipal-marker', iconSize: [32, 32], iconAnchor: [16, 16],
-        html: `<span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:${selected ? '0 0 0 4px #e5b744,0 2px 9px #333' : '0 1px 5px #555'}"></span>` });
+      const icon = L.divIcon({ className: 'municipal-marker', iconSize: [44, 44], iconAnchor: [22, 22],
+        html: `<span style="display:grid;place-items:center;width:44px;height:44px"><span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:${selected ? '0 0 0 4px #e5b744,0 2px 9px #333' : '0 1px 5px #555'}"></span></span>` });
       const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`, keyboard: true }).addTo(group);
       marker.on('click', () => {
         if (routePickMode) {
