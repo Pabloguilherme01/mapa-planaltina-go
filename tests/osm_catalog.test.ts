@@ -6,6 +6,29 @@ const entry = (id: number, tags: Record<string, string>, lat = -15.4542, lon = -
   ({ type: 'node', id, lat, lon, tags });
 
 describe('catálogo OSM municipal', () => {
+  it('aceita pontos sem nome somente para equipamentos identificáveis e com geometria real', () => {
+    const points = mapOverpassElements({ elements: [
+      entry(301, { amenity: 'school' }),
+      entry(302, { amenity: 'post_office' }),
+      entry(303, { amenity: 'fuel' }),
+      entry(304, { amenity: 'school', access: 'private' }),
+      entry(305, { amenity: 'school' }, 0, 0),
+      entry(306, { amenity: 'taxi' }),
+      entry(307, { shop: 'supermarket' }),
+      entry(308, { amenity: 'clinic', name: '' }),
+    ] }, snapshot);
+    expect(points.map(point => point.id)).toEqual(['osm-node-301', 'osm-node-302', 'osm-node-303']);
+    expect(points.map(point => point.name)).toEqual([
+      'Escola sem nome no OpenStreetMap',
+      'Correios sem nome no OpenStreetMap',
+      'Posto de combustível sem nome no OpenStreetMap',
+    ]);
+    expect(points.every(point => point.provenanceMeta.provenance === 'community' &&
+      point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+    expect(overpassQuery('urban')).toContain('nwr["amenity"~"^(');
+  });
+
+
   it('classifica serviços mapeados de mobilidade e reciclagem sem presumir verificação', () => {
     const points = mapOverpassElements({ elements: [
       entry(51, { amenity: 'charging_station', name: 'Recarga Exemplo' }),
