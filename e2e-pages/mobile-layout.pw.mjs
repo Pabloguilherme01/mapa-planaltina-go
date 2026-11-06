@@ -85,6 +85,22 @@ for (const width of [320, 390]) {
   });
 }
 
+test('mobile: busca e cartões mantêm separação visual nos dois temas', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+  await page.setViewportSize({ width: 320, height: 844 });
+  await page.goto('./');
+  await page.getByLabel('Aparência').selectOption('light');
+  const search = page.getByLabel('Buscar pontos em Planaltina, Goiás');
+  await search.fill('UPA');
+  const card = page.getByTestId('mobile-place-card').first();
+  await expect(card).toBeVisible();
+  await expect(card).toHaveCSS('background-color', 'rgb(248, 249, 245)');
+  await page.getByLabel('Aparência').selectOption('dark');
+  await expect(card).toHaveCSS('background-color', 'rgb(36, 52, 58)');
+  await expect(search).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
+});
+
 test('desktop: os dois controles de zoom ficam clicáveis sem sobreposição do planejador', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Fluxo específico desktop');
   await page.setViewportSize({ width: 1366, height: 768 });
