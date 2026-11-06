@@ -21,6 +21,9 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
 }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  // Mantém os callbacks atualizados sem recriar todos os marcadores em cada render do App.
+  const actions = useRef({ onOpenPointDetails, onMapCoordinatePicked });
+  actions.current = { onOpenPointDetails, onMapCoordinatePicked };
   const [streets, setStreets] = useState(() => typeof navigator === 'undefined' || navigator.onLine);
   const [tileError, setTileError] = useState(false);
   useEffect(() => {
@@ -45,7 +48,11 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
     const group = L.layerGroup().addTo(instance);
     const render = () => {
       group.clearLayers();
-      const buckets = groupMapPoints(points, instance.getZoom(), (point) => {
+      // Não montar milhares de elementos DOM fora da tela: pan/zoom os recria
+      // apenas ao entrar na área visível, com margem para movimentos curtos.
+      const viewport = instance.getBounds().pad(0.25);
+      const visible = points.filter(point => point.id === selectedPoint?.id || viewport.contains([point.lat, point.lng]));
+      const buckets = groupMapPoints(visible, instance.getZoom(), (point) => {
         const pixel = instance.project([point.lat, point.lng]);
         return { x: pixel.x, y: pixel.y };
       }, selectedPoint?.id);
@@ -81,8 +88,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
               option.className = 'municipal-cluster-choice';
               option.textContent = `${point.name} · ${point.category}`;
               option.addEventListener('click', () => {
-                if (routePickMode) onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
-                else onOpenPointDetails(point);
+                if (routePickMode) actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
+                else actions.current.onOpenPointDetails(point);
                 instance.closePopup();
               });
               options.appendChild(option);
@@ -110,20 +117,33 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
       const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${status}`, keyboard: true, zIndexOffset: selected ? 1000 : 0 }).addTo(group);
       marker.on('click', () => {
         if (routePickMode) {
-          onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
+          actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
         } else {
           // Tocar no pin abre a ficha; antes apenas alterava a cor do marcador,
           // sem apresentar ao cidadão qualquer ação visível no mapa.
-          onOpenPointDetails(point);
+          actions.current.onOpenPointDetails(point);
         }
       });
       marker.getElement()?.setAttribute('aria-label', `${point.name} — ${status}`);
       }
     };
+    // Evita trabalho duplicado no mesmo frame durante zoom + pan e mantém
+    // a cobertura atualizada quando o cidadão arrasta o mapa pelo município.
+    let frame = 0;
+    const scheduleRender = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(render);
+    };
     render();
-    instance.on('zoomend', render);
-    return () => { instance.off('zoomend', render); group.remove(); };
-  }, [points, onSelectPoint, onOpenPointDetails, selectedPoint?.id, routePickMode, onMapCoordinatePicked]);
+    instance.on('zoomend', scheduleRender);
+    instance.on('moveend', scheduleRender);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      instance.off('zoomend', scheduleRender);
+      instance.off('moveend', scheduleRender);
+      group.remove();
+    };
+  }, [points, selectedPoint?.id, routePickMode]);
   useEffect(() => {
     if (selectedPoint && map.current) {
       map.current.setView([selectedPoint.lat, selectedPoint.lng], Math.max(16, map.current.getZoom()));
