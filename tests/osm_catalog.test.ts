@@ -29,6 +29,18 @@ describe('catálogo OSM municipal', () => {
   });
 
 
+  it('inclui novos tipos nomeados, sem aceitar privados ou fora do município', () => {
+    const points = mapOverpassElements({ elements: [
+      entry(201, { amenity: 'place_of_worship', name: 'Igreja Exemplo' }),
+      entry(202, { amenity: 'driving_school', name: 'Autoescola Exemplo' }),
+      entry(203, { amenity: 'car_wash', name: 'Lava-rápido Exemplo' }),
+      entry(204, { amenity: 'place_of_worship', name: 'Privado', access: 'private' }),
+      entry(205, { amenity: 'bar', name: 'Fora' }, -23.55, -46.63),
+      entry(206, { amenity: 'bar' }),
+    ] }, snapshot);
+    expect(points.map(point => point.id)).toEqual(['osm-node-201', 'osm-node-202', 'osm-node-203']);
+    expect(points.every(point => point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+  });
   it('classifica serviços mapeados de mobilidade e reciclagem sem presumir verificação', () => {
     const points = mapOverpassElements({ elements: [
       entry(51, { amenity: 'charging_station', name: 'Recarga Exemplo' }),

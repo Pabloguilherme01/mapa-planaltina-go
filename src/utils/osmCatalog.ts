@@ -54,6 +54,18 @@ const AMENITIES: Record<string, Kind> = {
   arts_centre: { category: 'Lazer', label: 'Centro cultural' },
   theatre: { category: 'Lazer', label: 'Teatro' },
   cinema: { category: 'Lazer', label: 'Cinema' },
+  place_of_worship: { category: 'Lazer', label: 'Local religioso' },
+  social_centre: { category: 'Serviços Públicos', label: 'Centro social' },
+  food_court: { category: 'Comércio', label: 'Praça de alimentação' },
+  bar: { category: 'Comércio', label: 'Bar' },
+  pub: { category: 'Comércio', label: 'Bar' },
+  ice_cream: { category: 'Comércio', label: 'Sorveteria' },
+  car_wash: { category: 'Comércio', label: 'Lava-rápido' },
+  vehicle_inspection: { category: 'Transporte', label: 'Inspeção veicular' },
+  driving_school: { category: 'Educação', label: 'Autoescola' },
+  music_school: { category: 'Educação', label: 'Escola de música' },
+  language_school: { category: 'Educação', label: 'Escola de idiomas' },
+  funeral_hall: { category: 'Serviços Públicos', label: 'Serviço funerário' },
 };
 const SHOPS: Record<string, string> = {
   supermarket: 'Supermercado', convenience: 'Mercado', bakery: 'Padaria',
