@@ -191,3 +191,24 @@
 @media (prefers-reduced-motion: reduce) {
   .mobile-catalog { transition: none; }
 }
+
+/* Seleção de pontos coincidentes: touch targets reais e lista rolável no celular. */
+.municipal-cluster-panel { min-width: min(250px, 65vw); font: 500 14px/1.4 var(--font-sans); }
+.municipal-cluster-panel > strong { display: block; margin-bottom: 8px; color: #1b3a29; }
+.municipal-cluster-options { max-height: min(38dvh, 280px); overflow-y: auto; overscroll-behavior: contain; }
+.municipal-cluster-choice {
+  display: block; width: 100%; min-height: 44px; padding: 10px;
+  border: 0; border-bottom: 1px solid #d7e2d9; border-radius: 8px;
+  background: #fff; color: #15291d; text-align: left; font: inherit;
+}
+.municipal-cluster-choice:hover, .municipal-cluster-choice:focus-visible { background: #e6f0e8; }
+.municipal-cluster-hint { margin-top: 8px; color: #4b5563; }
+:root[data-theme="dark"] .leaflet-popup-content-wrapper,
+:root[data-theme="dark"] .leaflet-popup-tip { background: #17252c; color: #edf6f0; }
+:root[data-theme="dark"] .municipal-cluster-panel > strong { color: #c5f0d3; }
+:root[data-theme="dark"] .municipal-cluster-choice {
+  background: #20353a; color: #f1f9f3; border-color: #45615d;
+}
+:root[data-theme="dark"] .municipal-cluster-choice:hover,
+:root[data-theme="dark"] .municipal-cluster-choice:focus-visible { background: #315249; }
+:root[data-theme="dark"] .municipal-cluster-hint { color: #d3e0dc; }
