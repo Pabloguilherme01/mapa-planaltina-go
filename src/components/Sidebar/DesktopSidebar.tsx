@@ -379,7 +379,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                   onClick={() => onSelectPoint(point)}
                   className={`flex-1 min-h-[44px] py-2 px-3 rounded-xl font-sans text-xs font-bold transition-all ${isSelected ? 'bg-[#355E3B] text-white shadow-sm' : 'bg-neutral-100 text-[#121E14] hover:bg-neutral-200'}`}
                 >
-                  {isSelected ? 'Centralizado no Mapa' : 'Ver no Mapa'}
+                  {isSelected ? 'Centralizar novamente' : 'Ver no Mapa'}
                 </button>
                 <button
                   type="button"

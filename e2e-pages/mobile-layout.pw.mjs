@@ -74,3 +74,35 @@ test('desktop: os dois controles de zoom ficam clicáveis sem sobreposição do 
   await page.locator('.leaflet-control-zoom-in').click({ trial: true });
   await page.locator('.leaflet-control-zoom-out').click({ trial: true });
 });
+
+test('desktop: centralizar novamente o mesmo local após mover o mapa', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name.includes('mobile'), 'Fluxo do painel desktop');
+  await page.setViewportSize({ width: 1366, height: 768 });
+  await page.goto('./');
+  await page.getByLabel('Buscar locais, órgãos e serviços em Planaltina, Goiás').fill('UNIDADE DE PRONTO ATENDIMENTO UPA');
+  await page.getByRole('button', { name: 'Ver no Mapa' }).first().click();
+  const map = page.getByLabel('Mapa geográfico de Planaltina com limite IBGE');
+  const pane = page.locator('.leaflet-map-pane');
+  const offset = () => pane.evaluate(el => {
+    const m = new DOMMatrixReadOnly(getComputedStyle(el).transform);
+    return { x: m.m41, y: m.m42 };
+  });
+  await page.waitForTimeout(700); // Aguarda a animação do panTo do Leaflet.
+  const focused = await offset();
+  const box = await map.boundingBox();
+  expect(box).not.toBeNull();
+  const x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x + 160, y + 60, { steps: 8 });
+  await page.mouse.up();
+  await expect.poll(async () => {
+    const p = await offset();
+    return Math.hypot(p.x - focused.x, p.y - focused.y);
+  }).toBeGreaterThan(30);
+  await page.getByRole('button', { name: 'Centralizar novamente' }).click();
+  await expect.poll(async () => {
+    const p = await offset();
+    return Math.hypot(p.x - focused.x, p.y - focused.y);
+  }).toBeLessThan(5);
+});

@@ -243,7 +243,9 @@ export default function App() {
   }, [allPoints]);
 
   const handleSelectPoint = (point: MapPoint | null) => {
-    setSelectedPoint(point);
+    // Um novo objeto garante que focar o mesmo local novamente recentralize
+    // o mapa depois que a pessoa o moveu manualmente.
+    setSelectedPoint(point ? { ...point } : null);
   };
 
   const handleOpenPointDetails = (point: MapPoint) => {
