@@ -208,7 +208,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
       <p>Toque em uma rua do mapa para marcar {routePickMode === 'origin' ? 'a origem' : 'o destino'} do percurso.</p>
       <button type="button" className="touch-target mt-2 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-bold" onClick={onCancelMapPick}>Cancelar seleção</button>
     </div>}
-    <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-6rem)] flex-wrap gap-2" aria-label="Controles do mapa">
+    <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-6rem)] flex-wrap gap-2" role="group" aria-label="Controles do mapa">
       <button type="button" className="touch-target inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-3 py-2 text-xs font-bold text-[#355E3B] shadow-lg backdrop-blur"
         aria-pressed={streets} aria-label={streets ? 'Ruas online ativadas' : 'Ruas online desativadas'}
         onClick={() => { setTileError(false); setStreets(!streets); }}>
