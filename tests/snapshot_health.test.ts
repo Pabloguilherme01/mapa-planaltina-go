@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { assessPublishedSnapshot } from '../scripts/snapshot-health.ts';
+import { CNEFE_SOURCE } from '../src/utils/censusCatalog.ts';
 
 const NOW = new Date('2026-10-19T15:00:00.000Z');
 const real = (retrievedAt: string) => ({
@@ -77,6 +78,35 @@ describe('vigia do catálogo público', () => {
     expect(result.status).toBe('healthy');
     expect(result.realCount).toBe(2);
     expect(result.oldestAgeDays).toBe(1);
+  });
+
+
+  it('conta registro histórico CNEFE sem promover funcionamento a verificado', () => {
+    const value = payload('2026-10-18T15:00:00.000Z');
+    const census = {
+      ...real('2026-10-01T15:00:00.000Z'),
+      id: 'cnefe-2022-88951899-012bb3e25abd',
+      provenanceMeta: {
+        provenance: 'official',
+        verificationStatus: 'pending',
+        sourceUrl: CNEFE_SOURCE,
+        retrievedAt: '2026-10-01T15:00:00.000Z',
+      },
+    };
+    value.data.push(census as (typeof value.data)[number]);
+    value.meta.realCount = 2;
+    Object.assign(value.meta, { censusCount: 1, verifiedCount: 1, communityCount: 0 });
+    const result = assessPublishedSnapshot(value, NOW);
+    expect(result).toMatchObject({
+      status: 'healthy', realCount: 2, verifiedCount: 1,
+      communityCount: 0, censusCount: 1, oldestAgeDays: 1,
+    });
+    const invalidSource = structuredClone(value);
+    (invalidSource.data[2] as typeof census).provenanceMeta.sourceUrl = 'https://example.com/falso';
+    expect(() => assessPublishedSnapshot(invalidSource, NOW)).toThrow(/procedência/);
+    const invalidTotals = structuredClone(value);
+    Object.assign(invalidTotals.meta, { censusCount: 2 });
+    expect(() => assessPublishedSnapshot(invalidTotals, NOW)).toThrow(/Contagens/);
   });
 
   it.each([

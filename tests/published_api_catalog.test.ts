@@ -6,6 +6,7 @@ import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CNES_FALLBACK_POINTS } from '../server/data/cnesPlanaltinaFallback.ts';
+import { CNEFE_SOURCE } from '../src/utils/censusCatalog.ts';
 import { DEMO_DISCLAIMER_TEXT, ORIGIN_DISCLAIMER_TEXT, type MapPoint } from '../src/types/index.ts';
 
 const verified = (): MapPoint => structuredClone(CNES_FALLBACK_POINTS[0]);
@@ -80,6 +81,48 @@ describe('catálogo de snapshot compartilhável com a API', () => {
     expect(result.demoCount).toBe(1);
     expect(result.points[0].isDemo).toBe(false);
     expect(result.points[1].isDemo).toBe(true);
+  });
+
+
+  it('aceita CNEFE 2022 histórico e OSM colaborativo sem promoção a verificado', () => {
+    const base = verified();
+    const census: MapPoint = {
+      ...base,
+      id: 'cnefe-2022-88951899-012bb3e25abd',
+      provenanceMeta: {
+        ...base.provenanceMeta,
+        provenance: 'official',
+        verificationStatus: 'pending',
+        sourceUrl: CNEFE_SOURCE,
+      },
+    };
+    const osm: MapPoint = {
+      ...base,
+      id: 'osm-node-42',
+      provenanceMeta: {
+        ...base.provenanceMeta,
+        provenance: 'community',
+        verificationStatus: 'unverified',
+        sourceUrl: 'https://www.openstreetmap.org/node/42',
+      },
+    };
+    const mixed = {
+      success: true,
+      data: [base, census, osm, demo()],
+      meta: {
+        ibgeCode: '5217609', realCount: 3, demoCount: 1,
+        verifiedCount: 1, communityCount: 1, censusCount: 1,
+      },
+    };
+    const parsed = parsePublishedCatalog(mixed);
+    expect(parsed.realCount).toBe(3);
+    expect(parsed.points.find(p => p.id === census.id)?.provenanceMeta.verificationStatus).toBe('pending');
+    const forged = structuredClone(mixed);
+    forged.data[1].provenanceMeta.sourceUrl = 'https://example.com/falso';
+    expect(() => parsePublishedCatalog(forged)).toThrow(/procedência/);
+    const wrongCount = structuredClone(mixed);
+    wrongCount.meta.censusCount = 2;
+    expect(() => parsePublishedCatalog(wrongCount)).toThrow(/Contagens/);
   });
 
   it.each([
