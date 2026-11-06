@@ -6,6 +6,24 @@ import { geojsonToOsmElements } from '../scripts/import-geofabrik-geojson.ts';
 // Protege a conexão entre categorias aceitas no catálogo e tags
 // realmente extraídas pelo CI antes do importador Geofabrik.
 describe('contrato da coleta OSM de locais adicionais', () => {
+  it('preserva equipamentos sem nome no extrato, mas não inventa locais genéricos', () => {
+    const features = [
+      { id: 501, amenity: 'school' },
+      { id: 502, amenity: 'taxi' },
+      { id: 503, amenity: 'fuel' },
+    ].map(({ id, amenity }) => ({
+      type: 'Feature',
+      properties: { '@type': 'node', '@id': id, amenity },
+      geometry: { type: 'Point', coordinates: [-47.6029, -15.4542] },
+    }));
+    const elements = geojsonToOsmElements({ type: 'FeatureCollection', features });
+    expect(elements.map(element => element.id)).toEqual([501, 503]);
+    const points = mapOverpassElements({ elements }, '2026-10-19T12:00:00.000Z');
+    expect(points.map(point => point.id)).toEqual(['osm-node-501', 'osm-node-503']);
+    expect(points.every(point => point.provenanceMeta.verificationStatus === 'unverified')).toBe(true);
+  });
+
+
   const workflow = readFileSync(new URL('../.github/workflows/pages.yml', import.meta.url), 'utf8');
   it('extrai tags classificadas de ferrovias, emergência e patrimônio', () => {
     for (const item of [
