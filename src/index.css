@@ -212,3 +212,17 @@
 :root[data-theme="dark"] .municipal-cluster-choice:hover,
 :root[data-theme="dark"] .municipal-cluster-choice:focus-visible { background: #315249; }
 :root[data-theme="dark"] .municipal-cluster-hint { color: #d3e0dc; }
+
+.municipal-cluster-dialog {
+  margin: auto;
+  width: min(92vw, 26rem);
+  max-height: 90dvh;
+  padding: 0.75rem;
+  border: 0;
+  border-radius: 1rem;
+  background: #fff;
+  color: #15291d;
+  overflow-y: auto;
+}
+.municipal-cluster-dialog::backdrop { background: rgb(0 0 0 / 55%); }
+:root[data-theme="dark"] .municipal-cluster-dialog { background: #17252c; color: #edf6f0; }

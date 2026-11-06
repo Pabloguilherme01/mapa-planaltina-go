@@ -22,6 +22,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
 }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  const clusterDialog = useRef<HTMLDialogElement>(null);
+  const clusterContent = useRef<HTMLDivElement>(null);
   // Mantém os callbacks atualizados sem recriar todos os marcadores em cada render do App.
   const actions = useRef({ onOpenPointDetails, onMapCoordinatePicked });
   actions.current = { onOpenPointDetails, onMapCoordinatePicked };
@@ -76,10 +78,16 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
               return;
             }
             const panel = createClusterPanel(bucket, point => {
+              if (clusterDialog.current?.open) clusterDialog.current.close();
               if (routePickMode) actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
               else actions.current.onOpenPointDetails(point);
               instance.closePopup();
             });
+            if (window.matchMedia('(max-width: 1023px)').matches && clusterDialog.current && clusterContent.current) {
+              clusterContent.current.replaceChildren(panel);
+              clusterDialog.current.showModal();
+              return;
+            }
             L.popup({ maxWidth: 320 })
               .setLatLng(bounds.getCenter())
               .setContent(panel)
@@ -186,6 +194,13 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
     return () => { layer.remove(); };
   }, [streets]);
   return <div className="relative h-full w-full">
+    <dialog ref={clusterDialog} className="municipal-cluster-dialog" aria-label="Locais neste ponto"
+      onKeyDown={event => event.stopPropagation()}
+      onClose={() => clusterContent.current?.replaceChildren()}>
+      <button type="button" className="touch-target block min-h-11 ml-auto px-3 font-bold"
+        onClick={() => clusterDialog.current?.close()}>Fechar</button>
+      <div ref={clusterContent} />
+    </dialog>
     <div ref={host} className="h-full w-full bg-[#e9eee5]"
       style={{ zIndex: 0, cursor: routePickMode ? 'crosshair' : undefined }}
       aria-label="Mapa geográfico de Planaltina com limite IBGE" />
