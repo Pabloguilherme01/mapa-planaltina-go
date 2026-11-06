@@ -10,6 +10,7 @@ import { planLocalRoute, validateRoadGraph, type RoadGraph, type LocalRoute } fr
 
 type Mode = 'automatico' | 'proxima' | 'repetir' | 'economia' | 'offline' | 'conducao';
 const modes: [Mode, string][] = [['automatico', 'Automático'], ['proxima', 'Próxima viagem'], ['repetir', 'Repetir'], ['economia', 'Economia'], ['offline', 'Sem internet'], ['conducao', 'Condução']];
+const DESTINATION_BATCH = 100;
 
 export function MobilityHub({ isPicking = false, points, selectedPoint, userLocation, onRoutePreview, mapOrigin, mapDestination, onRequestMapPick }: {
   isPicking?: boolean;
@@ -36,6 +37,8 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
   const [price, setPrice] = useState('');
   const [query, setQuery] = useState('');
   const [originQuery, setOriginQuery] = useState('');
+  const [destinationLimit, setDestinationLimit] = useState(DESTINATION_BATCH);
+  const [originLimit, setOriginLimit] = useState(DESTINATION_BATCH);
   const [susOnly, setSusOnly] = useState(false);
   const [favorites, setFavorites] = useState(() => {
     try { return readFavorites(localStorage.getItem(favoritesKey)); } catch { return []; }
@@ -43,8 +46,8 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
   const real = useMemo(() => findDestinations(points, '', false), [points]);
   const results = useMemo(() => findDestinations(real, query, susOnly), [real, query, susOnly]);
   const originResults = useMemo(() => findDestinations(real, originQuery, false), [real, originQuery]);
-  const shownResults = visibleDestinations(results, destinationId);
-  const shownOrigins = visibleDestinations(originResults, originId);
+  const shownResults = visibleDestinations(results, destinationId, destinationLimit);
+  const shownOrigins = visibleDestinations(originResults, originId, originLimit);
   const destination = real.find(point => point.id === destinationId);
   const origin = originId === '__gps__' ? userLocation :
     originId === '__map__' ? mapOrigin : real.find(p => p.id === originId);
@@ -145,7 +148,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
   const inputStyle = 'w-full rounded-lg border border-neutral-400 bg-white p-3 text-neutral-900';
   return <>
     {!isPicking && <button type="button" onClick={() => {
-      setQuery(''); setSusOnly(false);
+      setQuery(''); setSusOnly(false); setDestinationLimit(DESTINATION_BATCH); setOriginLimit(DESTINATION_BATCH);
       if (selectedPoint && !selectedPoint.isDemo) setDestinationId(selectedPoint.id);
       dialog.current?.showModal();
     }} className="absolute right-3 top-16 lg:top-28 z-20 rounded-xl bg-[#355E3B] px-4 py-3 font-bold text-white shadow-lg">Planejar viagem</button>}
@@ -164,13 +167,14 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
           localStorage.setItem(favoritesKey, JSON.stringify(next)); setFavorites(next); setNotice('Destino removido dos favoritos deste aparelho.');
         } catch { setNotice('Não foi possível remover o favorito neste navegador.'); }
       }} />
-      <label className="my-3 block">Buscar destino por nome ou endereço<input type="search" className={inputStyle} value={query} onChange={event => { setQuery(event.target.value); setDestinationId(''); }} /></label>
-      <label className="my-2 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={susOnly} onChange={event => { setSusOnly(event.target.checked); setDestinationId(''); }} />Somente vínculo SUS informado no CNES</label>
+      <label className="my-3 block">Buscar destino por nome ou endereço<input type="search" className={inputStyle} value={query} onChange={event => { setQuery(event.target.value); setDestinationId(''); setDestinationLimit(DESTINATION_BATCH); }} /></label>
+      <label className="my-2 flex min-h-11 items-center gap-2 text-sm"><input type="checkbox" checked={susOnly} onChange={event => { setSusOnly(event.target.checked); setDestinationId(''); setDestinationLimit(DESTINATION_BATCH); }} />Somente vínculo SUS informado no CNES</label>
       <p aria-live="polite" className="text-xs">{results.length} {results.length === 1 ? "destino disponível" : "destinos disponíveis"}{susOnly ? ' com vínculo SUS informado' : ''}</p>
-      {results.length > shownResults.length && <p className="text-xs">Mostrando {shownResults.length} opções. Busque por nome, rua ou bairro para encontrar as demais.</p>}
+      {results.length > destinationLimit && <p className="text-xs">Mostrando {destinationLimit} de {results.length} opções. Busque por nome, rua ou bairro ou carregue mais destinos.</p>}
       <label className="my-3 block">Destino real<select className={inputStyle} value={destinationId} onChange={event => setDestinationId(event.target.value)}><option value="">Escolha um local</option>
         {mapDestination && <option value="__map__">Ponto marcado no mapa ({mapDestination.lat.toFixed(5)}, {mapDestination.lng.toFixed(5)})</option>}
         {shownResults.map(point => <option key={point.id} value={point.id}>{point.name}{isCensusPoint(point) ? ` · Censo 2022 · ${point.addressHint}` : ''}</option>)}</select></label>
+      {results.length > destinationLimit && <button type="button" className="touch-target mb-3 min-h-11 rounded-xl border border-neutral-400 px-4 py-2 text-sm font-bold" onClick={() => setDestinationLimit(limit => Math.min(limit + DESTINATION_BATCH, results.length))}>Carregar mais destinos</button>}
       <button type="button" className="touch-target my-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('destination')}>
         Marcar destino no mapa
       </button>
@@ -183,9 +187,9 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
         <legend className="font-bold">Rota pelas ruas de Planaltina · gratuita</legend>
         <label className="my-2 block text-sm">Buscar ponto de partida
           <input type="search" className={inputStyle} value={originQuery} placeholder="Nome, rua ou bairro"
-            onChange={event => { setOriginQuery(event.target.value); setOriginId(''); }} />
+            onChange={event => { setOriginQuery(event.target.value); setOriginId(''); setOriginLimit(DESTINATION_BATCH); }} />
         </label>
-        {originResults.length > shownOrigins.length && <p className="text-xs">Mostrando {shownOrigins.length} pontos de partida. Refine a busca para acessar os demais.</p>}
+        {originResults.length > originLimit && <p className="text-xs">Mostrando {originLimit} de {originResults.length} pontos de partida. Refine a busca ou carregue mais.</p>}
         <label className="my-2 block text-sm">Ponto de partida
           <select className={inputStyle} aria-label="Ponto de partida" value={originId}
             onChange={event => setOriginId(event.target.value)}>
@@ -195,6 +199,7 @@ export function MobilityHub({ isPicking = false, points, selectedPoint, userLoca
             {shownOrigins.map(point => <option key={point.id} value={point.id}>{point.name}{isCensusPoint(point) ? ` · Censo 2022 · ${point.addressHint}` : ''}</option>)}
           </select>
         </label>
+        {originResults.length > originLimit && <button type="button" className="touch-target mb-3 min-h-11 rounded-xl border border-neutral-400 px-4 py-2 text-sm font-bold" onClick={() => setOriginLimit(limit => Math.min(limit + DESTINATION_BATCH, originResults.length))}>Carregar mais origens</button>}
         <button type="button" className="touch-target my-2 mr-2 rounded-xl border border-neutral-400 px-3 py-2 text-sm font-bold" onClick={() => requestPick('origin')}>
           Marcar origem no mapa
         </button>

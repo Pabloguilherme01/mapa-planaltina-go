@@ -37,6 +37,8 @@ describe('estabelecimentos históricos CNEFE', () => {
     expect(visible).toHaveLength(101);
     expect(visible).toContain(selected);
     expect(visibleDestinations(points, points[0].id)).toHaveLength(100);
+    expect(visibleDestinations(points, '', 200)).toHaveLength(200);
+    expect(visibleDestinations(points, selected.id, 200)).toHaveLength(201);
     expect(visibleDestinations([], selected.id)).toEqual([]);
   });
 });
