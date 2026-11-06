@@ -170,6 +170,11 @@
   border-color: #a7e2bd;
 }
 .mobile-catalog { bottom: var(--mobile-nav-height); background: #fff; }
+.mobile-search-surface { background: #f1f5f1; }
+.mobile-place-card { background: #f8f9f5; }
+:root[data-theme="dark"] .mobile-search-surface { background: #24343a; }
+:root[data-theme="dark"] .mobile-search-input { background: transparent; }
+:root[data-theme="dark"] .mobile-place-card { background: #24343a; }
 .catalog-collapsed { height: 166px; }
 .catalog-expanded { height: min(72dvh, 720px); max-height: calc(100dvh - 4rem - var(--mobile-nav-height)); }
 /* Evita que o zoom seja coberto pelo botão flutuante Planejar viagem. */

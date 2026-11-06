@@ -1,6 +1,6 @@
 import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 const DirectoryResults = React.lazy(() => import('../Sources/DirectoryResults.tsx')
   .then(module => ({ default: module.DirectoryResults })));
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
@@ -70,7 +70,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [browseDirectory, setBrowseDirectory] = useState(false);
-  const realCount = points.filter((point) => !point.isDemo).length;
+  const realCount = useMemo(() => points.filter((point) => !point.isDemo).length, [points]);
   const [visibleLimit, setVisibleLimit] = useState(60);
   useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone, verification, sort, radiusKm]);
 
@@ -92,15 +92,15 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         className="touch-target w-full h-7 -mt-1 flex flex-col items-center justify-center cursor-pointer active:opacity-60 shrink-0"
       >
         <span className="w-12 h-1 rounded-full bg-neutral-300" />
-        <span className="text-xs font-bold mt-1">{isExpanded ? 'Voltar ao mapa' : 'Explorar Planaltina'}</span>
+        <span className="text-[13px] font-bold mt-1">{isExpanded ? 'Voltar ao mapa' : 'Explorar Planaltina'}</span>
       </button>
 
       <div className="relative w-full mb-1.5 shrink-0">
         <label htmlFor="mobile-search-input" className="sr-only">
           Buscar pontos em Planaltina, Goiás
         </label>
-          <div className="relative flex items-center bg-[#F5F0E6] rounded-2xl border border-neutral-300 focus-within:border-[#355E3B] focus-within:ring-2 focus-within:ring-[#355E3B]/20 transition-colors">
-          <Search size={16} className="text-neutral-500 ml-2.5 shrink-0" />
+          <div className="mobile-search-surface relative flex items-center rounded-2xl border border-neutral-300 focus-within:border-[#355E3B] focus-within:ring-2 focus-within:ring-[#355E3B]/20 transition-colors">
+          <Search size={18} className="text-neutral-600 ml-2.5 shrink-0" />
           <input
             id="mobile-search-input"
             type="text"
@@ -108,7 +108,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             onFocus={() => setIsExpanded(true)}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Buscar locais e serviços"
-            className="w-full min-h-[44px] py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-400 focus:outline-none"
+            className="mobile-search-input w-full min-h-[44px] py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-600 focus:outline-none"
           />
           {searchQuery && (
             <button
@@ -245,7 +245,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             return (
               <div
                 key={point.id}
-                className={`bg-[#F5F0E6] rounded-2xl p-3 flex flex-col gap-1.5 border shadow-sm transition-colors ${
+                data-testid="mobile-place-card"
+                className={`mobile-place-card rounded-2xl p-3 flex flex-col gap-1.5 border shadow-sm transition-colors ${
                   isSelected ? 'border-[#B05835] ring-1 ring-[#B05835]' : 'border-neutral-200'
                 }`}
               >
@@ -274,7 +275,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                 </div>}
 
                 <div className="flex items-center justify-between pt-0.5">
-                  <span className="text-xs text-neutral-600 font-semibold truncate max-w-[150px]">
+                  <span className="text-xs text-neutral-600 font-semibold line-clamp-2 max-w-[150px]">
                     {point.addressHint || 'Planaltina, Goiás'}
                   </span>
                   <div className="flex gap-1.5">

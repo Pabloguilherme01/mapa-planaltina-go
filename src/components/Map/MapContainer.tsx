@@ -1,12 +1,14 @@
 import type { LocalRoute } from '../../utils/roadGraph.ts';
 import React, { lazy, Suspense, useState } from 'react';
 import { MapPoint } from '../../types/index.ts';
-import { DemoMapProvider } from './DemoMapProvider.tsx';
 import { Map as MapIcon, Globe, Loader2 } from 'lucide-react';
 import { hasGoogleMapsApiKey } from '../../utils/mapProvider.ts';
 
 const GoogleMapsProvider = lazy(() =>
   import('./GoogleMapsProvider.tsx').then((module) => ({ default: module.GoogleMapsProvider }))
+);
+const DemoMapProvider = lazy(() =>
+  import('./DemoMapProvider.tsx').then(module => ({ default: module.DemoMapProvider }))
 );
 const GeographicMapProvider = lazy(() => import('./GeographicMapProvider.tsx').then(module => ({ default: module.GeographicMapProvider })));
 
@@ -100,14 +102,14 @@ export const MapContainer: React.FC<MapContainerProps> = ({
       </div>}
 
       {provider === 'geographic' ? <Suspense fallback={<p role="status">Carregando cartografia…</p>}><GeographicMapProvider points={points} selectedPoint={selectedPoint} onSelectPoint={onSelectPoint} userLocation={userLocation} routePreview={routePreview} onClearRoute={onClearRoute} routePickMode={routePickMode} onMapCoordinatePicked={onMapCoordinatePicked} onCancelMapPick={onCancelMapPick} /></Suspense> : provider === 'demo' ? (
-        <DemoMapProvider
+        <Suspense fallback={<p role="status">Carregando mapa de teste…</p>}><DemoMapProvider
           points={points}
           selectedPoint={selectedPoint}
           onSelectPoint={onSelectPoint}
           onOpenProvenanceLegend={onOpenProvenanceLegend}
           onRequestGeolocation={onRequestGeolocation}
           userLocation={userLocation}
-        />
+        /></Suspense>
       ) : (
         <Suspense
           fallback={
