@@ -34,6 +34,9 @@ test('mobile: tocar em um marcador abre sua ficha e preserva o mapa ao fechar', 
   await expect(page.locator('#bottomSheet')).toHaveClass(/catalog-collapsed/);
   const marker = page.locator('.municipal-marker').first();
   await expect(marker).toBeVisible();
+  const target = await marker.boundingBox();
+  expect(target?.width).toBeGreaterThanOrEqual(44);
+  expect(target?.height).toBeGreaterThanOrEqual(44);
   await marker.click();
   const detail = page.getByRole('dialog', { name: 'UNIDADE DE PRONTO ATENDIMENTO UPA' });
   await expect(detail).toBeVisible();
