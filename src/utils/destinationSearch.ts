@@ -20,6 +20,9 @@ export function findDestinations(points: MapPoint[], query: string, susOnly: boo
        /^osm-(node|way|relation)-[1-9]\d*$/.test(point.id))) || !/\p{L}/u.test(point.name) ||
         !Number.isFinite(point.lat) || !Number.isFinite(point.lng) || Math.abs(point.lat) > 90 || Math.abs(point.lng) > 180 ||
         (point.lat === 0 && point.lng === 0) || (susOnly && susStatus(point) !== 'yes')) return false;
+    // A listagem inicial e o reset da busca não têm termos: evitar
+    // normalizar nome, endereço e tags de milhares de pontos do CNEFE.
+    if (terms.length === 0) return true;
     const text = normalizeSearchText(`${point.name} ${point.addressHint ?? ''} ${point.id} ${point.tags.join(' ')}`);
     return matchesSearchTerms(text, terms);
   }).sort((a, b) => Number(b.provenanceMeta.verificationStatus === 'verified') - Number(a.provenanceMeta.verificationStatus === 'verified') ||
