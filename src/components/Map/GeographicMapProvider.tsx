@@ -201,7 +201,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
         onClick={() => clusterDialog.current?.close()}>Fechar</button>
       <div ref={clusterContent} />
     </dialog>
-    <div ref={host} className="h-full w-full bg-[#e9eee5]"
+    <div ref={host} role="region" className="h-full w-full bg-[#e9eee5]"
       style={{ zIndex: 0, cursor: routePickMode ? 'crosshair' : undefined }}
       aria-label="Mapa geográfico de Planaltina com limite IBGE" />
     {routePickMode && <div role="status" className="absolute inset-x-4 top-16 z-20 mx-auto w-fit max-w-[85vw] rounded-2xl border border-[#355E3B]/30 bg-white/95 px-4 py-3 text-center text-sm font-extrabold text-[#355E3B] shadow-xl backdrop-blur">
