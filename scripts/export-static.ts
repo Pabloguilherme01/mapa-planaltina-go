@@ -1,4 +1,5 @@
 import { inPlanaltina } from '../src/utils/territory.ts';
+import { censusPoints, CNEFE_SOURCE, CNEFE_NOTICE } from '../src/utils/censusCatalog.ts';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { mapOverpassElements, overpassQuery, validateOsmSnapshot, mergeOsmSnapshots } from '../src/utils/osmCatalog.ts';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
@@ -98,11 +99,17 @@ try {
 // e só são exportados se houver opt-in explícito em homologação.
 const publishDemo = process.env.INCLUDE_DEMO_POINTS === 'true';
 const publicDemoPoints = publishDemo ? demoPoints : [];
-const data = [...realHealthPoints, ...communityPoints, ...publicDemoPoints];
+const historicalPoints = censusPoints(JSON.parse(await readFile('data/cnefe-2022-planaltina.json', 'utf8')));
+const data = [...realHealthPoints, ...communityPoints, ...historicalPoints, ...publicDemoPoints];
 console.log(JSON.stringify({ event: 'osm-planaltina', count: communityPoints.length, error: osmIssue, sourceMode: osmMode, demoIncluded: publishDemo }));
 const sources = await Promise.all(
   [ibge, prefeitura, cnes, inep, osm].map((adapter) => adapter.checkStatus())
 );
+sources.push({ id: 'cnefe', name: 'CNEFE — Censo 2022', agency: 'IBGE', municipalCode: '5217609',
+  url: CNEFE_SOURCE, status: 'snapshot_fallback', verified: false,
+  statusMessage: `${historicalPoints.length} estabelecimentos históricos identificados; funcionamento atual não confirmado.`,
+  retrievedAt: historicalPoints[0]?.provenanceMeta.retrievedAt ?? null,
+  license: 'Dados públicos IBGE — atribuição da fonte', notes: CNEFE_NOTICE });
 const cnesStatus = sources.find(source => source.id === 'cnes');
 if (cnesStatus) cnesStatus.notes += ` Triagem pela malha IBGE: ${realHealthPoints.length} pins aceitos; ${territorialReview.length} registros separados para revisão.`;
 const osmStatus = sources.find(source => source.id === 'osm');
@@ -145,7 +152,9 @@ await writeFile(
     meta: {
       total: data.length,
       count: data.length,
-      realCount: realHealthPoints.length + communityPoints.length,
+      realCount: realHealthPoints.length + communityPoints.length + historicalPoints.length,
+      censusCount: historicalPoints.length,
+      censusReferenceYear: 2022,
       verifiedCount: realHealthPoints.length,
       communityCount: communityPoints.length,
       osmSourceMode: osmMode,
@@ -156,7 +165,7 @@ await writeFile(
       mode: publishDemo ? 'misto_oficial_demo' : communityPoints.length > 0 ? 'catalogo_real_comunitario' : 'catalogo_real_institucional',
       realSourceMode: cnes.dataMode,
       disclaimer:
-        'Saúde CNES é verificada; locais colaborativos OSM têm geometria mapeada, mas existência e atendimento não verificados. Confirme a fonte antes do deslocamento.',
+        'Saúde CNES é verificada na fonte; OSM é colaborativo. CNEFE é histórico do Censo 2022 e não confirma funcionamento atual. Confirme a fonte antes do deslocamento.',
     },
   })
 );

@@ -1,4 +1,5 @@
 import type { LocalRoute } from '../../utils/roadGraph.ts';
+import { isCensusPoint } from '../../utils/censusCatalog.ts';
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import { Layers2, MapPinned, Navigation2, Route, Info } from 'lucide-react';
@@ -47,7 +48,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
       const buckets = groupMapPoints(points, instance.getZoom(), (point) => {
         const pixel = instance.project([point.lat, point.lng]);
         return { x: pixel.x, y: pixel.y };
-      });
+      }, selectedPoint?.id);
       for (const bucket of buckets.values()) {
         if (bucket.length > 1) {
           const bounds = L.latLngBounds(bucket.map(point => L.latLng(point.lat, point.lng)));
@@ -105,7 +106,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
       const selected = selectedPoint?.id === point.id;
       const icon = L.divIcon({ className: 'municipal-marker', iconSize: [44, 44], iconAnchor: [22, 22],
         html: `<span style="display:grid;place-items:center;width:44px;height:44px"><span style="display:block;border:3px solid white;border-radius:50%;width:28px;height:28px;background:${real ? CATEGORY_CONFIG[point.category].hexColor : '#b45309'};box-shadow:${selected ? '0 0 0 4px #e5b744,0 2px 9px #333' : '0 1px 5px #555'}"></span></span>` });
-      const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`, keyboard: true }).addTo(group);
+      const status = point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : isCensusPoint(point) ? 'Censo 2022 — confirmar funcionamento' : real ? 'colaborativo não verificado' : 'DEMO';
+      const marker = L.marker([point.lat, point.lng], { icon, title: `${point.name} — ${status}`, keyboard: true, zIndexOffset: selected ? 1000 : 0 }).addTo(group);
       marker.on('click', () => {
         if (routePickMode) {
           onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
@@ -115,14 +117,18 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
           onOpenPointDetails(point);
         }
       });
-      marker.getElement()?.setAttribute('aria-label', `${point.name} — ${point.provenanceMeta.verificationStatus === 'verified' ? 'verificado' : real ? 'colaborativo não verificado' : 'DEMO'}`);
+      marker.getElement()?.setAttribute('aria-label', `${point.name} — ${status}`);
       }
     };
     render();
     instance.on('zoomend', render);
     return () => { instance.off('zoomend', render); group.remove(); };
   }, [points, onSelectPoint, onOpenPointDetails, selectedPoint?.id, routePickMode, onMapCoordinatePicked]);
-  useEffect(() => { if (selectedPoint) map.current?.panTo([selectedPoint.lat, selectedPoint.lng]); }, [selectedPoint]);
+  useEffect(() => {
+    if (selectedPoint && map.current) {
+      map.current.setView([selectedPoint.lat, selectedPoint.lng], Math.max(16, map.current.getZoom()));
+    }
+  }, [selectedPoint]);
   useEffect(() => {
     if (!routePickMode) return;
     const onKey = (event: KeyboardEvent) => { if (event.key === 'Escape') onCancelMapPick(); };

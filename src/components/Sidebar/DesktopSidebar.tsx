@@ -1,3 +1,4 @@
+import { isCensusPoint, CNEFE_NOTICE } from '../../utils/censusCatalog.ts';
 import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
 import React, { useState, useEffect } from 'react';
@@ -195,7 +196,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
               className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
               <option value="all">Todos</option>
               <option value="verified">Oficialmente verificados</option>
-              <option value="unverified">Colaborativos não verificados</option>
+              <option value="unverified">Funcionamento não confirmado</option>
             </select>
           </label>
           <label className="text-xs font-bold">Ordenação
@@ -332,6 +333,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
           const provConfig = PROVENANCE_CONFIG[point.provenanceMeta.provenance];
           const IconComp = catConfig.icon;
           const isReal = !point.isDemo;
+            const isCensus = isCensusPoint(point);
           const isVerified = point.provenanceMeta.verificationStatus === 'verified';
 
           return (
@@ -353,14 +355,14 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 </div>
                 <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border shrink-0 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
                   {isVerified ? <BadgeCheck size={11} /> : <AlertTriangle size={11} />}
-                  {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Verificado' : 'Colaborativo') : 'DEMO'}
+                  {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Verificado' : isCensus ? 'Censo 2022' : 'Colaborativo') : 'DEMO'}
                 </span>
               </div>
 
               {!isVerified && <div className="mt-2.5 flex items-start gap-1.5 rounded-xl border border-orange-200 bg-orange-50 p-2 text-xs text-orange-900">
                 <AlertTriangle size={14} className="mt-0.5 shrink-0" aria-hidden="true" />
                 <p className="text-[11px] leading-tight">
-                  {isReal ? 'Local comunitário não verificado oficialmente. Confirme o cadastro e atendimento na fonte.' :
+                  {isCensus ? CNEFE_NOTICE : isReal ? 'Local comunitário não verificado oficialmente. Confirme o cadastro e atendimento na fonte.' :
                     'Registro ilustrativo: não utilize para deslocamento.'}
                 </p>
               </div>}
@@ -369,7 +371,7 @@ export const DesktopSidebar: React.FC<DesktopSidebarProps> = ({
                 <span className="text-[11px] font-semibold text-neutral-500">Proveniência: {provConfig.label}</span>
                 <span className={`flex items-center gap-1 font-bold text-[11px] ${isReal ? 'text-emerald-800' : 'text-[#355E3B]'}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${isReal ? 'bg-emerald-600' : 'bg-[#355E3B]'}`} />
-                  {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Dado real' : 'Ponto comunitário não verificado') : 'Ponto DEMO'}
+                  {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'Dado real' : isCensus ? 'Histórico IBGE · 2022' : 'Ponto comunitário não verificado') : 'Ponto DEMO'}
                 </span>
               </div>
 

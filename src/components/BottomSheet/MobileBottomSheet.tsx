@@ -1,6 +1,7 @@
+import { isCensusPoint, CNEFE_NOTICE } from '../../utils/censusCatalog.ts';
 import { FilterActions } from '../Filters/FilterActions.tsx';
 import type { CatalogSort, VerificationFilter } from '../../utils/catalogFilters.ts';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 const DirectoryResults = React.lazy(() => import('../Sources/DirectoryResults.tsx')
   .then(module => ({ default: module.DirectoryResults })));
 import { MapPoint, PointCategory, ProvenanceType } from '../../types/index.ts';
@@ -70,6 +71,8 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
   const [browseDirectory, setBrowseDirectory] = useState(false);
+  const searchInput = useRef<HTMLInputElement>(null);
+  const collapse = () => { searchInput.current?.blur(); setIsExpanded(false); };
   const realCount = useMemo(() => points.filter((point) => !point.isDemo).length, [points]);
   const [visibleLimit, setVisibleLimit] = useState(60);
   useEffect(() => setVisibleLimit(60), [searchQuery, selectedCategories, selectedProvenance, selectedKind, selectedZone, verification, sort, radiusKm]);
@@ -88,7 +91,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         aria-label="Expandir ou recolher lista de pontos e filtros"
         aria-expanded={isExpanded}
         aria-controls="mobile-points-list"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={() => isExpanded ? collapse() : setIsExpanded(true)}
         className="touch-target w-full h-7 -mt-1 flex flex-col items-center justify-center cursor-pointer active:opacity-60 shrink-0"
       >
         <span className="w-12 h-1 rounded-full bg-neutral-300" />
@@ -103,10 +106,17 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <Search size={18} className="text-neutral-600 ml-2.5 shrink-0" />
           <input
             id="mobile-search-input"
-            type="text"
+            ref={searchInput}
+            type="search"
+            enterKeyHint="search"
+            autoComplete="off"
             value={searchQuery}
             onFocus={() => setIsExpanded(true)}
             onChange={(e) => onSearchChange(e.target.value)}
+            onKeyDown={event => {
+              if (event.key === 'Enter') searchInput.current?.blur();
+              if (event.key === 'Escape') { event.preventDefault(); collapse(); }
+            }}
             placeholder="Buscar locais e serviços"
             className="mobile-search-input w-full min-h-[44px] py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-600 focus:outline-none"
           />
@@ -165,7 +175,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               className="mt-1 min-h-11 w-full rounded-lg border border-neutral-400 bg-white p-2 text-xs">
               <option value="all">Todos</option>
               <option value="verified">Oficialmente verificados</option>
-              <option value="unverified">Colaborativos não verificados</option>
+              <option value="unverified">Funcionamento não confirmado</option>
             </select>
           </label>
           <label className="text-xs font-bold">Ordenação
@@ -202,6 +212,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             <p className="truncate text-xs text-neutral-600">
               Planaltina, Goiás • {realCount} {realCount === 1 ? "local mapeado" : "locais mapeados"}
             </p>
+            {points.some(isCensusPoint) && <p className="text-[11px] text-neutral-600">Inclui Censo 2022 · confirme funcionamento</p>}
           </div>
         </div>
 
@@ -233,7 +244,11 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         </React.Suspense>}
         {isLoading ? <p role="status" className="p-4 text-sm">Carregando locais de Planaltina…</p> : isError ? <div role="alert" className="p-4 text-sm"><p>Não foi possível carregar os locais.</p><button type="button" className="touch-target mt-2 rounded-xl border px-3 font-bold" onClick={onRetry}>Tentar novamente</button></div> : points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
-            Nenhum ponto encontrado com os filtros atuais.
+            <p>Nenhum ponto encontrado com os filtros atuais.</p>
+            {activeFilterCount > 0 && <button type="button" onClick={onClearAllFilters}
+              className="touch-target mt-2 rounded-xl border border-neutral-400 bg-white px-3 font-bold text-[#355E3B]">
+              Limpar busca e filtros
+            </button>}
             {activeFilterCount > 0 && <button type="button" onClick={onClearAllFilters} className="touch-target mt-2 block w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm font-bold text-[#355E3B]">Limpar busca e filtros</button>}
           </div>
         ) : (
@@ -242,6 +257,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             const IconComponent = catConfig.icon;
             const isSelected = selectedPoint?.id === point.id;
             const isReal = !point.isDemo;
+            const isCensus = isCensusPoint(point);
             const isVerified = point.provenanceMeta.verificationStatus === 'verified';
 
             return (
@@ -264,14 +280,14 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   </div>
                   <span className={`px-1.5 py-0.2 rounded-full text-xs font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
                     {isVerified ? <BadgeCheck size={9} /> : <AlertTriangle size={9} />}
-                    {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : 'COLABORATIVO') : 'DEMO'}
+                    {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : isCensus ? 'CENSO 2022' : 'COLABORATIVO') : 'DEMO'}
                   </span>
                 </div>
 
                 {!isVerified && <div className="flex items-start gap-1 rounded-lg border border-orange-200 bg-orange-50 p-1.5 text-orange-900">
                   <AlertTriangle size={12} className="mt-0.5 shrink-0" aria-hidden="true" />
                   <p className="text-xs leading-snug">
-                    {isReal ? 'Cadastro comunitário não verificado. Confirme o local na fonte.' :
+                    {isCensus ? CNEFE_NOTICE : isReal ? 'Cadastro comunitário não verificado. Confirme o local na fonte.' :
                       'Ilustrativo. Não use para deslocamento.'}
                   </p>
                 </div>}
@@ -283,7 +299,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                   <div className="flex gap-1.5">
                     <button
                       type="button"
-                      onClick={() => { onSelectPoint(point); setIsExpanded(false); }}
+                      onClick={() => { onSelectPoint(point); collapse(); }}
                       className="touch-target px-2 py-1 rounded-lg bg-white text-[#121E14] text-xs font-bold border border-neutral-300 active:scale-95 transition-transform"
                     >
                       Focar

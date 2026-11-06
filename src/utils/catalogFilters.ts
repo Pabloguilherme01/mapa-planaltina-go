@@ -1,5 +1,5 @@
 import type { MapPoint, PointCategory, ProvenanceType, VerificationStatus } from '../types/index.ts';
-import { normalizeSearchText } from './text.ts';
+import { normalizeSearchText, matchesSearchTerms } from './text.ts';
 export type MapCoordinates = { lat: number; lng: number };
 export type CatalogSort = 'default' | 'name' | 'nearest';
 export type VerificationFilter = 'all' | 'verified' | 'unverified';
@@ -39,7 +39,7 @@ export function filterCatalog(points: readonly MapPoint[], filters: CatalogFilte
     if (!terms.length) return true;
     const haystack = normalizeSearchText([point.id, point.name, point.category, point.description,
       point.addressHint || '', point.zone, point.provenanceMeta.sourceName, ...point.tags].join(' '));
-    return terms.every(term => haystack.includes(term));
+    return matchesSearchTerms(haystack, terms);
   });
   if (filters.sort === 'name') return filtered.sort((a,b)=>a.name.localeCompare(b.name,'pt-BR'));
   if (filters.sort === 'nearest' && origin) {

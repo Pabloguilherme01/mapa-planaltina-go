@@ -6,6 +6,13 @@ const point = (id: string, lat: number, lng: number) => ({ id, lat, lng } as Map
 const project = (item: MapPoint) => ({ x: item.lat, y: item.lng });
 
 describe('agrupamento geográfico de marcadores', () => {
+  it('mantém o destino focado fora do agrupamento mesmo com coordenadas coincidentes', () => {
+    const values = [point('escola', -15.4542, -47.6029), point('posto', -15.4542, -47.6029)];
+    for (const zoom of [13, 18]) {
+      const groups = [...groupMapPoints(values, zoom, project, 'posto').values()];
+      expect(groups.map(bucket => bucket.map(item => item.id))).toEqual([['escola'], ['posto']]);
+    }
+  });
   it('preserva agrupamento pelo mesmo quadrante e ordem de inserção', () => {
     const values = [point('a', 0, 0), point('b', 43, 43), point('c', 44, 0), point('d', -1, -1)];
     const groups = [...groupMapPoints(values, 13, project).values()];

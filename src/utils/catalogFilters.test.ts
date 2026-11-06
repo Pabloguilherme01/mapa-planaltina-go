@@ -41,6 +41,12 @@ const market: MapPoint = {
 };
 
 describe('busca textual no catálogo e em destinos', () => {
+  it('busca siglas sem confundir UPA com lojas de roupas', () => {
+    const upa = { ...clinic, name: 'UPA 24H', description: '' };
+    const clothes = { ...market, name: 'LOJA DE ROUPAS' };
+    expect(filterCatalog([clothes, upa], { search: 'UPA' })).toEqual([upa]);
+    expect(findDestinations([clothes, upa], 'UPA', false)).toEqual([upa]);
+  });
   it('interpreta hífens e vírgulas como separadores ao procurar nomes', () => {
     expect(filterCatalog([market, clinic], { search: 'posto-de-saúde' })).toEqual([clinic]);
     expect(filterCatalog([market, clinic], { search: 'São, João' })).toEqual([clinic]);
