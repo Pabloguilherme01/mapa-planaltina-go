@@ -107,12 +107,17 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <input
             id="mobile-search-input"
             ref={searchInput}
-            type="search"
+            type="text"
+            inputMode="search"
             enterKeyHint="search"
             autoComplete="off"
             value={searchQuery}
-            onFocus={() => setIsExpanded(true)}
-            onChange={(e) => onSearchChange(e.target.value)}
+            // Não expandir no focus: o WebKit pode terminar o reflow enquanto
+            // o teclado automatizado/usuário ainda insere o primeiro texto,
+            // restaurando o valor controlado anterior. Expandir no input
+            // preserva a digitação e mantém o atalho de expandir disponível.
+            onInput={(e) => { onSearchChange(e.currentTarget.value); setIsExpanded(true); }}
+            onChange={(e) => { onSearchChange(e.target.value); setIsExpanded(true); }}
             onKeyDown={event => {
               if (event.key === 'Enter') searchInput.current?.blur();
               if (event.key === 'Escape') { event.preventDefault(); collapse(); }

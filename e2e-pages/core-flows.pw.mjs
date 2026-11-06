@@ -468,6 +468,7 @@ test('diretório: encontra cadastros SEDUC, ANP e comércio sem inventar pontos 
   const search = page.getByLabel(mobile ? 'Buscar pontos em Planaltina, Goiás' :
     'Buscar locais, órgãos e serviços em Planaltina, Goiás');
   await search.fill('MACHADO DE ASSIS');
+  await expect(search).toHaveValue('MACHADO DE ASSIS');
   const docs = page.getByRole('region', { name: 'Cadastros sem geolocalização' });
   await expect(docs).toBeVisible();
   await expect(docs).toContainText('ESCOLA MUNICIPAL MACHADO DE ASSIS');
