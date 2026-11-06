@@ -22,6 +22,18 @@ describe('agrupamento geográfico de marcadores', () => {
     expect([...groups.values()].map(bucket => bucket[0].id)).toEqual(['a', 'b']);
   });
 
+  it('mantém acessíveis locais de IDs distintos nas mesmas coordenadas no zoom alto', () => {
+    const values = [point('escola', -15.4542, -47.6029),
+      point('posto', -15.4542, -47.6029),
+      point('hospital', -15.4543, -47.6029)];
+    const groups = [...groupMapPoints(values, 18, () => {
+      throw new Error('não deve projetar pontos com zoom alto');
+    }).values()];
+    expect(groups.map(bucket => bucket.map(item => item.id))).toEqual([
+      ['escola', 'posto'], ['hospital'],
+    ]);
+  });
+
   it('retorna vazio sem gerar marcadores artificiais', () => {
     expect(groupMapPoints([], 13, project).size).toBe(0);
   });
