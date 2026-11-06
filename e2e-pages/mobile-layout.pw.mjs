@@ -66,6 +66,25 @@ for (const viewport of [
   });
 }
 
+for (const width of [320, 390]) {
+  test(`mobile ${width}px: cores e navegação legíveis no tema escuro`, async ({ page }, testInfo) => {
+    test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+    await page.setViewportSize({ width, height: 844 });
+    await page.goto('./');
+    await page.getByLabel('Aparência').selectOption('dark');
+    await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
+    const nav = page.getByRole('navigation', { name: 'Navegação móvel' });
+    const active = nav.getByRole('button', { name: 'Mapa', exact: true });
+    await expect(nav).toHaveCSS('background-color', 'rgb(25, 38, 48)');
+    await expect(active).toHaveCSS('background-color', 'rgb(36, 67, 57)');
+    await expect(active).toHaveCSS('color', 'rgb(234, 242, 238)');
+    const box = await active.boundingBox();
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
+  });
+}
+
 test('desktop: os dois controles de zoom ficam clicáveis sem sobreposição do planejador', async ({ page }, testInfo) => {
   test.skip(testInfo.project.name.includes('mobile'), 'Fluxo específico desktop');
   await page.setViewportSize({ width: 1366, height: 768 });
