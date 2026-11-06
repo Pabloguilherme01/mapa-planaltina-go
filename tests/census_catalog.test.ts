@@ -30,6 +30,21 @@ describe('estabelecimentos históricos CNEFE', () => {
     expect(points.every(point => isCensusPoint(point))).toBe(true);
     expect(new Set(points.map(point => point.category))).toEqual(new Set(['Rural', 'Educação', 'Saúde', 'Comércio', 'Lazer']));
   });
+  it('não normaliza tags de todos os locais quando a busca está vazia', () => {
+    const [source] = censusPoints(sample);
+    const point = {
+      ...source,
+      tags: new Proxy(source.tags, {
+        get(target, property, receiver) {
+          if (property === 'join') throw new Error('Tags não devem ser concatenadas sem termos');
+          return Reflect.get(target, property, receiver);
+        },
+      }),
+    };
+    expect(findDestinations([point], '', false)).toEqual([point]);
+    expect(findDestinations([point], '    ', false)).toEqual([point]);
+  });
+
   it('limita opções no planejador e preserva destino escolhido fora da primeira página', () => {
     const points = censusPoints(snapshot);
     const selected = points.at(-1)!;
