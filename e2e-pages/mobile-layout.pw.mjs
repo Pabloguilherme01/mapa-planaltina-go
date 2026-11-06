@@ -1,5 +1,34 @@
 import { test, expect } from '@playwright/test';
 
+test('mobile: busca histórica, teclado e recuperação de filtros', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+  const search = page.locator('#mobile-search-input');
+  const sheet = page.locator('#bottomSheet');
+  await search.fill('JOVEM LATAS');
+  await search.press('Enter');
+  await expect(search).not.toBeFocused();
+  await expect(sheet.getByText('CENSO 2022', { exact: true }).first()).toBeVisible();
+  await sheet.getByRole('button', { name: 'Ficha', exact: true }).first().click();
+  const detail = page.getByRole('dialog', { name: 'JOVEM LATAS' });
+  await expect(detail).toContainText('Censo 2022 · confirmar funcionamento');
+  await detail.getByRole('button', { name: 'Fechar ficha cadastral' }).click();
+  await search.fill('termo-inexistente-cnefe');
+  await sheet.getByRole('button', { name: 'Limpar busca e filtros', exact: true }).click();
+  await expect(search).toHaveValue('');
+  await search.focus();
+  await search.press('Escape');
+  await expect(sheet).toHaveClass(/catalog-collapsed/);
+  await expect(search).not.toBeFocused();
+  await page.getByRole('button', { name: 'Planejar viagem', exact: true }).click();
+  const planner = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
+  expect(await planner.getByLabel('Destino real').locator('option').count()).toBeLessThanOrEqual(102);
+  expect(await planner.getByLabel('Ponto de partida', { exact: true }).locator('option').count()).toBeLessThanOrEqual(104);
+  await planner.getByLabel('Buscar ponto de partida', { exact: true }).fill('JOVEM LATAS');
+  await expect(planner.getByLabel('Ponto de partida', { exact: true }).locator('option')).toHaveCount(2);
+  await expect(planner.getByLabel('Ponto de partida', { exact: true })).toContainText('Censo 2022');
+});
+
 for (const width of [320, 390, 768]) {
   test(`mobile ${width}: busca compacta, resultados e seleção no mapa`, async ({ page }) => {
     await page.setViewportSize({ width, height: 844 });
@@ -27,7 +56,7 @@ for (const width of [320, 390, 768]) {
 test('mobile: busca singular, categorias completas e navegação visível na ficha', async ({ page }, testInfo) => {
   test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('./?q=UPA');
+  await page.goto('./?q=UNIDADE%20DE%20PRONTO%20ATENDIMENTO%20UPA');
   const sheet = page.locator('#bottomSheet');
   await expect(sheet.locator('#mobile-results-heading')).toHaveText('1 ponto no catálogo');
   await expect(sheet).toContainText('1 local mapeado');

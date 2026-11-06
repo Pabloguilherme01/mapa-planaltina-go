@@ -290,10 +290,11 @@ test('desktop: catálogo publicado contém saúde real verificável, inclusive e
   }
 
   await page.goto('./fontes/');
+  const cnesCard = page.getByRole('article').filter({ has: page.getByRole('heading', { name: cnesSource.name, exact: true }) });
   if (cnesSource.status === 'snapshot_fallback') {
-    await expect(page.getByText('Snapshot preservado')).toBeVisible();
+    await expect(cnesCard.getByText('Snapshot preservado', { exact: true })).toBeVisible();
   } else {
-    await expect(page.getByText('Fonte Ativa').first()).toBeVisible();
+    await expect(cnesCard.getByText('Fonte Ativa', { exact: true })).toBeVisible();
   }
 });
 
@@ -410,7 +411,7 @@ test('rotas: publicação oferece malha rodoviária verdadeira e rejeita origem 
   expect(graph.edges.length).toBeGreaterThan(100);
   await page.getByRole('button', { name: 'Planejar viagem' }).click();
   const dialog = page.getByRole('dialog', { name: 'Mobilidade em Planaltina' });
-  await expect(dialog.getByLabel('Ponto de partida')).toBeVisible();
+  await expect(dialog.getByLabel('Ponto de partida', { exact: true })).toBeVisible();
   await expect(dialog.getByRole('button', { name: 'Traçar rota no mapa' })).toBeDisabled();
   await expect(dialog).toContainText('Não considera restrições de conversão, tráfego ao vivo');
   await expect(dialog).toContainText('Confira a sinalização no local');
@@ -452,7 +453,7 @@ test('roteamento de qualquer rua: selecionar origem e destino por toque sem GPS'
   await expect(page.getByText('Toque em uma rua do mapa para marcar a origem do percurso.')).toBeVisible();
   await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 300, y: 220 }, force: true });
   await expect(planner).toBeVisible();
-  await expect(planner.getByLabel('Ponto de partida')).toHaveValue('__map__');
+  await expect(planner.getByLabel('Ponto de partida', { exact: true })).toHaveValue('__map__');
   await planner.getByRole('button', { name: 'Marcar destino no mapa' }).click();
   await expect(page.getByText('Toque em uma rua do mapa para marcar o destino do percurso.')).toBeVisible();
   await page.getByLabel('Mapa geográfico de Planaltina com limite IBGE').click({ position: { x: 460, y: 320 }, force: true });

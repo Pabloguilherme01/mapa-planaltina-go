@@ -1,4 +1,5 @@
 import { inPlanaltina } from '../src/utils/territory.ts';
+import { isCensusPoint } from '../src/utils/censusCatalog.ts';
 import { validateRoadGraph } from '../src/utils/roadGraph.ts';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
 import { readFile, readdir } from 'node:fs/promises';
@@ -73,18 +74,20 @@ export function isSourceUrl(value: unknown): boolean {
 
 function verifyRealPoint(point: ArtifactPoint): void {
   const provenance = point.provenanceMeta;
-  const confirmed = provenance?.provenance === 'official' || provenance?.provenance === 'verified_open_data';
+  const census = isCensusPoint(point);
+  const confirmed = !census && (provenance?.provenance === 'official' || provenance?.provenance === 'verified_open_data');
   const community = provenance?.provenance === 'community' &&
     (provenance.verificationStatus === 'unverified' || provenance.verificationStatus === 'pending') &&
     /^osm-(node|way|relation)-[1-9]\d*$/.test(point.id ?? '') &&
     /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\d*$/.test(provenance.sourceUrl ?? '');
-  const sourceAllowed = confirmed || community;
+  const sourceAllowed = confirmed || community || census;
 
   if (
     !point.id ||
     !isFiniteCoordinate(point.lat) || Math.abs(point.lat) > 90 ||
     !isFiniteCoordinate(point.lng) || Math.abs(point.lng) > 180 ||
     !sourceAllowed ||
+    !provenance ||
     (confirmed && provenance?.verificationStatus !== 'verified') ||
     !hasText(provenance.sourceName) ||
     !isSourceUrl(provenance.sourceUrl) ||

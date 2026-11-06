@@ -46,7 +46,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             Fontes auditáveis
           </span>
           <p className="text-xs text-[#78350F] font-semibold">
-            {realCount} locais mapeados {demoCount > 0 ? `• ${demoCount} DEMO` : '• catálogo real'}. Pontos comunitários podem não estar verificados; confira a fonte.
+            {realCount} locais mapeados {demoCount > 0 ? `• ${demoCount} DEMO` : '• fontes públicas'}. Inclui registros históricos do Censo 2022; confirme funcionamento e fonte.
           </p>
         </div>
       </div>

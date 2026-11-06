@@ -1,3 +1,4 @@
+import { isCensusPoint, CNEFE_NOTICE } from '../../utils/censusCatalog.ts';
 import React, { useRef } from 'react';
 import { useDialogFocus } from '../../hooks/useDialogFocus.ts';
 import { MapPoint } from '../../types/index.ts';
@@ -18,6 +19,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
 
   const provConfig = PROVENANCE_CONFIG[point.provenanceMeta.provenance];
   const isReal = !point.isDemo;
+  const isCensus = isCensusPoint(point);
   const isVerified = isReal && point.provenanceMeta.verificationStatus === 'verified';
   const retrievedDate = point.provenanceMeta.retrievedAt
     ? new Date(point.provenanceMeta.retrievedAt).toLocaleDateString('pt-BR')
@@ -41,13 +43,13 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
           <span
             className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide inline-flex items-center gap-1.5 ${
-              isReal
+              isVerified
                 ? 'bg-emerald-100 text-emerald-900'
                 : 'bg-amber-100 text-amber-950'
             }`}
           >
-            {isReal && <BadgeCheck size={13} />}
-            {isVerified ? 'Dado real verificado' : isReal ? 'Mapeado pela comunidade · não verificado' : 'Ficha Demonstrativa DEMO'}
+            {isVerified ? <BadgeCheck size={13} /> : <AlertTriangle size={13} />}
+            {isVerified ? 'Dado real verificado' : isCensus ? 'Censo 2022 · confirmar funcionamento' : isReal ? 'Mapeado pela comunidade · não verificado' : 'Ficha Demonstrativa DEMO'}
           </span>
           <button
             type="button"
@@ -96,7 +98,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
             </span>
           </div>
           <p className="text-xs text-[#424941] leading-relaxed">
-            {isReal
+            {isCensus ? CNEFE_NOTICE : isReal
               ? 'Contatos não são replicados. Para cadastros colaborativos, confirme estabelecimento, localização e atendimento na fonte antes de sair.'
               : 'Telefones, e-mails e números prediais foram intencionalmente omitidos por se tratarem de dados não verificados em Planaltina, Goiás.'}
           </p>
@@ -115,7 +117,7 @@ export const PointDetailsModal: React.FC<PointDetailsModalProps> = ({ point, onC
             <span className="text-neutral-600 font-medium">Status Cadastral:</span>
             <span className={`font-bold flex items-center gap-1 text-right ${isVerified ? 'text-emerald-800' : isReal ? 'text-orange-800' : 'text-rose-700'}`}>
               <span className={`w-2 h-2 rounded-full ${isVerified ? 'bg-emerald-600' : isReal ? 'bg-orange-600' : 'bg-rose-600'}`} />
-              {isVerified ? 'Verificado na fonte' : isReal ? 'Cadastro colaborativo não verificado' : 'Não Verificado (DEMO)'}
+              {isVerified ? 'Verificado na fonte' : isCensus ? 'Histórico · Censo 2022' : isReal ? 'Cadastro colaborativo não verificado' : 'Não Verificado (DEMO)'}
             </span>
           </div>
           <div className="flex justify-between items-center py-0.5 border-b border-neutral-200/60 gap-3">

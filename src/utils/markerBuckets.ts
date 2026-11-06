@@ -4,12 +4,15 @@ import type { MapPoint } from '../types/index.ts';
 export function groupMapPoints(
   points: readonly MapPoint[],
   zoom: number,
-  project: (point: MapPoint) => { x: number; y: number }
+  project: (point: MapPoint) => { x: number; y: number },
+  selectedId?: string
 ): Map<string, MapPoint[]> {
   const buckets = new Map<string, MapPoint[]>();
   for (const point of points) {
     let key = point.id;
-    if (zoom < 17) {
+    if (point.id === selectedId) {
+      key = `selected:${point.id}`;
+    } else if (zoom < 17) {
       const pixel = project(point);
       key = `${Math.floor(pixel.x / 44)}:${Math.floor(pixel.y / 44)}`;
     } else {
