@@ -144,13 +144,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
       <section aria-label="Filtros avançados" className="mb-2 shrink-0 rounded-lg border border-neutral-200 p-1.5">
         <h3 className="mb-2 text-xs font-bold text-[#355E3B]">Filtros avançados · tipo, zona, confiança e raio</h3>
         <div className="grid grid-cols-2 gap-2">
-        <label className="text-[11px] font-bold">Tipo
+        <label className="text-xs font-bold">Tipo
           <select aria-label="Tipo de estabelecimento" value={selectedKind} onChange={event => onSelectKind(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
             <option value="">Todos os tipos</option>
             {kindOptions.map(value => <option key={value} value={value}>{value}</option>)}
           </select>
         </label>
-        <label className="text-[11px] font-bold">Zona
+        <label className="text-xs font-bold">Zona
           <select aria-label="Zona do local" value={selectedZone} onChange={event => onSelectZone(event.target.value)} className="w-full min-h-11 border border-neutral-400 rounded-lg px-2 bg-white text-xs">
             <option value="">Todas as zonas</option>
             {zoneOptions.map(value => <option key={value} value={value}>{value}</option>)}
@@ -185,7 +185,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
               <option value={5}>Até 5 km</option><option value={10}>Até 10 km</option>
             </select>
           </label>
-          {!hasLocation && <p className="col-span-2 text-[11px] text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
+          {!hasLocation && <p className="col-span-2 text-xs text-neutral-600">Para ordenar por distância ou definir raio, use Perto de mim e permita o GPS.</p>}
         </div>
       </section>
       </details>}
@@ -260,7 +260,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                       <p className="text-xs text-neutral-600">{point.category} • {point.zone}</p>
                     </div>
                   </div>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[11px] font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
+                  <span className={`px-1.5 py-0.2 rounded-full text-xs font-bold border inline-flex items-center gap-0.5 ${isVerified ? 'bg-emerald-100 text-emerald-900 border-emerald-200' : 'bg-orange-100 text-orange-900 border-orange-300'}`}>
                     {isVerified ? <BadgeCheck size={9} /> : <AlertTriangle size={9} />}
                     {isReal ? (point.provenanceMeta.verificationStatus === 'verified' ? 'REAL' : 'COLABORATIVO') : 'DEMO'}
                   </span>
