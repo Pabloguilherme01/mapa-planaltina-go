@@ -245,10 +245,6 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
         {isLoading ? <p role="status" className="p-4 text-sm">Carregando locais de Planaltina…</p> : isError ? <div role="alert" className="p-4 text-sm"><p>Não foi possível carregar os locais.</p><button type="button" className="touch-target mt-2 rounded-xl border px-3 font-bold" onClick={onRetry}>Tentar novamente</button></div> : points.length === 0 ? (
           <div className="p-4 bg-neutral-50 rounded-xl text-center text-xs text-neutral-500">
             <p>Nenhum ponto encontrado com os filtros atuais.</p>
-            {activeFilterCount > 0 && <button type="button" onClick={onClearAllFilters}
-              className="touch-target mt-2 rounded-xl border border-neutral-400 bg-white px-3 font-bold text-[#355E3B]">
-              Limpar busca e filtros
-            </button>}
             {activeFilterCount > 0 && <button type="button" onClick={onClearAllFilters} className="touch-target mt-2 block w-full rounded-lg border border-neutral-300 bg-white px-3 text-sm font-bold text-[#355E3B]">Limpar busca e filtros</button>}
           </div>
         ) : (
