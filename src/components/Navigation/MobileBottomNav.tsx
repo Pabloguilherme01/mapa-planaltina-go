@@ -32,16 +32,16 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               key={tab.id}
               type="button"
               onClick={() => onSelectTab(tab.id)}
-              className={`touch-target flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-20 h-14 transition-all ${
+              className={`touch-target flex flex-col items-center justify-center min-w-[44px] min-h-[44px] w-20 h-14 rounded-xl transition-colors ${
                 isActive
-                  ? 'text-[#355E3B] font-extrabold scale-105'
+                  ? 'text-[#355E3B] font-extrabold'
                   : 'text-neutral-500 hover:text-neutral-800 font-medium'
               }`}
               aria-current={isActive ? 'page' : undefined}
               aria-label={tab.id === 'sources' ? 'Fontes, proveniência e serviços digitais' : undefined}
             >
               <IconComp size={22} className={isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'} />
-              <span className="text-[11px] mt-0.5">{tab.label}</span>
+              <span className="text-xs mt-0.5">{tab.label}</span>
             </button>
           );
         })}
