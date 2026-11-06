@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { lazy, Suspense, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useMemo, useCallback, useSyncExternalStore } from 'react';
 import { MapPoint, PointCategory, ProvenanceType, CATEGORIES_LIST } from './types/index.ts';
 import { fetchPoints } from './services/apiClient.ts';
 import { Navbar, ActiveTab } from './components/Navigation/Navbar.tsx';
@@ -56,7 +56,15 @@ function readInitialFilters() {
   return decodeMapFilters(params);
 }
 
+const desktopLayout = window.matchMedia('(min-width: 64rem)');
+
+function subscribeToLayout(onChange: () => void) {
+  desktopLayout.addEventListener('change', onChange);
+  return () => desktopLayout.removeEventListener('change', onChange);
+}
+
 export default function App() {
+  const isDesktop = useSyncExternalStore(subscribeToLayout, () => desktopLayout.matches);
   const [initialFilters] = useState(readInitialFilters);
   const [shareNotice, setShareNotice] = useState('');
   const [allPoints, setAllPoints] = useState<MapPoint[]>([]);
@@ -300,7 +308,7 @@ export default function App() {
         </Suspense>
       ) : (
         <div className="flex-1 w-full pt-16 lg:pt-24 pb-16 lg:pb-0 flex overflow-hidden relative">
-          <div className="hidden lg:flex h-[calc(100vh-6rem)]">
+          {isDesktop && <div className="flex h-[calc(100vh-6rem)]">
             <DesktopSidebar
               points={filteredPoints}
               selectedPoint={selectedPoint}
@@ -335,7 +343,7 @@ export default function App() {
               isError={isError}
               onRetry={loadData}
             />
-          </div>
+          </div>}
 
           <main
             className="map-workspace flex-1 relative overflow-hidden flex flex-col"
@@ -386,7 +394,7 @@ export default function App() {
               />
             </div>
 
-            {!routePickMode && <MobileBottomSheet
+            {!isDesktop && !routePickMode && <MobileBottomSheet
               selectedProvenance={selectedProvenance}
               onSelectProvenance={setSelectedProvenance}
               kindOptions={kindOptions}
