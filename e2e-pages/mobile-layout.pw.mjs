@@ -24,6 +24,24 @@ for (const width of [320, 390, 768]) {
   });
 }
 
+test('mobile: tocar em um marcador abre sua ficha e preserva o mapa ao fechar', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+  const search = page.getByLabel('Buscar pontos em Planaltina, Goiás');
+  await search.fill('UNIDADE DE PRONTO ATENDIMENTO UPA');
+  await page.getByRole('button', { name: 'Focar', exact: true }).first().click();
+  await expect(page.locator('#bottomSheet')).toHaveClass(/catalog-collapsed/);
+  const marker = page.locator('.municipal-marker').first();
+  await expect(marker).toBeVisible();
+  await marker.click();
+  const detail = page.getByRole('dialog', { name: 'UNIDADE DE PRONTO ATENDIMENTO UPA' });
+  await expect(detail).toBeVisible();
+  await detail.getByRole('button', { name: 'Fechar ficha cadastral' }).click();
+  await expect(detail).toHaveCount(0);
+  await expect(page.getByLabel('Mapa geográfico de Planaltina com limite IBGE')).toBeVisible();
+});
+
 for (const viewport of [
   { width: 320, height: 700 },
   { width: 390, height: 844 },
