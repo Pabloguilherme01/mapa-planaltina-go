@@ -344,6 +344,8 @@ test('desktop: geolocalização e assistente prendem foco, fecham com Escape e r
 
 test('páginas principais não têm violações críticas ou sérias de acessibilidade', async ({ page }) => {
   await page.goto('./');
+  // Leaflet altera o contêiner interno; a região semântica deve permanecer nomeada.
+  await expect(page.getByRole('region', { name: 'Mapa geográfico de Planaltina com limite IBGE' })).toBeVisible();
   const mapResults = await new AxeBuilder({ page }).analyze();
   const mapBlocking = mapResults.violations.filter((violation) => ['critical', 'serious'].includes(violation.impact));
   expect(mapBlocking, JSON.stringify(mapBlocking, null, 2)).toEqual([]);

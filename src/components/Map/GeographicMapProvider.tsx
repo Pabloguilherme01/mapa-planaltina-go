@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import { MUNICIPAL_BOUNDARY } from '../../data/municipalBoundary.ts';
 import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
+import { createClusterPanel } from './createClusterPanel.ts';
 import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
 export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, onOpenPointDetails, userLocation, routePreview, onClearRoute, routePickMode, onMapCoordinatePicked, onCancelMapPick }: {
@@ -21,6 +22,8 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
 }) {
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
+  const clusterDialog = useRef<HTMLDialogElement>(null);
+  const clusterContent = useRef<HTMLDivElement>(null);
   // Mantém os callbacks atualizados sem recriar todos os marcadores em cada render do App.
   const actions = useRef({ onOpenPointDetails, onMapCoordinatePicked });
   actions.current = { onOpenPointDetails, onMapCoordinatePicked };
@@ -74,32 +77,16 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
               });
               return;
             }
-            const panel = document.createElement('section');
-            panel.className = 'municipal-cluster-panel';
-            panel.setAttribute('aria-label', 'Selecionar local no agrupamento');
-            const heading = document.createElement('strong');
-            heading.textContent = `${bucket.length} locais neste ponto`;
-            panel.appendChild(heading);
-            const options = document.createElement('div');
-            options.className = 'municipal-cluster-options';
-            for (const point of bucket.slice(0, 40)) {
-              const option = document.createElement('button');
-              option.type = 'button';
-              option.className = 'municipal-cluster-choice';
-              option.textContent = `${point.name} · ${point.category}`;
-              option.addEventListener('click', () => {
-                if (routePickMode) actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
-                else actions.current.onOpenPointDetails(point);
-                instance.closePopup();
-              });
-              options.appendChild(option);
-            }
-            panel.appendChild(options);
-            if (bucket.length > 40) {
-              const hint = document.createElement('p');
-              hint.className = 'municipal-cluster-hint';
-              hint.textContent = 'Há mais locais aqui. Use a busca para refinar.';
-              panel.appendChild(hint);
+            const panel = createClusterPanel(bucket, point => {
+              if (clusterDialog.current?.open) clusterDialog.current.close();
+              if (routePickMode) actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
+              else actions.current.onOpenPointDetails(point);
+              instance.closePopup();
+            });
+            if (window.matchMedia('(max-width: 1023px)').matches && clusterDialog.current && clusterContent.current) {
+              clusterContent.current.replaceChildren(panel);
+              clusterDialog.current.showModal();
+              return;
             }
             L.popup({ maxWidth: 320 })
               .setLatLng(bounds.getCenter())
@@ -206,15 +193,22 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
     layer.on('tileerror', () => setTileError(true));
     return () => { layer.remove(); };
   }, [streets]);
-  return <div className="relative h-full w-full">
+  return <div role="region" aria-label="Mapa geográfico de Planaltina com limite IBGE" className="relative h-full w-full">
+    <dialog ref={clusterDialog} className="municipal-cluster-dialog" aria-label="Locais neste ponto"
+      onKeyDown={event => event.stopPropagation()}
+      onClose={() => clusterContent.current?.replaceChildren()}>
+      <button type="button" className="touch-target block min-h-11 ml-auto px-3 font-bold"
+        onClick={() => clusterDialog.current?.close()}>Fechar</button>
+      <div ref={clusterContent} />
+    </dialog>
     <div ref={host} className="h-full w-full bg-[#e9eee5]"
       style={{ zIndex: 0, cursor: routePickMode ? 'crosshair' : undefined }}
-      aria-label="Mapa geográfico de Planaltina com limite IBGE" />
+      />
     {routePickMode && <div role="status" className="absolute inset-x-4 top-16 z-20 mx-auto w-fit max-w-[85vw] rounded-2xl border border-[#355E3B]/30 bg-white/95 px-4 py-3 text-center text-sm font-extrabold text-[#355E3B] shadow-xl backdrop-blur">
       <p>Toque em uma rua do mapa para marcar {routePickMode === 'origin' ? 'a origem' : 'o destino'} do percurso.</p>
       <button type="button" className="touch-target mt-2 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-bold" onClick={onCancelMapPick}>Cancelar seleção</button>
     </div>}
-    <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-6rem)] flex-wrap gap-2" aria-label="Controles do mapa">
+    <div className="absolute left-3 top-3 z-10 flex max-w-[calc(100%-6rem)] flex-wrap gap-2" role="group" aria-label="Controles do mapa">
       <button type="button" className="touch-target inline-flex items-center gap-2 rounded-xl border border-neutral-200 bg-white/95 px-3 py-2 text-xs font-bold text-[#355E3B] shadow-lg backdrop-blur"
         aria-pressed={streets} aria-label={streets ? 'Ruas online ativadas' : 'Ruas online desativadas'}
         onClick={() => { setTileError(false); setStreets(!streets); }}>
