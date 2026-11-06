@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { z } from 'zod';
 import { MUNICIPALITY_CODE, type MapPoint } from '../../src/types/index.ts';
 import { isSnapshotDate } from '../../src/utils/snapshotDate.ts';
+import { isCensusPoint } from '../../src/utils/censusCatalog.ts';
 import { inPlanaltina } from '../../src/utils/territory.ts';
 
 const provenance = z.object({
@@ -36,6 +37,9 @@ const payloadSchema = z.object({
     ibgeCode: z.literal(MUNICIPALITY_CODE),
     realCount: z.number().int().min(1),
     demoCount: z.number().int().min(0),
+    verifiedCount: z.number().int().min(0).optional(),
+    communityCount: z.number().int().min(0).optional(),
+    censusCount: z.number().int().min(0).optional(),
   }),
 });
 
@@ -52,6 +56,9 @@ export function parsePublishedCatalog(payload: unknown): {
   const ids = new Set<string>();
   let realCount = 0;
   let demoCount = 0;
+  let verifiedCount = 0;
+  let communityCount = 0;
+  let censusCount = 0;
   for (const record of data) {
     if (ids.has(record.id)) throw new Error('Catálogo municipal contém identidade duplicada.');
     ids.add(record.id);
@@ -75,14 +82,27 @@ export function parsePublishedCatalog(payload: unknown): {
       validUrl = url.protocol === 'https:' && Boolean(url.hostname)
         && !url.username && !url.password;
     } catch { validUrl = false; }
-    if (!validUrl ||
-        !['official', 'verified_open_data'].includes(source.provenance) ||
-        source.verificationStatus !== 'verified' ||
+    const verified = ['official', 'verified_open_data'].includes(source.provenance) &&
+      source.verificationStatus === 'verified';
+    const community = source.provenance === 'community' &&
+      ['unverified', 'pending'].includes(source.verificationStatus) &&
+      /^osm-(node|way|relation)-[1-9]\d*$/.test(record.id) &&
+      /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\d*$/.test(source.sourceUrl ?? '');
+    // IBGE CNEFE 2022 é histórico: fonte autenticada, funcionamento não verificado.
+    const census = isCensusPoint(record);
+    if (!validUrl || (!verified && !community && !census) ||
         !inPlanaltina(record.lat, record.lng)) {
       throw new Error('Catálogo municipal contém registro real sem geometria ou procedência verificável.');
     }
+    if (verified) verifiedCount++;
+    if (community) communityCount++;
+    if (census) censusCount++;
   }
-  if (realCount === 0 || realCount !== meta.realCount || demoCount !== meta.demoCount) {
+  if (realCount === 0 || verifiedCount === 0 || realCount !== meta.realCount ||
+      demoCount !== meta.demoCount ||
+      (meta.verifiedCount !== undefined && meta.verifiedCount !== verifiedCount) ||
+      (meta.communityCount !== undefined && meta.communityCount !== communityCount) ||
+      (meta.censusCount !== undefined && meta.censusCount !== censusCount)) {
     throw new Error('Contagens do catálogo municipal não correspondem ao snapshot.');
   }
   return { points: data as MapPoint[], realCount, demoCount };
