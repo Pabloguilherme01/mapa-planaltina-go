@@ -14,9 +14,9 @@ test('mobile: planejador percorre o catálogo em lotes sem ocultar destinos e or
   await expect(destinations.locator('option')).toHaveCount(201);
 
   const laterId = await destinations.locator('option').nth(150).getAttribute('value');
-  expect(laterId).toBeTruthy();
-  await destinations.selectOption(laterId!);
-  await expect(destinations).toHaveValue(laterId!);
+  if (!laterId) throw new Error('A opção além do primeiro lote não possui ID');
+  await destinations.selectOption(laterId);
+  await expect(destinations).toHaveValue(laterId);
 
   const origins = dialog.getByRole('combobox', { name: 'Ponto de partida' });
   await expect(origins.locator('option')).toHaveCount(101);
