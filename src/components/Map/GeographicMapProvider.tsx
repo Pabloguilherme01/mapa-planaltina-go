@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import { MUNICIPAL_BOUNDARY } from '../../data/municipalBoundary.ts';
 import { MapPoint } from '../../types/index.ts';
 import { CATEGORY_CONFIG } from '../../utils/categoryMeta.ts';
+import { createClusterPanel } from './createClusterPanel.ts';
 import { groupMapPoints } from '../../utils/markerBuckets.ts';
 
 export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, onOpenPointDetails, userLocation, routePreview, onClearRoute, routePickMode, onMapCoordinatePicked, onCancelMapPick }: {
@@ -74,33 +75,11 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
               });
               return;
             }
-            const panel = document.createElement('section');
-            panel.className = 'municipal-cluster-panel';
-            panel.setAttribute('aria-label', 'Selecionar local no agrupamento');
-            const heading = document.createElement('strong');
-            heading.textContent = `${bucket.length} locais neste ponto`;
-            panel.appendChild(heading);
-            const options = document.createElement('div');
-            options.className = 'municipal-cluster-options';
-            for (const point of bucket.slice(0, 40)) {
-              const option = document.createElement('button');
-              option.type = 'button';
-              option.className = 'municipal-cluster-choice';
-              option.textContent = `${point.name} · ${point.category}`;
-              option.addEventListener('click', () => {
-                if (routePickMode) actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
-                else actions.current.onOpenPointDetails(point);
-                instance.closePopup();
-              });
-              options.appendChild(option);
-            }
-            panel.appendChild(options);
-            if (bucket.length > 40) {
-              const hint = document.createElement('p');
-              hint.className = 'municipal-cluster-hint';
-              hint.textContent = 'Há mais locais aqui. Use a busca para refinar.';
-              panel.appendChild(hint);
-            }
+            const panel = createClusterPanel(bucket, point => {
+              if (routePickMode) actions.current.onMapCoordinatePicked({ lat: point.lat, lng: point.lng });
+              else actions.current.onOpenPointDetails(point);
+              instance.closePopup();
+            });
             L.popup({ maxWidth: 320 })
               .setLatLng(bounds.getCenter())
               .setContent(panel)
