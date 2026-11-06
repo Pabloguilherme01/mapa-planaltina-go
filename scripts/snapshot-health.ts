@@ -2,6 +2,7 @@ import { appendFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { isSnapshotDate } from '../src/utils/snapshotDate.ts';
+import { isCensusPoint } from '../src/utils/censusCatalog.ts';
 import { inPlanaltina } from '../src/utils/territory.ts';
 import { verifyPublishedCompanionResources } from './published-site-health.ts';
 import { assessRoadHealth } from './road-health.ts';
@@ -44,6 +45,7 @@ export function assessPublishedSnapshot(
   let realCount = 0;
   let verifiedCount = 0;
   let communityCount = 0;
+  let censusCount = 0;
   let oldest = 0;
   for (const value of payload.data) {
     if (!record(value) || typeof value.id !== 'string' || !value.id.trim() || seen.has(value.id)) {
@@ -72,11 +74,21 @@ export function assessPublishedSnapshot(
       /^osm-(node|way|relation)-[1-9]\d*$/.test(value.id) &&
       typeof meta.sourceUrl === 'string' &&
       /^https:\/\/www\.openstreetmap\.org\/(node|way|relation)\/[1-9]\d*$/.test(meta.sourceUrl);
-    if ((!verified && !community) || !isSnapshotDate(meta.retrievedAt, now.getTime())) {
+    // CNEFE 2022 é fonte histórica oficial, mas funcionamento continua pendente.
+    const census = isCensusPoint({
+      id: value.id,
+      provenanceMeta: {
+        provenance: typeof meta.provenance === 'string' ? meta.provenance : undefined,
+        verificationStatus: typeof meta.verificationStatus === 'string' ? meta.verificationStatus : undefined,
+        sourceUrl: typeof meta.sourceUrl === 'string' ? meta.sourceUrl : undefined,
+      },
+    });
+    if ((!verified && !community && !census) || !isSnapshotDate(meta.retrievedAt, now.getTime())) {
       throw new Error('Ponto real sem classificação de procedência ou data válida.');
     }
     realCount++;
     if (community) communityCount++;
+    if (census) censusCount++;
     if (verified) { verifiedCount++; oldest = Math.max(oldest, now.getTime() - Date.parse(meta.retrievedAt)); }
   }
   if (
@@ -84,6 +96,7 @@ export function assessPublishedSnapshot(
     payload.meta.realCount !== realCount ||
     (payload.meta.verifiedCount !== undefined && payload.meta.verifiedCount !== verifiedCount) ||
     (payload.meta.communityCount !== undefined && payload.meta.communityCount !== communityCount) ||
+    (payload.meta.censusCount !== undefined && payload.meta.censusCount !== censusCount) ||
     payload.meta.demoCount !== demoCount
   ) {
     throw new Error('Contagens reais/DEMO inconsistentes no catálogo.');
