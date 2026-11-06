@@ -107,7 +107,7 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             value={searchQuery}
             onFocus={() => setIsExpanded(true)}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="Buscar pontos em Planaltina, Goiás..."
+            placeholder="Buscar locais e serviços"
             className="w-full min-h-[44px] py-1.5 px-2 bg-transparent text-xs text-[#121E14] placeholder:text-neutral-400 focus:outline-none"
           />
           {searchQuery && (
@@ -195,10 +195,10 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
             <Building size={14} />
           </div>
           <div className="min-w-0">
-            <h2 id="mobile-results-heading" className="text-xs font-bold text-[#121E14] leading-tight">
+            <h2 id="mobile-results-heading" className="text-sm font-bold text-[#121E14] leading-tight">
               {points.length} pontos no catálogo
             </h2>
-            <p className="truncate text-[10px] text-neutral-500">
+            <p className="truncate text-xs text-neutral-600">
               Planaltina, Goiás • {realCount} locais mapeados
             </p>
           </div>
@@ -274,21 +274,21 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
                 </div>}
 
                 <div className="flex items-center justify-between pt-0.5">
-                  <span className="text-[10px] text-neutral-500 font-semibold truncate max-w-[150px]">
+                  <span className="text-xs text-neutral-600 font-semibold truncate max-w-[150px]">
                     {point.addressHint || 'Planaltina, Goiás'}
                   </span>
                   <div className="flex gap-1.5">
                     <button
                       type="button"
                       onClick={() => { onSelectPoint(point); setIsExpanded(false); }}
-                      className="touch-target px-2 py-1 rounded-lg bg-white text-[#121E14] text-[11px] font-bold border border-neutral-300 active:scale-95 transition-transform"
+                      className="touch-target px-2 py-1 rounded-lg bg-white text-[#121E14] text-xs font-bold border border-neutral-300 active:scale-95 transition-transform"
                     >
                       Focar
                     </button>
                     <button
                       type="button"
                       onClick={() => onOpenPointDetails(point)}
-                      className="touch-target px-2 py-1 rounded-lg bg-[#B05835] text-white text-[11px] font-bold flex items-center gap-1 active:scale-95 transition-transform"
+                      className="touch-target px-2 py-1 rounded-lg bg-[#B05835] text-white text-xs font-bold flex items-center gap-1 active:scale-95 transition-transform"
                     >
                       <span>Ficha</span>
                       <Eye size={12} />
