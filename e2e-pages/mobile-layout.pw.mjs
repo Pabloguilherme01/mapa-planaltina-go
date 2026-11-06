@@ -215,3 +215,48 @@ test('desktop: centralizar novamente o mesmo local após mover o mapa', async ({
     return Math.hypot(p.x - focused.x, p.y - focused.y);
   }).toBeLessThan(5);
 });
+
+test('mobile: tela cheia mantém mapa montado, controle de foco e saída por Escape', async ({ page }, testInfo) => {
+  test.skip(!testInfo.project.name.includes('mobile'), 'Fluxo específico mobile');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+
+  const originalMap = page.getByLabel('Mapa geográfico de Planaltina com limite IBGE');
+  await expect(originalMap).toBeVisible();
+  await originalMap.evaluate(element => element.setAttribute('data-map-instance', 'preserved'));
+
+  const open = page.getByRole('button', { name: 'Abrir mapa em tela cheia' });
+  await open.click();
+  const dialog = page.getByRole('dialog', { name: 'Mapa de Planaltina em tela cheia' });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel('Mapa geográfico de Planaltina com limite IBGE'))
+    .toHaveAttribute('data-map-instance', 'preserved');
+  await expect(page.getByRole('button', { name: 'Sair do mapa em tela cheia' })).toBeFocused();
+  await expect(page.locator('body')).toHaveCSS('overflow', 'hidden');
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole('button', { name: 'Abrir mapa em tela cheia' })).toBeFocused();
+  await expect(originalMap).toHaveAttribute('data-map-instance', 'preserved');
+
+  await page.getByRole('button', { name: 'Abrir mapa em tela cheia' }).click();
+  await page.getByRole('button', { name: 'Sair do mapa em tela cheia' }).click();
+  await expect(page.getByRole('dialog', { name: 'Mapa de Planaltina em tela cheia' })).toHaveCount(0);
+});
+
+test('trocar o tamanho da tela preserva a busca e monta um único catálogo', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('./');
+  const mobile = page.locator('#mobile-search-input');
+  const desktop = page.locator('#search-input');
+  await expect(desktop).toHaveCount(0);
+  await mobile.fill('JOVEM LATAS');
+  await expect(page.locator('#bottomSheet').getByRole('heading', { name: 'JOVEM LATAS' })).toBeVisible();
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await expect(mobile).toHaveCount(0);
+  await expect(desktop).toHaveValue('JOVEM LATAS');
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(desktop).toHaveCount(0);
+  await expect(mobile).toHaveValue('JOVEM LATAS');
+});

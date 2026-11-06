@@ -192,6 +192,18 @@
   .mobile-catalog { transition: none; }
 }
 
+/* Tela cheia do mapa: não remontar o Leaflet, apenas ampliar a área observada. */
+.map-workspace .planaltina-map-fullscreen .leaflet-control-zoom {
+  margin-top: 76px !important;
+}
+.planaltina-map-fullscreen .leaflet-control-zoom a {
+  min-width: 44px;
+  min-height: 44px;
+  display: grid;
+  place-items: center;
+}
+:root[data-theme="dark"] .planaltina-map-fullscreen { background: #101b22; }
+
 /* Seleção de pontos coincidentes: touch targets reais e lista rolável no celular. */
 .municipal-cluster-panel { min-width: min(250px, 65vw); font: 500 14px/1.4 var(--font-sans); }
 .municipal-cluster-panel > strong { display: block; margin-bottom: 8px; color: #1b3a29; }
