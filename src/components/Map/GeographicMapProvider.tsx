@@ -193,7 +193,7 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
     layer.on('tileerror', () => setTileError(true));
     return () => { layer.remove(); };
   }, [streets]);
-  return <div className="relative h-full w-full">
+  return <div role="region" aria-label="Mapa geográfico de Planaltina com limite IBGE" className="relative h-full w-full">
     <dialog ref={clusterDialog} className="municipal-cluster-dialog" aria-label="Locais neste ponto"
       onKeyDown={event => event.stopPropagation()}
       onClose={() => clusterContent.current?.replaceChildren()}>
@@ -201,9 +201,9 @@ export function GeographicMapProvider({ points, selectedPoint, onSelectPoint, on
         onClick={() => clusterDialog.current?.close()}>Fechar</button>
       <div ref={clusterContent} />
     </dialog>
-    <div ref={host} role="region" className="h-full w-full bg-[#e9eee5]"
+    <div ref={host} className="h-full w-full bg-[#e9eee5]"
       style={{ zIndex: 0, cursor: routePickMode ? 'crosshair' : undefined }}
-      aria-label="Mapa geográfico de Planaltina com limite IBGE" />
+      />
     {routePickMode && <div role="status" className="absolute inset-x-4 top-16 z-20 mx-auto w-fit max-w-[85vw] rounded-2xl border border-[#355E3B]/30 bg-white/95 px-4 py-3 text-center text-sm font-extrabold text-[#355E3B] shadow-xl backdrop-blur">
       <p>Toque em uma rua do mapa para marcar {routePickMode === 'origin' ? 'a origem' : 'o destino'} do percurso.</p>
       <button type="button" className="touch-target mt-2 rounded-lg border border-neutral-300 px-3 py-2 text-xs font-bold" onClick={onCancelMapPick}>Cancelar seleção</button>
