@@ -107,11 +107,13 @@ export const MobileBottomSheet: React.FC<MobileBottomSheetProps> = ({
           <input
             id="mobile-search-input"
             ref={searchInput}
-            type="search"
+            type="text"
+            inputMode="search"
             enterKeyHint="search"
             autoComplete="off"
             value={searchQuery}
             onFocus={() => setIsExpanded(true)}
+            onInput={(e) => onSearchChange(e.currentTarget.value)}
             onChange={(e) => onSearchChange(e.target.value)}
             onKeyDown={event => {
               if (event.key === 'Enter') searchInput.current?.blur();
